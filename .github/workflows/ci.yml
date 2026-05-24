@@ -1,0 +1,169 @@
+name: CI
+
+# Triggers: push/PR into main or develop.
+# All jobs must pass before merging to main (enforce via branch protection rules).
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Job 1: Lint ─────────────────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # ─── Job 2: Type Check ───────────────────────────────────────────────────────
+  # Enforces TypeScript strict mode (ADR-002). Runs in parallel with lint.
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: TypeScript type check
+        # Uses tsc --noEmit so no output is generated — pure validation only.
+        # Sprint 1 task: ensure tsconfig.json has "strict": true (ADR-002).
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit
+          else
+            echo "::notice::tsconfig.json not found — TypeScript migration is a Sprint 1 task."
+            echo "::notice::See ARCHITECTURE.md ADR-002: TypeScript strict mode required."
+          fi
+
+  # ─── Job 3: Test ─────────────────────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests
+        # Sprint 0: placeholder — Vitest not yet installed.
+        # Sprint 1 migration path:
+        #   1. npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/react
+        #   2. Add "test": "vitest run" and "test:coverage": "vitest run --coverage" to package.json
+        #   3. Replace this step with: npm run test:coverage
+        #   4. Add coverage upload to Codecov (see commented step below)
+        # Coverage targets (ARCHITECTURE.md §10.1): >= 80% global, >= 95% domain modules.
+        run: |
+          echo "::notice::Test suite placeholder — Vitest will be configured in Sprint 1."
+          echo "::notice::Coverage targets: 80% global, 95% on domain modules (ARCHITECTURE.md §10.1)."
+          npm run lint --silent
+
+      # Uncomment in Sprint 1 after Vitest + Codecov are configured:
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     fail_ci_if_error: true
+
+  # ─── Job 4: Security ─────────────────────────────────────────────────────────
+  # OWASP A06 (Vulnerable Components) + secret scanning. Runs in parallel.
+  # Unblocks merge if HIGH or CRITICAL vulnerabilities are found (ADR-002, Stage 5).
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Dependency vulnerability audit (OWASP A06)
+        # Fails CI on HIGH or CRITICAL vulnerabilities.
+        # MODERATE vulnerabilities generate a warning but do not block.
+        run: npm audit --audit-level=high
+
+      - name: Secret scanning (TruffleHog)
+        # Scans the git history for accidentally committed secrets.
+        # Detects API keys, tokens, credentials (OWASP A05).
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  # ─── Job 5: Build ────────────────────────────────────────────────────────────
+  # Only runs after lint, typecheck, test, and security all pass.
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test, security]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+        env:
+          # Production values live in Vercel env vars (ADR-007).
+          # These placeholders allow CI to verify the build succeeds without secrets.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.placeholder.app' }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+      # Sprint 1: uncomment after adding "build:size-check" script to package.json.
+      # Performance budget: JS bundle < 200KB gzipped (ARCHITECTURE.md §4 Stage 4).
+      # - name: Bundle size check
+      #   run: npm run build:size-check
