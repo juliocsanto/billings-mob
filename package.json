@@ -1,0 +1,25 @@
+{
+  "name": "billings-mob",
+  "version": "1.0.0",
+  "description": "Gráfico do Método de Ovulação Billings",
+  "type": "module",
+  "homepage": "https://juliocsanto.github.io/billings-mob/",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@react-pdf/renderer": "4.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.10",
+    "vite-plugin-node-polyfills": "^0.22.0",
+    "gh-pages": "^6.2.0"
+  }
+}

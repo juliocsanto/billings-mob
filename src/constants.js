@@ -1,0 +1,49 @@
+export const C = {
+  bg:          '#DDD3C4',
+  surface:     '#D4C9B8',
+  card:        '#E4D8C8',
+  border:      '#B8A898',
+  borderStrong:'#9A8878',
+  text:        '#241408',
+  textSec:     '#6A5040',
+  textMuted:   '#9A8070',
+  terra:       '#8C3C28',
+  terraLight:  '#E8C8BC',
+  terraBorder: '#C49080',
+  sage:        '#3E5E48',
+  sageLight:   '#C8D8CC',
+  sageBorder:  '#7EA48A',
+  amber:       '#846010',
+  amberLight:  '#E4D4A0',
+  amberBorder: '#B89848',
+  rose:        '#7A2828',
+  roseLight:   '#E8C8C8',
+  roseBorder:  '#C09090',
+  white:       '#F0E8DC',
+  shadow:      'rgba(44,26,16,0.12)',
+};
+
+export const STAMPS = [
+  { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',          c:'#A03030', bg:'#F5E8E8', border:'#D4A0A0' },
+  { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',      c:'#2E6040', bg:'#E4F0E8', border:'#7AB498' },
+  { id:'muco',        sym:'○', label:'Muco',         sub:'Fluxo presente',      c:'#806020', bg:'#F5ECD4', border:'#C4A860' },
+  { id:'apice',       sym:'✕', label:'Ápice',        sub:'Último dia lubrificante', c:'#8C3C28', bg:'#F0DCD4', border:'#C49080' },
+];
+
+export const MUCUS = [
+  { id:'opaco',        label:'Opaco / Pegajoso',   desc:'Ponto de mudança — cérvix se abre' },
+  { id:'cremoso',      label:'Cremoso',            desc:'Fertilidade em crescimento' },
+  { id:'transparente', label:'Transparente',       desc:'Alta fertilidade' },
+  { id:'elastico',     label:'Fios elásticos',     desc:'Máxima fertilidade — próximo ao Ápice' },
+];
+
+export const BLEEDING = [
+  { id:'intenso',  label:'Intenso'  },
+  { id:'moderado', label:'Moderado' },
+  { id:'leve',     label:'Leve'     },
+  { id:'manchas',  label:'Manchas'  },
+];
+
+export const EMPTY_FORM = {
+  stamp: null, mucus: null, bleeding: null, notes: '', relations: false,
+};
