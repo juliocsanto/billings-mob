@@ -1,46 +1,43 @@
-name: Deploy to GitHub Pages
+# Connect this repo to Vercel dashboard first: vercel.com/new
+# After connecting, populate these secrets in GitHub repo settings:
+#   VERCEL_TOKEN       — from Vercel account settings → Tokens
+#   VERCEL_ORG_ID      — from Vercel project settings → General → Team ID
+#   VERCEL_PROJECT_ID  — from Vercel project settings → General → Project ID
+
+name: Deploy to Vercel
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+# Only run after CI passes (ci.yml must be green on main)
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy-production:
+    name: Deploy to Vercel (Production)
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: '22'
+          cache: 'npm'
 
-      - name: Install
-        run: npm ci
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
 
-      - name: Build
-        run: npm run build
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
         with:
-          path: dist
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./

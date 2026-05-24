@@ -50,15 +50,9 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: TypeScript type check
-        # Uses tsc --noEmit so no output is generated — pure validation only.
-        # Sprint 1 task: ensure tsconfig.json has "strict": true (ADR-002).
-        run: |
-          if [ -f tsconfig.json ]; then
-            npx tsc --noEmit
-          else
-            echo "::notice::tsconfig.json not found — TypeScript migration is a Sprint 1 task."
-            echo "::notice::See ARCHITECTURE.md ADR-002: TypeScript strict mode required."
-          fi
+        # Runs tsc -b --noEmit using project references (tsconfig.json → tsconfig.app.json).
+        # strict: true enforced per ADR-002. allowJs: true enables incremental JSX→TSX migration.
+        run: npm run typecheck
 
   # ─── Job 3: Test ─────────────────────────────────────────────────────────────
   test:
@@ -119,15 +113,29 @@ jobs:
         # MODERATE vulnerabilities generate a warning but do not block.
         run: npm audit --audit-level=high
 
+      - name: Dependency audit (MODERATE — warning only)
+        run: npm audit --audit-level=moderate 2>&1 | tee audit-moderate.txt || true
+        continue-on-error: true
+
+      - name: Upload moderate audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-moderate-${{ github.sha }}
+          path: audit-moderate.txt
+          retention-days: 30
+
       - name: Secret scanning (TruffleHog)
         # Scans the git history for accidentally committed secrets.
         # Detects API keys, tokens, credentials (OWASP A05).
-        uses: trufflesecurity/trufflehog@main
+        # Pinned to exact version — supply chain integrity (security-policy-ci.md §5).
+        # --results=verified,unverified: catches secrets whose provider API is unreachable
+        # at scan time (Anthropic, Supabase). --only-verified silently passes those.
+        uses: trufflesecurity/trufflehog@v3.82.6
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --only-verified
+          extra_args: --results=verified,unverified
 
   # ─── Job 5: Build ────────────────────────────────────────────────────────────
   # Only runs after lint, typecheck, test, and security all pass.
@@ -155,6 +163,16 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.placeholder.app' }}
+
+      - name: Scan build output for secret patterns (LGPD)
+        # Ensures no secrets are baked into the Vite build output (security-policy-ci.md §6).
+        # Catches Supabase service_role keys, JWT secrets, and API tokens in dist/.
+        run: |
+          if grep -rE "(ANTHROPIC|service_role|JWT_SECRET|WHATSAPP_API_TOKEN)" dist/ 2>/dev/null; then
+            echo "::error::Secret pattern found in build output — do not deploy"
+            exit 1
+          fi
+          echo "Build output clean — no secret patterns detected"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
