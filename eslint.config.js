@@ -2,18 +2,97 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   // Ignora artefatos de build e dependências
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'dist-api/**', 'node_modules/**', 'coverage/**'],
   },
 
   // Base JS recomendado
   js.configs.recommended,
 
-  // Configuração para arquivos JS/JSX do projeto
+  // Configuração para arquivos TypeScript da API (api/**)
+  {
+    files: ['api/**/*.ts'],
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+    rules: {
+      // TypeScript-specific rules
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'error',
+      // LGPD / Security
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'eqeqeq': ['error', 'always'],
+      'no-debugger': 'error',
+      // Disable base rule in favor of TypeScript rule
+      'no-unused-vars': 'off',
+    },
+  },
+
+  // Configuração para arquivos TypeScript da aplicação (src/**)
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+    },
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
+    settings: {
+      react: { version: 'detect' },
+    },
+    rules: {
+      // TypeScript
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'error',
+      // React
+      ...reactPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',             // TypeScript handles prop types
+      'react/jsx-no-target-blank': 'error',
+      'react/no-danger': 'error',
+      // React Hooks
+      ...reactHooksPlugin.configs.recommended.rules,
+      // Qualidade geral
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-unused-vars': 'off',              // Use @typescript-eslint/no-unused-vars instead
+      'no-debugger': 'error',
+      'eqeqeq': ['error', 'always'],
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+    },
+  },
+
+  // Configuração para arquivos JS do src (migração JSX → TSX)
   {
     files: ['src/**/*.{js,jsx}'],
     plugins: {
@@ -35,23 +114,16 @@ export default [
       react: { version: 'detect' },
     },
     rules: {
-      // React
       ...reactPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',   // Desnecessário com React 17+
-      'react/prop-types': 'warn',           // Warn (sem TypeScript ainda)
-      'react/jsx-no-target-blank': 'error', // Segurança: rel="noopener noreferrer"
-      'react/no-danger': 'error',           // Previne XSS via dangerouslySetInnerHTML
-
-      // React Hooks
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'warn',
+      'react/jsx-no-target-blank': 'error',
+      'react/no-danger': 'error',
       ...reactHooksPlugin.configs.recommended.rules,
-
-      // Qualidade geral
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-debugger': 'error',
       'eqeqeq': ['error', 'always'],
-
-      // Segurança básica (OWASP A03 — sem eval/injection)
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
@@ -60,7 +132,7 @@ export default [
 
   // Configuração para arquivos de config na raiz
   {
-    files: ['*.config.{js,mjs}', 'eslint.config.js'],
+    files: ['*.config.{js,mjs,ts}', 'eslint.config.js'],
     languageOptions: {
       globals: { ...globals.node },
     },
