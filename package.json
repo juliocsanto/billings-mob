@@ -10,22 +10,40 @@
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx --report-unused-disable-directives",
+    "lint:api": "eslint api --ext .ts --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest run",
+    "test:unit": "vitest run --reporter=verbose",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@hono/zod-validator": "^0.8.0",
     "@react-pdf/renderer": "4.5.1",
+    "@supabase/supabase-js": "^2.106.2",
+    "hono": "^4.12.23",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^25.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "gh-pages": "^6.2.0",
     "globals": "^15.15.0",
+    "jsdom": "^29.1.1",
     "typescript": "~5.6",
     "vite": "^5.4.10",
-    "vite-plugin-node-polyfills": "^0.22.0"
+    "vite-plugin-node-polyfills": "^0.22.0",
+    "vitest": "^4.1.7"
   }
 }

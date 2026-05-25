@@ -8,6 +8,26 @@
 
   "rewrites": [
     {
+      "source": "/api/observations/versions/:path*",
+      "destination": "/api/observations/versions/index"
+    },
+    {
+      "source": "/api/observations/:id",
+      "destination": "/api/observations/[id]"
+    },
+    {
+      "source": "/api/observations",
+      "destination": "/api/observations/index"
+    },
+    {
+      "source": "/api/cycles/:id",
+      "destination": "/api/cycles/[id]"
+    },
+    {
+      "source": "/api/cycles",
+      "destination": "/api/cycles/index"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -44,6 +64,15 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://graph.facebook.com; worker-src 'self' blob:; frame-ancestors 'none';"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
         }
       ]
     },

@@ -29,8 +29,16 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint
+      - name: Lint API (TypeScript — strict, max-warnings 0)
+        # Sprint 1: API TypeScript files must pass with zero warnings.
+        # OWASP A03: no-eval, no-implied-eval, eqeqeq enforced.
+        run: npm run lint:api
+
+      - name: Lint src (JS/JSX — pre-TypeScript migration, warnings allowed)
+        # Legacy .jsx files have prop-types warnings pending the JSX→TSX migration (Sprint 2).
+        # Runs without --max-warnings to avoid blocking CI on pre-existing tech debt.
         run: npm run lint
+        continue-on-error: false
 
   # ─── Job 2: Type Check ───────────────────────────────────────────────────────
   # Enforces TypeScript strict mode (ADR-002). Runs in parallel with lint.
@@ -71,24 +79,27 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run tests
-        # Sprint 0: placeholder — Vitest not yet installed.
-        # Sprint 1 migration path:
-        #   1. npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/react
-        #   2. Add "test": "vitest run" and "test:coverage": "vitest run --coverage" to package.json
-        #   3. Replace this step with: npm run test:coverage
-        #   4. Add coverage upload to Codecov (see commented step below)
-        # Coverage targets (ARCHITECTURE.md §10.1): >= 80% global, >= 95% domain modules.
-        run: |
-          echo "::notice::Test suite placeholder — Vitest will be configured in Sprint 1."
-          echo "::notice::Coverage targets: 80% global, 95% on domain modules (ARCHITECTURE.md §10.1)."
-          npm run lint --silent
+      - name: Run unit tests with coverage (Sprint 1)
+        # Sprint 1: Vitest configured with vitest.config.ts.
+        # Unit tests cover pure function modules: vectorClock, sanitizeAuditData, Zod schemas.
+        # Integration tests (Hono endpoint handlers against Supabase local) are deferred to Sprint 2.
+        # Coverage targets (ARCHITECTURE.md §10.1): >= 80% global — enforced Sprint 2+.
+        run: npm run test:coverage
 
-      # Uncomment in Sprint 1 after Vitest + Codecov are configured:
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/
+          retention-days: 30
+
+      # Sprint 2+: uncomment after configuring Codecov token in GitHub Secrets.
       # - name: Upload coverage to Codecov
       #   uses: codecov/codecov-action@v4
       #   with:
       #     fail_ci_if_error: true
+      #     files: ./coverage/lcov.info
 
   # ─── Job 4: Security ─────────────────────────────────────────────────────────
   # OWASP A06 (Vulnerable Components) + secret scanning. Runs in parallel.
