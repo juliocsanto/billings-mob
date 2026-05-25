@@ -5,3 +5,4 @@ dist
 *:Zone.Identifier
 .claude/
 .vercel
+coverage/
