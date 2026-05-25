@@ -141,10 +141,12 @@ jobs:
         # Pinned to exact version — supply chain integrity (security-policy-ci.md §5).
         # --results=verified,unverified: catches secrets whose provider API is unreachable
         # at scan time (Anthropic, Supabase). --only-verified silently passes those.
+        # On push to main: base=github.event.before (the SHA before the push) so that
+        # TruffleHog has a diff range to scan. On PR: base=default branch works correctly.
         uses: trufflesecurity/trufflehog@v3.82.6
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
+          base: ${{ github.event_name == 'push' && github.event.before || github.event.repository.default_branch }}
           head: HEAD
           extra_args: --results=verified,unverified
 
