@@ -4,3 +4,4 @@ dist
 *.local
 *:Zone.Identifier
 .claude/
+.vercel

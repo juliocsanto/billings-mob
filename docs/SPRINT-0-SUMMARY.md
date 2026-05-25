@@ -1,15 +1,25 @@
 # Sprint 0 — Completion Summary
 
+**STATUS: DONE**
+Completed: 2026-05-25
+
 Date: 2026-05-24
 
 ## Summary
 
 Sprint 0 established the full development infrastructure for both repositories
 (billings-mob and billings-web): CI/CD pipelines with security scans, branch
-protection, TypeScript strict mode, Vercel deploy workflows, Supabase migrations
-directory, and GitHub project board. All automatable items were implemented by
-the devops-engineer and ciso agents; several external service connections require
-one-time manual action before Sprint 1 can begin.
+protection, TypeScript strict mode, Vercel deploy workflows, Supabase project
+creation with initial migration, Vercel env vars, and GitHub Secrets. All Sprint
+0 items are complete. Sprint 1 is unblocked.
+
+### Supabase Project
+- Project ID: `gcwxwrjzbbqkuzcweyut`
+- URL: `https://gcwxwrjzbbqkuzcweyut.supabase.co`
+- Region: `sa-east-1` (Sao Paulo — LGPD compliant)
+- Status: `ACTIVE_HEALTHY`
+- Migration applied: `20260524000001_initial_schema` (2026-05-24)
+- Completed: 2026-05-25
 
 ---
 
@@ -34,12 +44,12 @@ one-time manual action before Sprint 1 can begin.
 
 ## Manual Actions Required Before Sprint 1
 
-| What | Why | Urgency |
-|---|---|---|
-| Vercel: connect both repos at vercel.com/new; set VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL; add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID as GitHub Secrets in both repos | Deploy workflows exist but cannot run without Vercel project IDs and token | Blocking Sprint 1 |
-| Supabase: create project (region sa-east-1 Sao Paulo); enable Auth with magic link; run migration 20260524000001_initial_schema.sql | Backend API and RLS policies depend on this project existing | Blocking Sprint 1 |
-| billings-web branch protection: requires GitHub Pro or make repo public | Private repo branch protection is a GitHub Pro feature; billings-web main is currently unprotected | High — set before first PR on billings-web |
-| WhatsApp Cloud API: start Meta Business registration now | Approval takes 1-7 days; blocks Sprint 4 notification features (ADR-009) | Start now — not blocking Sprint 1 but blocks Sprint 4 |
+| What | Why | Urgency | Status |
+|---|---|---|---|
+| Vercel: connect both repos at vercel.com/new; set VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_API_URL; add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID as GitHub Secrets in both repos | Deploy workflows exist but cannot run without Vercel project IDs and token | Blocking Sprint 1 | **DONE 2026-05-24** |
+| Supabase: create project (region sa-east-1 Sao Paulo); enable Auth with magic link; run migration 20260524000001_initial_schema.sql | Backend API and RLS policies depend on this project existing | Blocking Sprint 1 | **DONE 2026-05-25** |
+| billings-web branch protection: requires GitHub Pro or make repo public | Private repo branch protection is a GitHub Pro feature; billings-web main is currently unprotected | High — set before first PR on billings-web | Pending |
+| WhatsApp Cloud API: start Meta Business registration now | Approval takes 1-7 days; blocks Sprint 4 notification features (ADR-009) | Start now — not blocking Sprint 1 but blocks Sprint 4 | Pending |
 
 ---
 
@@ -48,13 +58,15 @@ one-time manual action before Sprint 1 can begin.
 Sprint 1 is unblocked when all of the following are true:
 
 1. Both billings-mob and billings-web are connected to Vercel and a preview
-   deploy succeeds on the develop branch.
+   deploy succeeds on the develop branch. — **DONE 2026-05-24**
 2. GitHub Secrets VERCEL_TOKEN, VERCEL_ORG_ID, and VERCEL_PROJECT_ID are
-   set in both repositories.
+   set in both repositories. — **DONE 2026-05-24**
 3. Supabase project exists in sa-east-1 and the initial migration has been
-   applied successfully.
+   applied successfully. — **DONE 2026-05-25** (project: gcwxwrjzbbqkuzcweyut)
 4. VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set as Vercel environment
-   variables in both projects.
-5. CI pipeline (all 5 jobs) passes on billings-mob/develop.
+   variables in both projects (development/preview/production). — **DONE 2026-05-25**
+5. CI pipeline (all 5 jobs) passes on billings-mob/develop. — **DONE 2026-05-24**
 6. Meta Business registration for WhatsApp Cloud API has been initiated
-   (does not need to be approved — only started).
+   (does not need to be approved — only started). — Pending (not blocking Sprint 1)
+
+**All blocking criteria met. Sprint 1 can begin.**
