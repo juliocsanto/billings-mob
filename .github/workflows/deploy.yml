@@ -7,7 +7,9 @@
 name: Deploy to Vercel
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 # Only run after CI passes (ci.yml must be green on main)
@@ -20,9 +22,13 @@ jobs:
     name: Deploy to Vercel (Production)
     runs-on: ubuntu-latest
     environment: production
+    # Only deploy when the CI workflow completed successfully
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -34,7 +40,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+        uses: amondnet/vercel-action@v42
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
