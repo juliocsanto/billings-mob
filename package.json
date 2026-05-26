@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Gráfico do Método de Ovulação Billings",
   "type": "module",
-  "homepage": "https://juliocsanto.github.io/billings-mob/",
+  "homepage": "https://billings-mob.vercel.app",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
