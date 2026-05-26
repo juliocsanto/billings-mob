@@ -1,9 +1,9 @@
 # ARCHITECTURE.md — Billings Gráfico: Plataforma MOB
 
-> Documento de Arquitetura de Software — Versão 1.0  
-> Projeto: **Billings Gráfico** (billings-mob)  
-> Data: 2026-05-24  
-> Arquiteto Responsável: Julio C. Santo  
+> Documento de Arquitetura de Software — Versao 1.1  
+> Projeto: **Billings Grafico** (billings-mob)  
+> Data: 2026-05-24 — atualizado em 2026-05-26  
+> Arquiteto Responsavel: Julio C. Santo  
 > Status: **APROVADO PARA IMPLEMENTACAO**
 
 ---
@@ -36,7 +36,16 @@
 
 **Restricao clinica inviolavel**: O sistema NUNCA deve interpretar automaticamente o ciclo como fertil ou infertil. Toda interpretacao clinica e competencia exclusiva da instrutora certificada CENPLAFAM/WOOMB.
 
-### 1.2 Diagrama de Sistema — Visao de Alto Nivel
+### 1.2 Paths Locais dos Repositorios
+
+Os repositorios residem dentro de um diretorio organizador `billings/`:
+
+| Repositorio    | Path local                            |
+|----------------|---------------------------------------|
+| billings-mob   | ~/billings/billings-mob               |
+| billings-web   | ~/billings/billings-web               |
+
+### 1.4 Diagrama de Sistema — Visao de Alto Nivel
 
 ```
 +------------------------------------------------------------------+
@@ -50,7 +59,8 @@
         |   React PWA        |        |  React Web App     |
         |   (billings-mob)   |        |  (billings-web)    |
         |   Vite + React 18  |        |  Vite + React 18   |
-        |   Vercel (free)    |        |  Vercel (free)     |
+        | billings-mob.      |        | billings-web.      |
+        |   vercel.app       |        |   vercel.app       |
         +----------+---------+        +----------+---------+
                    |                             |
                    +-------------+---------------+
@@ -85,7 +95,7 @@
 (tudo em free tier: Vercel + Supabase + GitHub Actions + FCM + WhatsApp Cloud API;
 custo so aparece se ultrapassar 1.000 conversas WhatsApp/mes)
 
-### 1.3 Diagrama de Fluxo de Dados Principal
+### 1.5 Diagrama de Fluxo de Dados Principal
 
 ```
 ALUNA (Mobile PWA)
@@ -122,7 +132,7 @@ ALUNA (Mobile PWA)
                    9. Salva nova versao com vetor de clock
 ```
 
-### 1.4 Diagrama de Bounded Contexts
+### 1.6 Diagrama de Bounded Contexts
 
 ```
 +-------------------+     +-------------------+     +-------------------+
@@ -948,7 +958,7 @@ AVISO: Mensagem nao entregue sobre o Apice de uma aluna e um problema clinico, n
 - Preview deployments para cada PR
 - Alinhado com ADR-007 (Vercel + Supabase como stack centralizado)
 
-**Novo repositorio:** `billings-web` (a criar)
+**Repositorio:** `billings-web` (criado em Sprint 0)
 
 **Impacto no backend:**
 - Endpoint adicional: `GET /api/instructor/students` — lista alunas da instrutora
@@ -1423,12 +1433,17 @@ test('instrutora ve conflito e resolve', async ({ page }) => {
 - Skills: `cicd_pipeline_designer`, `branching_strategy_definer`, `rollback_procedure_writer`
 
 **Estrategia de Branching:**
+
+Ambos os repositorios (`billings-mob` e `billings-web`) possuem apenas
+as branches `main` (default, protegida) e `develop`. A branch `master`
+foi removida do `billings-mob` em 2026-05-26 para eliminar ambiguidade.
+
 ```
-main (producao — protegida)
+main (producao — protegida, default)
   |
-  +-- develop (staging)
+  +-- develop (integracao continua)
        |
-       +-- feature/obs-edit-past-days    (feature branches)
+       +-- feature/obs-edit-past-days  (branches de feature)
        +-- fix/conflict-badge-display
        +-- chore/upgrade-dependencies
 ```
@@ -1472,6 +1487,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm audit --audit-level=high
       - uses: trufflesecurity/trufflehog@main
+        with:
+          # Fix para BASE==HEAD em push direto para main
+          base: >
+            ${{ github.event_name == 'push'
+                && github.event.before
+                || github.event.repository.default_branch }}
       - uses: github/codeql-action/analyze@v3
 
   build:
@@ -1481,6 +1502,23 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
       - run: npm run build:size-check  # verifica performance budget
+      - name: Validate base path
+        # Falha se dist/index.html referenciar assets em sub-path
+        # (ex: /billings-mob/assets/) — previne blank-page deploy no Vercel
+        run: |
+          if grep -r '/billings-mob/assets/' dist/index.html; then
+            echo "ERRO: base path incorreto detectado em dist/"
+            exit 1
+          fi
+      - name: Scan build output for secrets (LGPD)
+        # Falha se encontrar padroes de segredos no artefato de build
+        run: |
+          if grep -rE \
+            'ANTHROPIC|service_role|JWT_SECRET|WHATSAPP_API_TOKEN' \
+            dist/; then
+            echo "ERRO: segredo detectado no artefato de build"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with: { name: dist, path: dist/ }
 
@@ -1511,6 +1549,59 @@ jobs:
           gh issue comment ${{ env.ISSUE_NUMBER }} \
             --body "Deployed to production: ${{ github.sha }}"
 ```
+
+**Pipeline de deploy implementado (deploy.yml — igual em ambos os repos):**
+
+O workflow de deploy e acionado pelo evento `workflow_run` — so executa
+apos o CI (workflow "CI") ser concluido com sucesso na branch `main`.
+Isso garante que nenhum commit com CI quebrado chega a producao.
+
+```yaml
+# .github/workflows/deploy.yml
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy-production:
+    if: >
+      ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: "${{ github.event.workflow_run.head_sha }}"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps
+      - run: npm install --global vercel@latest
+      - run: >
+          vercel deploy --prod
+          --token "$VERCEL_TOKEN"
+          --scope "$VERCEL_ORG_ID"
+          --yes
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+```
+
+**Licao aprendida:** nao usar `amondnet/vercel-action`. Tokens OAuth
+com escopo de equipe (prefixo `vca_`) sao rejeitados pelo CLI Vercel v50.
+A solucao correta e invocar `vercel deploy` diretamente, passando
+`VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` via env vars.
+
+**Correcao de configuracao aplicada (billings-mob/vite.config.js):**
+
+O campo `base` estava definido como `'/billings-mob/'` (legado de um
+deploy anterior em GitHub Pages). Esse valor causava blank-page no Vercel
+porque os assets eram referenciados com sub-path inexistente. Corrigido
+para `base: '/'`.
+
+O `billings-web` nunca teve sub-path configurado (valor ja estava correto).
 
 **Worker Agent — Release Manager**
 - Papel: Executa o deploy, monitora a saude pos-deploy, aciona rollback se necessario
@@ -2132,36 +2223,45 @@ O pipeline de CI/CD e "done" (producao-grade) quando:
 
 ## 11. Proximos Passos
 
-### Imediatos (esta semana)
+### Historico — Concluidos (Sprint 0 + Sprint 1, ate 2026-05-25)
 
-1. **Criar repositorio billings-web** — dashboard da instrutora (impacto D1)
-   ```bash
-   gh repo create juliocsanto/billings-web --private --clone
-   ```
+Os itens abaixo foram concluidos e fechados:
 
-2. **Setup Vercel** — conectar repositorio billings-mob e billings-web, configurar variaveis de ambiente
-   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-   - `ANTHROPIC_API_KEY` (para Supabase Edge Function do chat IA)
-   - `JWT_SECRET` (gerado com `openssl rand -base64 32`)
+- [x] Criar repositorio `billings-web` (Sprint 0)
+- [x] Conectar `billings-mob` e `billings-web` ao Vercel; configurar
+      variaveis de ambiente em todos os targets (Sprint 0)
+- [x] Criar projeto Supabase em `sa-east-1`; habilitar Auth (magic link);
+      executar migration `20260524000001_initial_schema` (Sprint 0)
+- [x] Criar GitHub Project "Billings Grafico" com colunas Kanban (Sprint 0)
+- [x] Implementar schema de banco conforme ADR-003 e ADR-004 (Sprint 1)
+- [x] Implementar RLS policies conforme ADR-003 (Sprint 1)
+- [x] Implementar API base (Hono.js) com endpoints de observacoes (Sprint 1)
+- [x] Configurar CI/CD inicial — pipeline 5 jobs em ambos os repos (Sprint 0)
+- [x] Pipeline de deploy real (`deploy.yml`) ativo em ambos os repos (Sprint 1)
 
-3. **Criar projeto Supabase** — regiao South America (Sao Paulo)
-   - Habilitar Auth (magic link por email)
-   - Executar migrations da Sprint 1
+Obs.: Setup do WhatsApp Cloud API (Meta Business) permanece pendente;
+aguarda aprovacao do Meta Business (prazo externo, 1–7 dias).
 
-4. **Criar GitHub Project** — board Kanban com colunas: Backlog / Sprint / In Progress / Review / Done
+### Imediatos — Sprint 2 (em andamento)
 
-5. **Setup WhatsApp Cloud API** — criar conta Meta Business, numero dedicado, solicitar aprovacao de templates
+- Supabase Auth: magic link flow no PWA (substituir localStorage)
+- Service Worker: offline-first com sync queue para observations
+- DayDetailModal: integracao com `GET /api/observations/:id`
+- Integracao `POST /api/observations` e `PATCH /api/observations/:id` no PWA
+- Integration tests com Supabase local stack
+- PR `develop -> main` Sprint 2
 
-### Curto prazo (proximas 2 semanas — Sprint 1)
+### Backlog Tecnico com Prazo
 
-6. Implementar schema de banco conforme ADR-003 e ADR-004
-7. Implementar RLS policies conforme ADR-003
-8. Implementar API base (Hono.js) com endpoints de observacoes
-9. Configurar CI/CD inicial (.github/workflows/ci.yml)
+- **[Sprint 2 — PRAZO 2026-06-02]** Atualizar `actions/checkout@v4` e
+  `actions/setup-node@v4` para Node.js 24 em ambos os repos.
+  O GitHub Actions depreca o runner Node.js 20 nessa data. A mudanca
+  requer apenas alterar `node-version: '22'` para `node-version: '24'`
+  nos arquivos `ci.yml` e `deploy.yml` de ambos os repositorios.
 
 ### Medio prazo (mes 1-2)
 
-10. Completar Sprints 1-4 (MVP tecnico completo)
+10. Completar Sprints 2-4 (PWA offline-first, dashboard instrutora, vinculos)
 11. Onboarding 5 instrutoras beta (Sprint 6)
 12. Primeiro pagamento real (Stripe — Sprint 7)
 
@@ -2218,19 +2318,26 @@ AVISO: Nenhuma dessas variaveis deve aparecer no codigo-fonte. Usar `.env.local`
 
 ## Apendice C — Links e Recursos
 
-- Repositorio PWA: https://github.com/juliocsanto/billings-mob
-- App em producao: https://juliocsanto.github.io/billings-mob/
+- Repositorio PWA (billings-mob):
+    https://github.com/juliocsanto/billings-mob
+- Repositorio Dashboard (billings-web):
+    https://github.com/juliocsanto/billings-web
+- App PWA em producao:
+    https://billings-mob.vercel.app
+- Dashboard Instrutora em producao:
+    https://billings-web.vercel.app
 - CENPLAFAM/WOOMB Brasil: https://www.woomb.com.br
 - Supabase Dashboard: https://supabase.com/dashboard
 - Vercel Dashboard: https://vercel.com/dashboard
-- Supabase Dashboard: https://supabase.com/dashboard
-- GitHub Projects: https://github.com/juliocsanto/billings-mob/projects
+- GitHub Projects:
+    https://github.com/juliocsanto/billings-mob/projects
 - Sentry: https://sentry.io
 - UptimeRobot: https://uptimerobot.com
-- WhatsApp Cloud API (Meta): https://developers.facebook.com/docs/whatsapp/cloud-api
+- WhatsApp Cloud API (Meta):
+    https://developers.facebook.com/docs/whatsapp/cloud-api
 
 ---
 
-*Documento gerado em 2026-05-24. Versao 1.0.*  
+*Documento gerado em 2026-05-24. Versao 1.1 — atualizado em 2026-05-26.*  
 *Proximo review: 2026-06-24 (apos Sprint 3).*  
 *Mantenedor: Julio C. Santo (juliocsanto3@gmail.com)*
