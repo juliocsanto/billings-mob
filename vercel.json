@@ -28,6 +28,18 @@
       "destination": "/api/cycles/index"
     },
     {
+      "source": "/api/instructor-student-links/:id",
+      "destination": "/api/instructor-student-links/[id]"
+    },
+    {
+      "source": "/api/instructor-student-links",
+      "destination": "/api/instructor-student-links/index"
+    },
+    {
+      "source": "/api/users/me",
+      "destination": "/api/users/me"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

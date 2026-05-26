@@ -45,9 +45,8 @@ app.get('/:id', async (c) => {
     .eq('id', id)
     .single();
 
-  if (obsError || !observation) {
-    return notFound(c, 'Observation not found');
-  }
+  if (obsError) return internalError(c, obsError);
+  if (!observation) return notFound(c, 'Observation not found');
 
   // Fetch version history
   const { data: versions, error: versionsError } = await supabase
@@ -93,9 +92,8 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
     .eq('id', id)
     .single();
 
-  if (fetchError || !current) {
-    return notFound(c, 'Observation not found');
-  }
+  if (fetchError) return internalError(c, fetchError);
+  if (!current) return notFound(c, 'Observation not found');
 
   const currentClock = (current.vector_clock ?? {}) as VectorClock;
   const newClock = incrementVectorClock(currentClock, auth.userId);

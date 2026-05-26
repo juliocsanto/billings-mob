@@ -81,19 +81,23 @@ app.get('/:id', async (c) => {
   const { id } = c.req.param();
   const supabase = createAuthenticatedClient(auth.jwt);
 
+  // LGPD: relations and notes are sensitive fields — excluded from nested select.
+  // Callers that need those fields for the authenticated user must use
+  // GET /api/observations?cycle_id=:id directly.
   const { data: cycle, error } = await supabase
     .from('cycles')
     .select(`
       id, start_date, end_date, apex_date, status, created_at, updated_at,
       observations (
-        id, date, stamp, mucus, bleeding, relations, notes,
+        id, date, stamp, mucus, bleeding,
         vector_clock, version, created_at, updated_at
       )
     `)
     .eq('id', id)
     .single();
 
-  if (error || !cycle) return notFound(c, 'Cycle not found');
+  if (error) return internalError(c, error);
+  if (!cycle) return notFound(c, 'Cycle not found');
 
   return c.json({ data: cycle });
 });
@@ -112,7 +116,8 @@ app.patch('/:id', zValidator('json', PatchCycleSchema), async (c) => {
     .eq('id', id)
     .single();
 
-  if (fetchErr || !current) return notFound(c, 'Cycle not found');
+  if (fetchErr) return internalError(c, fetchErr);
+  if (!current) return notFound(c, 'Cycle not found');
 
   const { data: updated, error: updateErr } = await supabase
     .from('cycles')
