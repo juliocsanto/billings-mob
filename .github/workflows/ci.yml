@@ -187,6 +187,17 @@ jobs:
           fi
           echo "Build output clean — no secret patterns detected"
 
+      - name: Validate base path (Vercel deploy guard)
+        # Ensures vite.config.js base is '/' (Vercel) and not a sub-path like '/billings-mob/'
+        # (legacy GitHub Pages). A wrong base makes the SPA return HTTP 200 with a blank page.
+        run: |
+          if grep -qE 'src="[^"]+/[^/]+/assets/' dist/index.html 2>/dev/null; then
+            echo "::error::dist/index.html references assets under a sub-path prefix — check vite.config.js base setting. Expected base '/', got a sub-path."
+            grep -E 'src=|href=' dist/index.html || true
+            exit 1
+          fi
+          echo "Base path validation passed — assets are root-relative"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
