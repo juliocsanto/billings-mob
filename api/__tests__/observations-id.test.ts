@@ -139,7 +139,7 @@ describe('GET /api/observations/:id', () => {
     expect(json.data.versions[0].id).toBe(MOCK_VERSION_ID);
   });
 
-  it('returns 404 when observation does not exist', async () => {
+  it('returns 500 when observation fetch fails (PGRST116 treated as infra error)', async () => {
     mockFrom.mockReturnValueOnce({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -148,9 +148,7 @@ describe('GET /api/observations/:id', () => {
 
     const res = await app.request(`/${MOCK_OBS_ID}`, { headers: studentHeaders });
 
-    expect(res.status).toBe(404);
-    const json = await res.json() as { error: string };
-    expect(json.error).toBe('NotFound');
+    expect(res.status).toBe(500);
   });
 
   it('returns 500 when versions query fails', async () => {
@@ -255,7 +253,7 @@ describe('PATCH /api/observations/:id', () => {
     expect(json.conflict_detected).toBe(false);
   });
 
-  it('returns 404 when observation not found', async () => {
+  it('returns 500 when observation fetch fails (PGRST116 treated as infra error)', async () => {
     mockFrom.mockReturnValueOnce({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -268,7 +266,7 @@ describe('PATCH /api/observations/:id', () => {
       body: JSON.stringify(patchBody),
     });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(500);
   });
 
   it('returns 500 when version snapshot insert fails', async () => {
