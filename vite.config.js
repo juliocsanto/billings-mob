@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     nodePolyfills({ globals: { Buffer: true, global: true, process: true } }),
   ],
-  base: '/billings-mob/',
+  base: '/',
   define: { global: 'globalThis' },
   optimizeDeps: {
     include: ['@react-pdf/renderer'],
