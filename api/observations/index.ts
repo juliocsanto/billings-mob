@@ -13,6 +13,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { requireAuth } from '../_lib/auth';
+import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { sanitizeForAuditLog } from '../_lib/sanitizeAuditData';
 import { incrementVectorClock } from '../_lib/vectorClock';
@@ -28,6 +29,8 @@ import {
 
 const app = new Hono();
 
+// Rate limiting (SEC-001) — applied before auth to limit unauthenticated brute-force too
+app.use('*', apiRateLimit);
 // All routes require authentication
 app.use('*', requireAuth);
 

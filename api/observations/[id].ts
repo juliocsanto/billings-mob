@@ -15,6 +15,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { requireAuth } from '../_lib/auth';
+import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { sanitizeForAuditLog } from '../_lib/sanitizeAuditData';
 import {
@@ -30,6 +31,8 @@ import { PatchObservationSchema } from './schema';
 
 const app = new Hono();
 
+// Rate limiting (SEC-001) — before auth to limit unauthenticated probing
+app.use('*', apiRateLimit);
 // All routes require authentication
 app.use('*', requireAuth);
 
@@ -98,13 +101,16 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
   const currentClock = (current.vector_clock ?? {}) as VectorClock;
   const newClock = incrementVectorClock(currentClock, auth.userId);
 
-  // Detect conflict: this happens when another actor has already incremented
-  // their counter since the client last read this observation.
-  // For PATCH requests, we compare the client's implicit "parent" clock
-  // (= current state in DB) with the new clock being applied.
-  // A more robust implementation would accept client's lastKnownClock in the body,
-  // but for Sprint 1 we derive it from the DB state.
-  const isConflict = detectConflict(currentClock, newClock);
+  // Detect conflict (ARCH-001 + CODE-001 fix):
+  // Compare the client's last-known clock (sent in body as client_vector_clock)
+  // against the current clock in the DB.
+  // If the DB clock has advanced beyond what the client knew, another actor
+  // has edited this record concurrently — that is a real conflict.
+  // If client_vector_clock is not provided, skip conflict detection (backward-compatible).
+  const clientClock = body.client_vector_clock as VectorClock | undefined;
+  const isConflict = clientClock !== undefined
+    ? detectConflict(clientClock, currentClock)
+    : false;
 
   // Save snapshot of current version BEFORE applying the edit (ADR-004)
   const { error: versionError } = await supabase
@@ -128,9 +134,11 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
     return internalError(c, versionError);
   }
 
-  // Apply the update with the new vector clock
+  // Apply the update with the new vector clock.
+  // Exclude client_vector_clock — it is a request hint, not a DB column.
+  const { client_vector_clock: _clientClock, ...domainFields } = body;
   const updatePayload = {
-    ...body,
+    ...domainFields,
     vector_clock: newClock,
     version: current.version + 1,
   };

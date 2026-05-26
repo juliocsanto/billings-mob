@@ -1,10 +1,13 @@
 import { Hono } from 'hono';
 import { requireAuth } from '../_lib/auth';
+import { authRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient } from '../_lib/supabaseClient';
 import { internalError, notFound } from '../_lib/errorHandler';
 
 const app = new Hono();
 
+// Auth-tier rate limit (SEC-001) — stricter limit for user profile endpoint
+app.use('*', authRateLimit);
 app.use('*', requireAuth);
 
 // ─── GET /api/users/me ─────────────────────────────────────────────────────

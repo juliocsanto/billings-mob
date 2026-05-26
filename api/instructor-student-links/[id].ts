@@ -1,12 +1,15 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { requireAuth } from '../_lib/auth';
+import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { badRequest, forbidden, internalError, notFound } from '../_lib/errorHandler';
 import { PatchLinkSchema } from './schema';
 
 const app = new Hono();
 
+// Rate limiting (SEC-001)
+app.use('*', apiRateLimit);
 app.use('*', requireAuth);
 
 // ─── PATCH /api/instructor-student-links/:id ───────────────────────────────

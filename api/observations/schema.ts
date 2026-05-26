@@ -42,10 +42,15 @@ export type CreateObservationInput = z.infer<typeof CreateObservationSchema>;
  *
  * Excluded fields (immutable or server-managed):
  *   - date: immutable after creation
- *   - vector_clock: managed server-side
+ *   - vector_clock: managed server-side (server increments; client sends client_vector_clock)
  *   - version: managed server-side
  *   - user_id: determined from JWT
  *   - created_at / updated_at: managed by database triggers
+ *
+ * client_vector_clock (ARCH-001 / CODE-001 fix):
+ *   The client must send the vector_clock it had when it last READ this observation.
+ *   The server compares it against the current DB clock to detect concurrent edits.
+ *   If omitted, conflict detection is skipped (backward-compatible).
  */
 export const PatchObservationSchema = z
   .object({
@@ -55,10 +60,17 @@ export const PatchObservationSchema = z
     relations: z.boolean().optional(),
     notes: z.string().max(500).optional(),
     cycle_id: z.string().uuid().nullable().optional(),
+    // ADR-004: client sends the clock it had when it last read this record.
+    // Server uses this to detect concurrent edits (not the newly-incremented clock).
+    client_vector_clock: z.record(z.string(), z.number()).optional(),
   })
-  .strict() // rejects unknown keys (including date, vector_clock, etc.)
+  .strict() // rejects unknown keys (date, vector_clock, version, etc. are not allowed)
   .refine(
-    (data) => Object.keys(data).length > 0,
+    (data) => {
+      // At least one domain field must be provided (client_vector_clock alone is not enough)
+      const domainKeys = ['stamp', 'mucus', 'bleeding', 'relations', 'notes', 'cycle_id'];
+      return domainKeys.some((k) => k in data && data[k as keyof typeof data] !== undefined);
+    },
     { message: 'At least one field must be provided for update' }
   );
 
