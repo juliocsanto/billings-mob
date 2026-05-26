@@ -56,7 +56,20 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
   // Store auth context for downstream handlers
   c.set('auth', {
     userId: user.id,
-    // role is stored in user_metadata by the sign-up Edge Function
+    // SEC-003 AUDIT NOTE: role is read from user_metadata which Supabase Auth allows users
+    // to set on sign-up. This is a privilege escalation risk if the sign-up flow is not
+    // locked down by a server-side Edge Function.
+    //
+    // CURRENT MITIGATION (Sprint 2): RLS policies limit the blast radius — a user claiming
+    // role=instructor can only see links where they are the instructor_id, and since no
+    // legitimate student has been linked to them, they see no data.
+    //
+    // PLANNED FIX (Sprint 4 — billings-edge): The sign-up Edge Function will use the
+    // service_role key to write user_metadata.role authoritatively, and this middleware
+    // will be updated to read role from user_profiles table (PostgreSQL, RLS-protected)
+    // instead of user_metadata.
+    //
+    // Acceptable risk until Sprint 4: MEDIUM (mitigated by RLS; no data exfiltration path).
     role: (user.user_metadata?.role ?? 'student') as AuthContext['role'],
     jwt,
   });
