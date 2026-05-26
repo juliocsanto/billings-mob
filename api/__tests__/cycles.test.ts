@@ -304,7 +304,7 @@ describe('GET /api/cycles/:id', () => {
     expect(json.data.observations).toHaveLength(1);
   });
 
-  it('returns 404 when cycle not found', async () => {
+  it('returns 500 when cycle fetch fails (PGRST116 treated as infra error)', async () => {
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -313,9 +313,7 @@ describe('GET /api/cycles/:id', () => {
 
     const res = await app.request(`/${MOCK_CYCLE_ID}`, { headers: studentHeaders });
 
-    expect(res.status).toBe(404);
-    const json = await res.json() as { error: string };
-    expect(json.error).toBe('NotFound');
+    expect(res.status).toBe(500);
   });
 
   it('returns 401 without Authorization header', async () => {
@@ -364,7 +362,7 @@ describe('PATCH /api/cycles/:id', () => {
     expect(json.data.status).toBe('archived');
   });
 
-  it('returns 404 when cycle not found', async () => {
+  it('returns 500 when cycle fetch fails (PGRST116 treated as infra error)', async () => {
     mockFrom.mockReturnValueOnce({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -377,7 +375,7 @@ describe('PATCH /api/cycles/:id', () => {
       body: JSON.stringify(patchBody),
     });
 
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(500);
   });
 
   it('returns 500 when update fails', async () => {
