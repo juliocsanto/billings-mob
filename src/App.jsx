@@ -3,10 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
-import { loadData, saveData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { loadUserData, saveUserData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
 import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffDays } from './utils/dates.js';
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
 import { generateDailyReminder, downloadICS } from './utils/ics.js';
+import { DayDetailModal } from './components/DayDetailModal.jsx';
 
 // ── Micro-components ──────────────────────────────────────
 
@@ -97,7 +98,8 @@ function buildDemoData() {
 
 // ── Main App ──────────────────────────────────────────────
 
-export default function App() {
+export default function App({ user, session } = {}) {
+  const userId = user?.id ?? null;
   const [tab,          setTab]          = useState('hoje');
   const [cycleStart,   setCycleStart]   = useState(today());
   const [obs,          setObs]          = useState({});
@@ -116,11 +118,12 @@ export default function App() {
   const [aiLoading,    setAiLoading]    = useState(false);
   const [pdfLoading,   setPdfLoading]   = useState(false);
   const [showBanner,   setShowBanner]   = useState(false);
+  const [selectedDay,  setSelectedDay]  = useState(null); // { date, n, obs } for DayDetailModal
   const chatEnd = useRef(null);
 
-  // Load persisted data
+  // Load persisted data (user-scoped when authenticated, anonymous otherwise)
   useEffect(() => {
-    const d = loadData();
+    const d = loadUserData(userId);
     const demo = buildDemoData();
     if (d) {
       setObs(d.obs || {}); setCycleStart(d.cycleStart || today());
@@ -135,31 +138,43 @@ export default function App() {
     const last = getLastOpenDate();
     if (last !== today()) { setShowBanner(true); setLastOpenDate(today()); }
     setLoaded(true);
-  }, []);
+  }, [userId]);
 
   const persist = (newForm, ns) => {
     const u = {...obs, [today()]: newForm};
     setObs(u);
     const data = { cycleStart: ns||cycleStart, obs:u, history, instructor };
-    saveData(data); setSaved(true);
+    saveUserData(data, userId); setSaved(true);
   };
 
   const archiveAndReset = (f, ns) => {
     const archived = { start:cycleStart, obs, label:fmtMonthYear(cycleStart) };
     const nh = [archived, ...history].slice(0,12);
     setHistory(nh); setCycleStart(ns); setObs({[ns]:f}); setForm(f); setSaved(true);
-    saveData({ cycleStart:ns, obs:{[ns]:f}, history:nh, instructor });
+    saveUserData({ cycleStart:ns, obs:{[ns]:f}, history:nh, instructor }, userId);
   };
 
   const saveInstructor = (instr) => {
     setInstructor(instr);
-    const d = loadData() || {};
-    saveData({...d, instructor:instr});
+    const d = loadUserData(userId) || {};
+    saveUserData({...d, instructor:instr}, userId);
   };
 
   const removeInstructor = () => {
     setInstructor(null); setInstrForm({name:'',email:''}); setInstrConfirm(false);
-    const d = loadData() || {}; delete d.instructor; saveData(d);
+    const d = loadUserData(userId) || {}; delete d.instructor; saveUserData(d, userId);
+  };
+
+  // Save edited observation from DayDetailModal (supports past and today)
+  const handleDaySave = (date, formData) => {
+    const updatedObs = { ...obs, [date]: formData };
+    setObs(updatedObs);
+    if (date === today()) {
+      setForm({ ...EMPTY_FORM, ...formData });
+      setSaved(true);
+    }
+    const data = { cycleStart, obs: updatedObs, history, instructor };
+    saveUserData(data, userId);
   };
 
   const handlePDFDownload = async () => {
@@ -456,19 +471,25 @@ export default function App() {
                       {vDays.map(d=><div key={d.n} style={{width:32,flexShrink:0}}>{row.render(d)}</div>)}
                     </div>
                   ))}
-                  {/* Stamps row */}
+                  {/* Stamps row — each day circle is clickable (opens DayDetailModal) */}
                   <div style={{display:'flex',alignItems:'center',marginBottom:6,paddingBottom:6,borderBottom:`1px solid ${C.border}`}}>
                     <div style={{width:60,flexShrink:0,fontSize:9,color:C.textMuted,fontWeight:600}}>Obs.</div>
                     {vDays.map(d=>{
                       const s=STAMPS.find(x=>x.id===d.obs?.stamp);
                       const isToday=d.date===today()&&!selCycle, isFut=d.date>today()&&!selCycle;
+                      const clickable = !selCycle; // only current cycle is editable
                       return (
                         <div key={d.n} style={{width:32,flexShrink:0,display:'flex',justifyContent:'center'}}>
-                          <div style={{width:24,height:24,borderRadius:'50%',background:isFut?'transparent':s?s.bg:C.card,
-                            border:`1.5px solid ${isToday?C.terra:isFut?C.border:s?s.c:C.borderStrong}`,
-                            display:'flex',alignItems:'center',justifyContent:'center',
-                            fontFamily:'Georgia,serif',fontSize:12,color:s?s.c:C.textMuted,fontWeight:700,
-                            opacity:isFut?0.2:1,boxShadow:isToday?`0 0 0 3px ${C.terraLight},0 0 0 4.5px ${C.terra}`:'none'}}>
+                          <div
+                            onClick={clickable ? () => setSelectedDay(d) : undefined}
+                            style={{width:24,height:24,borderRadius:'50%',background:isFut?'transparent':s?s.bg:C.card,
+                              border:`1.5px solid ${isToday?C.terra:isFut?C.border:s?s.c:C.borderStrong}`,
+                              display:'flex',alignItems:'center',justifyContent:'center',
+                              fontFamily:'Georgia,serif',fontSize:12,color:s?s.c:C.textMuted,fontWeight:700,
+                              opacity:isFut?0.2:1,
+                              boxShadow:isToday?`0 0 0 3px ${C.terraLight},0 0 0 4.5px ${C.terra}`:'none',
+                              cursor:clickable?'pointer':'default',
+                            }}>
                             {s?s.sym:''}
                           </div>
                         </div>
@@ -799,6 +820,19 @@ export default function App() {
           ))}
         </div>
       </div>
+
+      {/* ══ DAY DETAIL MODAL ══════════════════════ */}
+      {selectedDay && (
+        <DayDetailModal
+          day={selectedDay}
+          today={today()}
+          onClose={() => setSelectedDay(null)}
+          onSave={(date, formData) => {
+            handleDaySave(date, formData);
+          }}
+          observationId={selectedDay.obs?.id ?? undefined}
+        />
+      )}
     </div>
   );
 }

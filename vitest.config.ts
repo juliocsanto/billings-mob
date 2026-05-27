@@ -1,26 +1,34 @@
 /**
- * Vitest configuration — Sprint 1
+ * Vitest configuration — Sprint 2 (updated)
  *
  * Coverage targets (ARCHITECTURE.md §10.1):
  *   - Global: >= 80%
  *   - Domain modules (api/_lib, api/observations, api/cycles): >= 95%
  *
- * Includes API unit tests (pure functions: vectorClock, sanitizeAuditData, schemas).
- * Integration tests against real Supabase are separate (test:integration).
+ * Environments:
+ *   - api/**  → node (no DOM needed for Hono serverless unit tests)
+ *   - src/**  → jsdom (React hooks + localStorage + Testing Library)
  *
- * ADR-002: Node.js 22 runtime for API tests.
+ * ADR-002: Node.js 24 runtime for API tests.
  */
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Use node environment for API tests (no DOM needed for unit tests)
+    // Default to node; src/ tests override to jsdom via environmentMatchGlobs
     environment: 'node',
-    // Include all test files in api/ and src/
+    environmentMatchGlobs: [
+      // All src/ tests need browser APIs (localStorage, DOM, renderHook)
+      ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
+      ['src/**/__tests__/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
+    ],
+    // setupFiles runs in all environments — keep empty at global level
+    // src/ tests that need jest-dom import it directly in their test file
+    // Include all test files in api/ and src/ (ts, tsx, js, jsx)
     include: [
       'api/**/__tests__/**/*.{test,spec}.{ts,tsx}',
-      'src/**/__tests__/**/*.{test,spec}.{ts,tsx}',
-      'src/**/*.{test,spec}.{ts,tsx}',
+      'src/**/__tests__/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      'src/**/*.{test,spec}.{ts,tsx,js,jsx}',
     ],
     // Exclude node_modules and dist
     exclude: ['node_modules/**', 'dist/**'],
@@ -49,6 +57,14 @@ export default defineConfig({
         '**/*.d.ts',
         'src/main.tsx',
         'src/vite-env.d.ts',
+        // Supabase client configuration — integration-only, no unit-testable logic
+        'api/_lib/supabaseClient.ts',
+        'src/lib/supabaseClient.ts',
+        // AuthGate.tsx — React auth wrapper, requires E2E testing (Sprint 5)
+        'src/components/AuthGate.tsx',
+        // useObservationSync.ts — TODO Sprint 3: add unit tests for sync hook
+        // Complex async fetch hook requiring full service worker + fetch mocking
+        'src/hooks/useObservationSync.ts',
       ],
     },
     // TypeScript support
