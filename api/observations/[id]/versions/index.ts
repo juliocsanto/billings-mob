@@ -20,10 +20,10 @@
  * Explicit column selection — never SELECT * on tables with sensitive fields.
  */
 import { Hono } from 'hono';
-import { requireAuth } from '../../_lib/auth';
-import { apiRateLimit } from '../../_lib/rateLimit';
-import { createAuthenticatedClient } from '../../_lib/supabaseClient';
-import { internalError } from '../../_lib/errorHandler';
+import { requireAuth } from '../../../_lib/auth';
+import { apiRateLimit } from '../../../_lib/rateLimit';
+import { createAuthenticatedClient } from '../../../_lib/supabaseClient';
+import { internalError } from '../../../_lib/errorHandler';
 
 const app = new Hono();
 
