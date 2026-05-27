@@ -19,16 +19,16 @@ export default defineConfig({
     environment: 'node',
     environmentMatchGlobs: [
       // All src/ tests need browser APIs (localStorage, DOM, renderHook)
-      ['src/**/*.{test,spec}.{ts,tsx}', 'jsdom'],
-      ['src/**/__tests__/**/*.{test,spec}.{ts,tsx}', 'jsdom'],
+      ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
+      ['src/**/__tests__/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
     ],
     // setupFiles runs in all environments — keep empty at global level
     // src/ tests that need jest-dom import it directly in their test file
-    // Include all test files in api/ and src/
+    // Include all test files in api/ and src/ (ts, tsx, js, jsx)
     include: [
       'api/**/__tests__/**/*.{test,spec}.{ts,tsx}',
-      'src/**/__tests__/**/*.{test,spec}.{ts,tsx}',
-      'src/**/*.{test,spec}.{ts,tsx}',
+      'src/**/__tests__/**/*.{test,spec}.{ts,tsx,js,jsx}',
+      'src/**/*.{test,spec}.{ts,tsx,js,jsx}',
     ],
     // Exclude node_modules and dist
     exclude: ['node_modules/**', 'dist/**'],

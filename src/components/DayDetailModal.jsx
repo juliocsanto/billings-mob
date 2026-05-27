@@ -1,0 +1,318 @@
+/**
+ * DayDetailModal — modal exibido ao clicar em um dia no gráfico.
+ *
+ * Funcionalidades:
+ *  - Exibe os dados de observação do dia selecionado (stamp, muco, sangramento, notas)
+ *  - Permite editar observações de dias passados (não apenas o dia atual)
+ *  - Salva alterações via onSave(date, formData)
+ *  - Fecha via onClose() ou clicando fora do modal
+ *
+ * Restrição clínica inviolável: o modal NUNCA interpreta o ciclo como fértil ou infértil.
+ * LGPD: 'relations' field é exibido apenas como boolean (sim/não) — nunca em logs.
+ *
+ * Props:
+ *   day      — objeto { date, n, obs } do dia clicado
+ *   onClose  — callback para fechar o modal
+ *   onSave   — callback(date, formData) para salvar a edição
+ *   today    — string YYYY-MM-DD (para saber se é hoje ou passado)
+ */
+
+import { useState } from 'react';
+import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from '../constants.js';
+
+const Lbl = ({ children }) => (
+  <div style={{
+    fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+    color: C.textMuted, marginBottom: 8,
+  }}>
+    {children}
+  </div>
+);
+
+const Pill = ({ label, active, color, onClick }) => (
+  <button onClick={onClick} style={{
+    background: active ? `${color}22` : C.card,
+    border: `1.5px solid ${active ? color : C.border}`,
+    borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 500,
+    color: active ? color : C.textSec, cursor: 'pointer', fontFamily: 'inherit',
+    transition: 'all 0.15s',
+  }}>
+    {label}
+  </button>
+);
+
+export function DayDetailModal({ day, onClose, onSave, today: todayDate }) {
+  const isToday = day.date === todayDate;
+  const isPast = day.date < todayDate;
+  const isFuture = day.date > todayDate;
+
+  const initialForm = day.obs
+    ? { stamp: day.obs.stamp, mucus: day.obs.mucus, bleeding: day.obs.bleeding, notes: day.obs.notes ?? '', relations: day.obs.relations ?? false }
+    : { ...EMPTY_FORM };
+
+  const [form, setForm] = useState(initialForm);
+  const [saved, setSaved] = useState(false);
+
+  // Format date for display
+  const dateLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', {
+    weekday: 'long', day: '2-digit', month: 'long',
+  });
+
+  const handleSave = () => {
+    if (!form.stamp) return;
+    onSave(day.date, form);
+    setSaved(true);
+    setTimeout(() => onClose(), 800);
+  };
+
+  // Click outside to close
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div
+      onClick={handleBackdropClick}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        background: 'rgba(36,20,8,0.45)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+    >
+      <div style={{
+        background: C.bg,
+        borderRadius: '20px 20px 0 0',
+        width: '100%', maxWidth: 430,
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        padding: '0 0 32px',
+        boxShadow: '0 -4px 32px rgba(36,20,8,0.18)',
+      }}>
+        {/* Handle bar */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', padding: '12px 0 0',
+        }}>
+          <div style={{
+            width: 40, height: 4, borderRadius: 2,
+            background: C.border,
+          }} />
+        </div>
+
+        {/* Header */}
+        <div style={{
+          padding: '16px 22px 14px',
+          borderBottom: `1px solid ${C.border}`,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+        }}>
+          <div>
+            <div style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 20, color: C.text, textTransform: 'capitalize',
+            }}>
+              {dateLabel}
+            </div>
+            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
+              Dia {day.n} do ciclo
+              {isToday && <span style={{ color: C.terra, fontWeight: 700 }}> · Hoje</span>}
+              {isPast && <span style={{ color: C.textMuted }}> · Edição de registro passado</span>}
+              {isFuture && <span style={{ color: C.textMuted }}> · Dia futuro</span>}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', fontSize: 20,
+              color: C.textMuted, cursor: 'pointer', padding: '0 0 0 12px',
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Future day: read-only message */}
+        {isFuture ? (
+          <div style={{ padding: '32px 22px', textAlign: 'center', color: C.textMuted, fontStyle: 'italic', fontSize: 13 }}>
+            Este dia ainda não chegou. Registre suas observações quando chegar.
+          </div>
+        ) : (
+          <div style={{ padding: '20px 22px' }}>
+            {/* Save success */}
+            {saved && (
+              <div style={{
+                background: C.sageLight, border: `1px solid ${C.sageBorder}`,
+                borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}>
+                <span style={{ color: C.sage }}>✓</span>
+                <span style={{ fontSize: 13, color: C.sage }}>Observação salva</span>
+              </div>
+            )}
+
+            {/* Past-day notice */}
+            {isPast && (
+              <div style={{
+                background: C.amberLight, border: `1px solid ${C.amberBorder}`,
+                borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+                fontSize: 12, color: C.textSec, lineHeight: 1.6,
+              }}>
+                Você está editando um registro passado. As alterações substituem o registro original.
+              </div>
+            )}
+
+            {/* Stamps */}
+            <div style={{ marginBottom: 20 }}>
+              <Lbl>Observação</Lbl>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {STAMPS.map(s => {
+                  const active = form.stamp === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setForm(p => ({ ...p, stamp: s.id, mucus: null, bleeding: null }))}
+                      style={{
+                        background: active ? s.bg : C.card,
+                        border: `1.5px solid ${active ? s.c : C.border}`,
+                        borderRadius: 12, padding: '12px 12px',
+                        textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        width: 28, height: 28, borderRadius: '50%',
+                        background: active ? C.white : s.bg,
+                        border: `1.5px solid ${s.c}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 15, color: s.c, marginBottom: 8,
+                        fontFamily: 'Georgia, serif', fontWeight: 700,
+                      }}>
+                        {s.sym}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? s.c : C.text }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{s.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bleeding detail */}
+            {form.stamp === 'sangramento' && (
+              <div style={{ marginBottom: 18 }}>
+                <Lbl>Intensidade</Lbl>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {BLEEDING.map(b => (
+                    <Pill key={b.id} label={b.label} active={form.bleeding === b.id} color='#A03030'
+                      onClick={() => setForm(p => ({ ...p, bleeding: b.id }))} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mucus detail */}
+            {form.stamp === 'muco' && (
+              <div style={{ marginBottom: 18 }}>
+                <Lbl>Tipo de muco</Lbl>
+                {MUCUS.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => setForm(p => ({ ...p, mucus: m.id }))}
+                    style={{
+                      display: 'block', width: '100%',
+                      background: form.mucus === m.id ? C.amberLight : C.card,
+                      border: `1px solid ${form.mucus === m.id ? C.amber : C.border}`,
+                      borderRadius: 10, padding: '10px 14px', textAlign: 'left',
+                      cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 700, color: form.mucus === m.id ? C.amber : C.text }}>{m.label}</div>
+                    <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{m.desc}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Apex info */}
+            {form.stamp === 'apice' && (
+              <div style={{
+                background: C.terraLight, border: `1px solid ${C.terraBorder}`,
+                borderRadius: 12, padding: '12px 14px', marginBottom: 18,
+              }}>
+                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: C.terra, marginBottom: 4, fontStyle: 'italic' }}>
+                  Ápice marcado
+                </div>
+                <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.7 }}>
+                  Último dia de sensação lubrificante ou escorregadia.<br />
+                  <span style={{ color: C.textMuted }}>Informe sua instrutora certificada.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Relations */}
+            <div style={{ marginBottom: 18 }}>
+              <Lbl>Relações íntimas</Lbl>
+              <button
+                onClick={() => setForm(p => ({ ...p, relations: !p.relations }))}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: form.relations ? C.roseLight : C.card,
+                  border: `1.5px solid ${form.relations ? C.rose : C.border}`,
+                  borderRadius: 12, padding: '10px 14px',
+                  cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+                  textAlign: 'left', transition: 'all 0.2s',
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  background: form.relations ? C.rose : 'transparent',
+                  border: `1.5px solid ${form.relations ? C.rose : C.borderStrong}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, color: '#F0E8DC', transition: 'all 0.2s',
+                }}>
+                  {form.relations ? '♥' : ''}
+                </div>
+                <span style={{ fontSize: 13, color: form.relations ? C.rose : C.text }}>
+                  {form.relations ? 'Sim — houve relações' : 'Não houve relações'}
+                </span>
+              </button>
+            </div>
+
+            {/* Notes */}
+            <div style={{ marginBottom: 20 }}>
+              <Lbl>Notas para a instrutora</Lbl>
+              <textarea
+                value={form.notes}
+                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                placeholder="Observações adicionais..."
+                style={{
+                  width: '100%', background: C.card,
+                  border: `1px solid ${C.border}`, borderRadius: 10,
+                  padding: '10px 14px', fontSize: 13, color: C.text,
+                  minHeight: 64, boxSizing: 'border-box', outline: 'none', lineHeight: 1.6,
+                }}
+              />
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={handleSave}
+              disabled={!form.stamp || saved}
+              style={{
+                width: '100%',
+                background: form.stamp && !saved ? C.terra : C.border,
+                color: form.stamp && !saved ? C.white : C.textMuted,
+                border: 'none', borderRadius: 12, padding: '14px',
+                fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
+                cursor: form.stamp && !saved ? 'pointer' : 'default',
+                fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
+              }}
+            >
+              {saved ? 'Salvo ✓' : isPast ? 'Salvar edição' : 'Salvar observação'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
