@@ -14,7 +14,8 @@
  * The mock references are obtained via import after mocking.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
+import { waitFor } from '@testing-library/dom';
 
 // ── Mock the supabase client module ───────────────────────────────────────────
 // vi.mock is hoisted to the top, so we use a factory that creates fresh vi.fn()

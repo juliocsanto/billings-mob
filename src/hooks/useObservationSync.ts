@@ -21,7 +21,7 @@
  */
 import { useState, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { tickAndSaveClock, mergeServerClock, loadObservationClock } from '../lib/vectorClock';
+import { tickAndSaveClock, mergeServerClock } from '../lib/vectorClock';
 
 const API_BASE = '/api';
 

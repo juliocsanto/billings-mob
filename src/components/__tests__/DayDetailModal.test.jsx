@@ -15,7 +15,7 @@
  * Sprint 2 item #11: useObservationVersions is mocked to control version data.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DayDetailModal } from '../DayDetailModal.jsx';
 
 // ── Mock useObservationVersions so DayDetailModal tests are isolated ───────────

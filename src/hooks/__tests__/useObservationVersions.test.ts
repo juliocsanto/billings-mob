@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+/// <reference lib="dom" />
 /**
  * TDD — RED phase: Unit tests for useObservationVersions hook.
  * Sprint 2 item #11 — Version history hook
@@ -13,7 +14,8 @@
  *  - Clinical constraint: never returns fertile/infertile classification
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
+import { waitFor } from '@testing-library/dom';
 
 // ── Mock fetch globally ────────────────────────────────────────────────────────
 const mockFetch = vi.fn();
@@ -107,9 +109,9 @@ describe('useObservationVersions', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(mockFetch).toHaveBeenCalledOnce();
-    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const [url, init] = mockFetch.mock.calls[0] as [string, { headers: Record<string, string> }];
     expect(url).toBe(`/api/observations/${OBSERVATION_ID}/versions`);
-    expect((init.headers as Record<string, string>)['Authorization']).toBe(`Bearer ${JWT}`);
+    expect(init.headers['Authorization']).toBe(`Bearer ${JWT}`);
   });
 
   it('sets loading=true during fetch, loading=false after', async () => {
