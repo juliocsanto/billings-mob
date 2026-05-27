@@ -12,6 +12,10 @@
       "destination": "/api/observations/versions/index"
     },
     {
+      "source": "/api/observations/([^/]+)/versions",
+      "destination": "/api/observations/[id]/versions"
+    },
+    {
       "source": "/api/observations/:id",
       "destination": "/api/observations/[id]"
     },

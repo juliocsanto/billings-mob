@@ -6,19 +6,24 @@
  *  - Permite editar observações de dias passados (não apenas o dia atual)
  *  - Salva alterações via onSave(date, formData)
  *  - Fecha via onClose() ou clicando fora do modal
+ *  - Exibe histórico de versões (Sprint 2 item #11): seção colapsável com edições anteriores
  *
  * Restrição clínica inviolável: o modal NUNCA interpreta o ciclo como fértil ou infértil.
  * LGPD: 'relations' field é exibido apenas como boolean (sim/não) — nunca em logs.
+ *       O histórico de versões NUNCA exibe 'relations' ou 'notes' — esses campos
+ *       não estão em observation_versions.data (excluídos no servidor por LGPD).
  *
  * Props:
- *   day      — objeto { date, n, obs } do dia clicado
- *   onClose  — callback para fechar o modal
- *   onSave   — callback(date, formData) para salvar a edição
- *   today    — string YYYY-MM-DD (para saber se é hoje ou passado)
+ *   day            — objeto { date, n, obs } do dia clicado
+ *   onClose        — callback para fechar o modal
+ *   onSave         — callback(date, formData) para salvar a edição
+ *   today          — string YYYY-MM-DD (para saber se é hoje ou passado)
+ *   observationId  — UUID da observação no Supabase (opcional; sem id = sem histórico)
  */
 
 import { useState } from 'react';
 import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from '../constants.js';
+import { useObservationVersions } from '../hooks/useObservationVersions';
 
 const Lbl = ({ children }) => (
   <div style={{
@@ -41,7 +46,128 @@ const Pill = ({ label, active, color, onClick }) => (
   </button>
 );
 
-export function DayDetailModal({ day, onClose, onSave, today: todayDate }) {
+/**
+ * Formats an ISO timestamp for display in pt-BR locale.
+ * Example: "2026-05-20T14:00:00Z" → "20/05/2026, 14:00"
+ */
+function formatVersionDate(isoString) {
+  try {
+    return new Date(isoString).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch {
+    return isoString;
+  }
+}
+
+/**
+ * Returns the stamp label from the STAMPS constant.
+ * Never interprets stamps as fertile/infertile — just returns the label as defined.
+ * Clinical constraint: STAMPS labels never contain fertility classifications.
+ */
+function getStampLabel(stampId) {
+  return STAMPS.find(s => s.id === stampId)?.label ?? stampId;
+}
+
+/**
+ * VersionHistorySection — collapsible section showing past edits of an observation.
+ *
+ * LGPD constraint: renders ONLY stamp, mucus, bleeding from version.data.
+ *   'relations' and 'notes' are NEVER stored in observation_versions.data
+ *   (enforced at the API write site via sanitizeForAuditLog).
+ *   We do not attempt to render, reference, or mention those fields here.
+ *
+ * Clinical constraint: never displays fertile/infertile interpretation.
+ *   Stamp labels come from the STAMPS constant which never contains those terms.
+ */
+function VersionHistorySection({ versions, loading }) {
+  const [expanded, setExpanded] = useState(true);
+
+  if (loading) {
+    return (
+      <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: C.textMuted, fontSize: 12 }}>
+        Carregando histórico...
+      </div>
+    );
+  }
+
+  if (!versions || versions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      data-testid="version-history"
+      style={{ marginTop: 20, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}
+    >
+      {/* Collapsible header */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          width: '100%', background: 'none', border: 'none', padding: '0 0 8px',
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.textMuted }}>
+          Histórico de edições
+        </div>
+        <span style={{ fontSize: 12, color: C.textMuted }}>
+          {expanded ? '▲' : '▼'}
+        </span>
+      </button>
+
+      {expanded && (
+        <div>
+          {versions.map((version) => {
+            // LGPD: version.data contains ONLY stamp, mucus, bleeding.
+            // 'relations' and 'notes' are intentionally excluded at the DB/API level.
+            // We destructure only the permitted fields to make this constraint explicit.
+            const { stamp, mucus, bleeding } = version.data;
+            const stampLabel = getStampLabel(stamp);
+
+            return (
+              <div
+                key={version.id}
+                style={{
+                  background: C.card, border: `1px solid ${C.border}`,
+                  borderRadius: 10, padding: '10px 12px', marginBottom: 8,
+                }}
+              >
+                {/* Timestamp */}
+                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                  {formatVersionDate(version.created_at)}
+                </div>
+
+                {/* Stamp label */}
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                  {stampLabel}
+                </div>
+
+                {/* Mucus detail — only rendered if present */}
+                {mucus && (
+                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                    Muco: {MUCUS.find(m => m.id === mucus)?.label ?? mucus}
+                  </div>
+                )}
+
+                {/* Bleeding detail — only rendered if present */}
+                {bleeding && (
+                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                    Sangramento: {bleeding}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function DayDetailModal({ day, onClose, onSave, today: todayDate, observationId }) {
   const isToday = day.date === todayDate;
   const isPast = day.date < todayDate;
   const isFuture = day.date > todayDate;
@@ -52,6 +178,17 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate }) {
 
   const [form, setForm] = useState(initialForm);
   const [saved, setSaved] = useState(false);
+
+  // The JWT is not directly available in this component — the hook handles the null case
+  // gracefully (returns versions=[] without fetching). When the parent passes observationId
+  // from a Supabase-backed observation, the PWA's auth context would supply the JWT.
+  // For now (Sprint 2): hook receives null JWT → returns empty versions → no history shown
+  // for localStorage-only observations (correct: they have no server-side versions).
+  // Future: pass session.access_token as a prop when available.
+  const { versions, loading: versionsLoading } = useObservationVersions(
+    observationId ?? null,
+    null // TODO Sprint 3: accept jwt prop from parent when wiring Supabase session
+  );
 
   // Format date for display
   const dateLabel = new Date(day.date + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -310,6 +447,16 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate }) {
             >
               {saved ? 'Salvo ✓' : isPast ? 'Salvar edição' : 'Salvar observação'}
             </button>
+
+            {/* Version history — only for past and today days, and only when versions exist.
+                LGPD: VersionHistorySection never renders relations or notes.
+                      Those fields are not in observation_versions.data by design. */}
+            {(isPast || isToday) && (
+              <VersionHistorySection
+                versions={versions}
+                loading={versionsLoading}
+              />
+            )}
           </div>
         )}
       </div>

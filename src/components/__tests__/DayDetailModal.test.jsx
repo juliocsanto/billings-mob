@@ -9,10 +9,27 @@
  *  - onSave fires with correct date and formData when save button is clicked
  *  - Past-day notice appears for past days
  *  - Clinical constraint: never displays fertile/infertile interpretation
+ *  - Version history section: renders when versions fetched, absent otherwise
+ *  - LGPD: relations and notes never rendered in version history
+ *
+ * Sprint 2 item #11: useObservationVersions is mocked to control version data.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { DayDetailModal } from '../DayDetailModal.jsx';
+
+// ── Mock useObservationVersions so DayDetailModal tests are isolated ───────────
+vi.mock('../../hooks/useObservationVersions', () => ({
+  useObservationVersions: vi.fn(() => ({ versions: [], loading: false, error: null })),
+}));
+
+import { useObservationVersions } from '../../hooks/useObservationVersions';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Default: no versions
+  vi.mocked(useObservationVersions).mockReturnValue({ versions: [], loading: false, error: null });
+});
 
 const TODAY = '2026-05-27';
 const PAST_DATE = '2026-05-20';
@@ -180,5 +197,242 @@ describe('DayDetailModal', () => {
     const backdrop = container.firstChild;
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledOnce();
+  });
+});
+
+// ── Version history section tests (Sprint 2 item #11) ─────────────────────────
+
+const OBSERVATION_ID = '11111111-1111-1111-1111-111111111111';
+
+const makePastDayWithId = (override = {}) => ({
+  date: PAST_DATE,
+  n: 20,
+  obs: { id: OBSERVATION_ID, stamp: 'seco', mucus: null, bleeding: null, notes: '', relations: false },
+  ...override,
+});
+
+const SAMPLE_VERSIONS = [
+  {
+    id: 'ver-2',
+    observation_id: OBSERVATION_ID,
+    vector_clock: { 'user-1': 2 },
+    data: { stamp: 'muco', mucus: 'cremoso', bleeding: null },
+    author_id: 'user-student-1',
+    conflict_resolved: false,
+    created_at: '2026-05-20T14:00:00Z',
+  },
+  {
+    id: 'ver-1',
+    observation_id: OBSERVATION_ID,
+    vector_clock: { 'user-1': 1 },
+    data: { stamp: 'seco', mucus: null, bleeding: null },
+    author_id: 'user-student-1',
+    conflict_resolved: false,
+    created_at: '2026-05-20T10:00:00Z',
+  },
+];
+
+describe('DayDetailModal — version history section', () => {
+  it('does not render history section when observationId is undefined', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({ versions: [], loading: false, error: null });
+
+    const { container } = render(
+      <DayDetailModal
+        day={{ date: PAST_DATE, n: 20, obs: { stamp: 'seco', mucus: null, bleeding: null, notes: '', relations: false } }}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+      // No observationId prop → no version history
+    );
+
+    const allText = container.textContent;
+    expect(allText).not.toContain('Histórico de edições');
+  });
+
+  it('does not render history section when versions array is empty', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({ versions: [], loading: false, error: null });
+
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    const allText = container.textContent;
+    expect(allText).not.toContain('Histórico de edições');
+  });
+
+  it('renders history section heading when versions are present', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({
+      versions: SAMPLE_VERSIONS,
+      loading: false,
+      error: null,
+    });
+
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    expect(container.textContent).toContain('Histórico de edições');
+  });
+
+  it('renders stamp label for each version', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({
+      versions: SAMPLE_VERSIONS,
+      loading: false,
+      error: null,
+    });
+
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    const allText = container.textContent;
+    // 'Muco' and 'Seco' are stamp labels from STAMPS constant
+    expect(allText).toContain('Muco');
+    expect(allText).toContain('Seco');
+  });
+
+  it('renders formatted date/time for each version in pt-BR locale', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({
+      versions: SAMPLE_VERSIONS,
+      loading: false,
+      error: null,
+    });
+
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    // The date '2026-05-20' formatted in pt-BR should include '20' or '05' or '2026'
+    const allText = container.textContent;
+    expect(allText).toMatch(/20\/05\/2026|20 de maio|maio de 2026/i);
+  });
+
+  it('LGPD: never renders "relations" or "notes" text in history section', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({
+      versions: SAMPLE_VERSIONS,
+      loading: false,
+      error: null,
+    });
+
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    // Check that no rendered version row contains the word "relations" as a field name
+    // (the label "Relações íntimas" is in the edit form, not in the history)
+    // We check the history section specifically
+    const historySection = Array.from(container.querySelectorAll('[data-testid="version-history"]'));
+    if (historySection.length > 0) {
+      historySection.forEach(section => {
+        expect(section.textContent).not.toContain('relations');
+        expect(section.textContent).not.toContain('notes');
+      });
+    }
+    // Additionally, raw field names must not appear (defensive check)
+    // "relations" as a JS property name must not be rendered as text
+    const lowerHtml = container.innerHTML.toLowerCase();
+    // The word 'relations' should not appear as displayed content in version rows
+    // (it can appear as part of aria attrs only if added deliberately — we don't add those)
+    const historyEl = container.querySelector('[data-testid="version-history"]');
+    if (historyEl) {
+      expect(historyEl.textContent?.toLowerCase()).not.toContain('"relations"');
+      expect(historyEl.textContent?.toLowerCase()).not.toContain('"notes"');
+    }
+    // Verify no clinical interpretation
+    expect(lowerHtml).not.toContain('fértil');
+    expect(lowerHtml).not.toContain('fertil');
+    expect(lowerHtml).not.toContain('infértil');
+    expect(lowerHtml).not.toContain('seguro');
+    expect(lowerHtml).not.toContain('inseguro');
+  });
+
+  it('does not render history section for future days', () => {
+    vi.mocked(useObservationVersions).mockReturnValue({
+      versions: SAMPLE_VERSIONS,
+      loading: false,
+      error: null,
+    });
+
+    const { container } = render(
+      <DayDetailModal
+        day={{ date: '2026-05-30', n: 30, obs: null }}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    // Future day shows "still not arrived" message — no history
+    expect(container.textContent).toContain('ainda não chegou');
+    expect(container.textContent).not.toContain('Histórico de edições');
+  });
+
+  it('passes observationId to useObservationVersions hook', () => {
+    render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        observationId={OBSERVATION_ID}
+      />
+    );
+
+    // Hook receives the observationId as first argument
+    // jwt is null in Sprint 2 (no session wiring yet) — hook handles null gracefully
+    expect(vi.mocked(useObservationVersions)).toHaveBeenCalledWith(
+      OBSERVATION_ID,
+      null
+    );
+  });
+
+  it('passes null observationId to hook when prop is not provided', () => {
+    render(
+      <DayDetailModal
+        day={makePastDayWithId()}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+        // No observationId prop
+      />
+    );
+
+    // Hook receives null observationId → returns empty versions without fetching
+    expect(vi.mocked(useObservationVersions)).toHaveBeenCalledWith(
+      null,
+      null
+    );
   });
 });

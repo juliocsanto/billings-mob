@@ -830,6 +830,7 @@ export default function App({ user, session } = {}) {
           onSave={(date, formData) => {
             handleDaySave(date, formData);
           }}
+          observationId={selectedDay.obs?.id ?? undefined}
         />
       )}
     </div>
