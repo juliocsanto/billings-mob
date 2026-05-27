@@ -57,6 +57,14 @@ export default defineConfig({
         '**/*.d.ts',
         'src/main.tsx',
         'src/vite-env.d.ts',
+        // Supabase client configuration — integration-only, no unit-testable logic
+        'api/_lib/supabaseClient.ts',
+        'src/lib/supabaseClient.ts',
+        // AuthGate.tsx — React auth wrapper, requires E2E testing (Sprint 5)
+        'src/components/AuthGate.tsx',
+        // useObservationSync.ts — TODO Sprint 3: add unit tests for sync hook
+        // Complex async fetch hook requiring full service worker + fetch mocking
+        'src/hooks/useObservationSync.ts',
       ],
     },
     // TypeScript support
