@@ -1,21 +1,29 @@
 /**
- * Vitest configuration — Sprint 1
+ * Vitest configuration — Sprint 2 (updated)
  *
  * Coverage targets (ARCHITECTURE.md §10.1):
  *   - Global: >= 80%
  *   - Domain modules (api/_lib, api/observations, api/cycles): >= 95%
  *
- * Includes API unit tests (pure functions: vectorClock, sanitizeAuditData, schemas).
- * Integration tests against real Supabase are separate (test:integration).
+ * Environments:
+ *   - api/**  → node (no DOM needed for Hono serverless unit tests)
+ *   - src/**  → jsdom (React hooks + localStorage + Testing Library)
  *
- * ADR-002: Node.js 22 runtime for API tests.
+ * ADR-002: Node.js 24 runtime for API tests.
  */
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Use node environment for API tests (no DOM needed for unit tests)
+    // Default to node; src/ tests override to jsdom via environmentMatchGlobs
     environment: 'node',
+    environmentMatchGlobs: [
+      // All src/ tests need browser APIs (localStorage, DOM, renderHook)
+      ['src/**/*.{test,spec}.{ts,tsx}', 'jsdom'],
+      ['src/**/__tests__/**/*.{test,spec}.{ts,tsx}', 'jsdom'],
+    ],
+    // setupFiles runs in all environments — keep empty at global level
+    // src/ tests that need jest-dom import it directly in their test file
     // Include all test files in api/ and src/
     include: [
       'api/**/__tests__/**/*.{test,spec}.{ts,tsx}',

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
-import { loadData, saveData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { loadUserData, saveUserData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
 import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffDays } from './utils/dates.js';
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
 import { generateDailyReminder, downloadICS } from './utils/ics.js';
@@ -97,7 +97,8 @@ function buildDemoData() {
 
 // ── Main App ──────────────────────────────────────────────
 
-export default function App() {
+export default function App({ user, session } = {}) {
+  const userId = user?.id ?? null;
   const [tab,          setTab]          = useState('hoje');
   const [cycleStart,   setCycleStart]   = useState(today());
   const [obs,          setObs]          = useState({});
@@ -118,9 +119,9 @@ export default function App() {
   const [showBanner,   setShowBanner]   = useState(false);
   const chatEnd = useRef(null);
 
-  // Load persisted data
+  // Load persisted data (user-scoped when authenticated, anonymous otherwise)
   useEffect(() => {
-    const d = loadData();
+    const d = loadUserData(userId);
     const demo = buildDemoData();
     if (d) {
       setObs(d.obs || {}); setCycleStart(d.cycleStart || today());
@@ -135,31 +136,31 @@ export default function App() {
     const last = getLastOpenDate();
     if (last !== today()) { setShowBanner(true); setLastOpenDate(today()); }
     setLoaded(true);
-  }, []);
+  }, [userId]);
 
   const persist = (newForm, ns) => {
     const u = {...obs, [today()]: newForm};
     setObs(u);
     const data = { cycleStart: ns||cycleStart, obs:u, history, instructor };
-    saveData(data); setSaved(true);
+    saveUserData(data, userId); setSaved(true);
   };
 
   const archiveAndReset = (f, ns) => {
     const archived = { start:cycleStart, obs, label:fmtMonthYear(cycleStart) };
     const nh = [archived, ...history].slice(0,12);
     setHistory(nh); setCycleStart(ns); setObs({[ns]:f}); setForm(f); setSaved(true);
-    saveData({ cycleStart:ns, obs:{[ns]:f}, history:nh, instructor });
+    saveUserData({ cycleStart:ns, obs:{[ns]:f}, history:nh, instructor }, userId);
   };
 
   const saveInstructor = (instr) => {
     setInstructor(instr);
-    const d = loadData() || {};
-    saveData({...d, instructor:instr});
+    const d = loadUserData(userId) || {};
+    saveUserData({...d, instructor:instr}, userId);
   };
 
   const removeInstructor = () => {
     setInstructor(null); setInstrForm({name:'',email:''}); setInstrConfirm(false);
-    const d = loadData() || {}; delete d.instructor; saveData(d);
+    const d = loadUserData(userId) || {}; delete d.instructor; saveUserData(d, userId);
   };
 
   const handlePDFDownload = async () => {
