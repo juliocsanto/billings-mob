@@ -62,9 +62,7 @@ export default defineConfig({
         'src/lib/supabaseClient.ts',
         // AuthGate.tsx — React auth wrapper, requires E2E testing (Sprint 5)
         'src/components/AuthGate.tsx',
-        // useObservationSync.ts — TODO Sprint 3: add unit tests for sync hook
-        // Complex async fetch hook requiring full service worker + fetch mocking
-        'src/hooks/useObservationSync.ts',
+        // useObservationSync.ts — unit tests added in Sprint 3 item #1
       ],
     },
     // TypeScript support
