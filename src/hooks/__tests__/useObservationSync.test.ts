@@ -147,7 +147,7 @@ describe('useObservationSync — PATCH existing observation', () => {
     });
 
     expect(mockFetch).toHaveBeenCalledOnce();
-    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const [url, init] = mockFetch.mock.calls[0] as [string, Parameters<typeof fetch>[1]];
     expect(url).toBe(`/api/observations/${OBS_ID}`);
     expect(init.method).toBe('PATCH');
 
@@ -257,8 +257,8 @@ describe('useObservationSync — PATCH existing observation', () => {
       await result.current.syncObservation('2026-05-27', FORM_DATA, OBS_ID);
     });
 
-    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    const headers = init.headers as Record<string, string>;
+    const [, init] = mockFetch.mock.calls[0] as [string, Parameters<typeof fetch>[1]];
+    const headers = (init?.headers ?? {}) as Record<string, string>;
     expect(headers['Authorization']).toBe('Bearer jwt-token');
   });
 
@@ -302,7 +302,7 @@ describe('useObservationSync — POST new observation', () => {
       await result.current.syncObservation('2026-05-27', FORM_DATA);
     });
 
-    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const [url, init] = mockFetch.mock.calls[0] as [string, Parameters<typeof fetch>[1]];
     expect(url).toBe('/api/observations');
     expect(init.method).toBe('POST');
     const body = JSON.parse(init.body as string);
@@ -392,10 +392,8 @@ describe('useObservationSync — syncStatus state machine', () => {
   });
 
   it('transitions idle -> syncing -> synced on successful PATCH', async () => {
-    const statusHistory: string[] = [];
-
     mockFetch.mockImplementation(async () => {
-      // captured mid-flight: at this point syncStatus should be 'syncing'
+      // mid-flight: syncStatus transitions to 'syncing' before this resolves
       return makeOkResponse({ id: OBS_ID, vector_clock: {} });
     });
 
