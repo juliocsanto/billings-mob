@@ -79,7 +79,8 @@ export function useAuth(): AuthState {
   }, []);
 
   const signInWithMagicLink = async (email: string): Promise<{ error: Error | null }> => {
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const baseUrl = import.meta.env.VITE_AUTH_REDIRECT_URL ?? window.location.origin;
+    const redirectTo = `${baseUrl}/auth/callback`;
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: redirectTo },

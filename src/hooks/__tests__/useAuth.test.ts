@@ -150,6 +150,71 @@ describe('useAuth', () => {
     });
   });
 
+  it('uses VITE_AUTH_REDIRECT_URL env var as the base for emailRedirectTo when set', async () => {
+    // RED: this test verifies that VITE_AUTH_REDIRECT_URL takes precedence
+    // over window.location.origin so production deploys get the correct URL.
+    const originalEnv = import.meta.env.VITE_AUTH_REDIRECT_URL;
+    try {
+      // Inject the env var into the in-process import.meta.env (Vitest exposes this)
+      (import.meta.env as Record<string, string>).VITE_AUTH_REDIRECT_URL =
+        'https://billings-mob.vercel.app';
+
+      mockAuth.getSession.mockResolvedValue({ data: { session: null } });
+      mockAuth.signInWithOtp.mockResolvedValue({ error: null });
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.signInWithMagicLink('prod@billings.app');
+      });
+
+      expect(mockAuth.signInWithOtp).toHaveBeenCalledWith({
+        email: 'prod@billings.app',
+        options: {
+          emailRedirectTo: 'https://billings-mob.vercel.app/auth/callback',
+        },
+      });
+    } finally {
+      // Restore: undefined means the var was not set before
+      if (originalEnv === undefined) {
+        delete (import.meta.env as Record<string, string>).VITE_AUTH_REDIRECT_URL;
+      } else {
+        (import.meta.env as Record<string, string>).VITE_AUTH_REDIRECT_URL = originalEnv;
+      }
+    }
+  });
+
+  it('falls back to window.location.origin when VITE_AUTH_REDIRECT_URL is not set', async () => {
+    // Ensure the env var is absent for this test
+    const originalEnv = import.meta.env.VITE_AUTH_REDIRECT_URL;
+    delete (import.meta.env as Record<string, string>).VITE_AUTH_REDIRECT_URL;
+
+    try {
+      mockAuth.getSession.mockResolvedValue({ data: { session: null } });
+      mockAuth.signInWithOtp.mockResolvedValue({ error: null });
+
+      const { result } = renderHook(() => useAuth());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.signInWithMagicLink('dev@billings.app');
+      });
+
+      // window.location.origin in jsdom is 'http://localhost:3000' or similar
+      expect(mockAuth.signInWithOtp).toHaveBeenCalledWith({
+        email: 'dev@billings.app',
+        options: {
+          emailRedirectTo: expect.stringMatching(/^https?:\/\/.+\/auth\/callback$/),
+        },
+      });
+    } finally {
+      if (originalEnv !== undefined) {
+        (import.meta.env as Record<string, string>).VITE_AUTH_REDIRECT_URL = originalEnv;
+      }
+    }
+  });
+
   it('returns error when signInWithOtp fails', async () => {
     mockAuth.getSession.mockResolvedValue({ data: { session: null } });
     const authError = new Error('Rate limit exceeded');
