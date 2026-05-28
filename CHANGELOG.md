@@ -6,6 +6,21 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.1] — 2026-05-27
+
+### Added
+
+- 22 unit tests for `useObservationSync` hook covering: session guard, offline guard, PATCH with `client_vector_clock`, `Authorization` header, 409 conflict detection, `conflict_version_id` extraction, `loading`/`error` states, POST for new observations, network-error handling, and `syncStatus` state-machine transitions (Sprint 3 item #1 — débito Sprint 2)
+- `vitest.config.ts` now includes `useObservationSync` in coverage — hook is no longer excluded from the coverage threshold
+
+### Fixed
+
+- ESLint `no-undef` error on `RequestInit` in test file replaced with `NonNullable<Parameters<typeof fetch>[1]>`, removing dependency on a global type not declared in the jsdom environment
+- TypeScript strict-mode error TS18048 (`init` possibly `undefined`) resolved by narrowing the mock-call type to the non-nullable form of the fetch options parameter
+- Unused variable `statusHistory` removed from the state-machine test, resolving TS6133 and the corresponding `@typescript-eslint/no-unused-vars` lint error
+
+---
+
 ## [1.2.0] — 2026-05-27
 
 ### Added
