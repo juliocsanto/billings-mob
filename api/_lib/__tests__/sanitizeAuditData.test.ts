@@ -6,7 +6,7 @@
  * 'relations' or 'notes' fields.
  */
 import { describe, it, expect } from 'vitest';
-import { sanitizeForAuditLog } from '../sanitizeAuditData';
+import { sanitizeForAuditLog, assertNoSensitiveFields } from '../sanitizeAuditData';
 
 describe('sanitizeForAuditLog', () => {
   it('removes relations field', () => {
@@ -60,5 +60,49 @@ describe('sanitizeForAuditLog', () => {
     sanitizeForAuditLog(original);
     expect(original).toHaveProperty('relations');
     expect(original).toHaveProperty('notes');
+  });
+
+  it('passes through non-object values unchanged', () => {
+    expect(sanitizeForAuditLog(42 as unknown as Record<string, unknown>)).toBe(42);
+    expect(sanitizeForAuditLog('string' as unknown as Record<string, unknown>)).toBe('string');
+    expect(sanitizeForAuditLog(true as unknown as Record<string, unknown>)).toBe(true);
+  });
+});
+
+describe('assertNoSensitiveFields', () => {
+  it('throws when "relations" field is present', () => {
+    expect(() => {
+      assertNoSensitiveFields({ stamp: 'muco', relations: true });
+    }).toThrow(/LGPD violation/i);
+  });
+
+  it('throws when "notes" field is present', () => {
+    expect(() => {
+      assertNoSensitiveFields({ stamp: 'seco', notes: 'texto sensível' });
+    }).toThrow(/LGPD violation/i);
+  });
+
+  it('throws with message identifying the offending field', () => {
+    expect(() => {
+      assertNoSensitiveFields({ relations: false });
+    }).toThrow(/relations/);
+  });
+
+  it('does NOT throw when no sensitive fields are present', () => {
+    expect(() => {
+      assertNoSensitiveFields({
+        id: 'uuid-1',
+        stamp: 'apice',
+        mucus: 'elastico',
+        bleeding: null,
+        version: 3,
+      });
+    }).not.toThrow();
+  });
+
+  it('does NOT throw on an empty object', () => {
+    expect(() => {
+      assertNoSensitiveFields({});
+    }).not.toThrow();
   });
 });

@@ -32,6 +32,10 @@
       "destination": "/api/cycles/index"
     },
     {
+      "source": "/api/instructor-student-links/pending",
+      "destination": "/api/instructor-student-links/pending"
+    },
+    {
       "source": "/api/instructor-student-links/:id",
       "destination": "/api/instructor-student-links/[id]"
     },
@@ -42,6 +46,10 @@
     {
       "source": "/api/users/me",
       "destination": "/api/users/me"
+    },
+    {
+      "source": "/api/users/push-preferences",
+      "destination": "/api/users/push-preferences/index"
     },
     {
       "source": "/((?!api/).*)",

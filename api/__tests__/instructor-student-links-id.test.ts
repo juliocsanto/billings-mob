@@ -145,6 +145,28 @@ describe("PATCH /:id — action 'accept'", () => {
     expect(json.error).toBe('Forbidden');
   });
 
+  it('returns 403 when instructor tries to accept a link where they are NOT the linked instructor (SEC4-02)', async () => {
+    // Link belongs to a DIFFERENT instructor — auth.userId is MOCK_INSTRUCTOR_ID
+    // but link.instructor_id is a completely different UUID
+    const DIFFERENT_INSTRUCTOR_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+    const pendingLinkOtherInstructor = makeLink({
+      status: 'pending',
+      instructor_id: DIFFERENT_INSTRUCTOR_ID, // NOT the auth user
+    });
+
+    mockFrom.mockReturnValueOnce(makeFetchChain(pendingLinkOtherInstructor));
+
+    const res = await app.request(`/${MOCK_LINK_ID}`, {
+      method: 'PATCH',
+      headers: instructorHeaders, // authenticates as MOCK_INSTRUCTOR_ID
+      body: JSON.stringify({ action: 'accept' }),
+    });
+
+    expect(res.status).toBe(403);
+    const json = await res.json() as { error: string };
+    expect(json.error).toBe('Forbidden');
+  });
+
   it("returns 400 when link status is already 'active' (cannot accept twice)", async () => {
     const activeLink = makeLink({ status: 'active', accepted_at: '2026-05-25T00:00:00Z' });
     mockFrom.mockReturnValueOnce(makeFetchChain(activeLink));
