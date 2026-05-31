@@ -22,7 +22,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WhatsAppPort } from '../whatsapp/WhatsAppPort';
 import type { NotificationEvent } from './NotificationEvent';
-import { buildPayload } from './buildPayload';
+import { buildPayload, buildWhatsAppTemplate } from './buildPayload';
 
 /** How long a sent notification is deduplicated (milliseconds). */
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 60 minutes
@@ -136,9 +136,11 @@ export class NotificationService {
         return;
       }
 
+      const template = buildWhatsAppTemplate(event);
       const result = await this.whatsApp.sendMessage({
         to: userProfile.phone,
         body: payload.body,
+        ...(template ?? {}),
       });
 
       if (!result.success) {
