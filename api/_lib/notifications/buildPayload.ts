@@ -1,16 +1,16 @@
 /**
- * buildPayload — ADR-012
+ * buildPayload / buildWhatsAppTemplate — ADR-012
  *
- * Pure function (no side effects) that maps a NotificationEvent to a
- * notification title + body text.
+ * Pure functions (no side effects) that map a NotificationEvent to
+ * notification text or WhatsApp template references.
  *
  * LGPD / Clinical constraint:
- * - This function is the SINGLE source of truth for notification text.
- * - It NEVER receives clinical data (stamp, mucus, bleeding, relations, notes).
- * - It NEVER emits clinical classifications (fertile, infertile, safe, unsafe).
+ * - These functions are the SINGLE source of truth for notification text.
+ * - They NEVER receive clinical data (stamp, mucus, bleeding, relations, notes).
+ * - They NEVER emit clinical classifications (fertile, infertile, safe, unsafe).
  * - Text is generic and non-identifying beyond a first name.
  *
- * No handler may construct notification text inline — always use this function.
+ * No handler may construct notification text inline — always use these functions.
  */
 
 import type { NotificationEvent } from './NotificationEvent';
@@ -55,5 +55,70 @@ export function buildPayload(event: NotificationEvent): NotificationPayload {
         title: 'Vínculo aceito',
         body: 'Sua instrutora aceitou seu pedido de vínculo no Billings Gráfico.',
       };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// WhatsApp template mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * A reference to a Meta-approved WhatsApp message template.
+ *
+ * Templates `billings_nova_observacao` and `billings_conflito_versao` are not
+ * yet approved — the CloudAdapter will attempt to send them and return an error
+ * if Meta rejects them (graceful degradation per ADR-011).
+ */
+export interface WhatsAppTemplate {
+  /** Exact template name as registered in Meta Business Manager */
+  templateName: string;
+  /** Positional parameters {{1}}, {{2}} … mapped in order */
+  templateParams: string[];
+}
+
+/**
+ * Maps a NotificationEvent to a WhatsApp template reference.
+ *
+ * Returns null only when there is no template defined for the event type,
+ * which should never happen given the current exhaustive event union.
+ *
+ * LGPD / Clinical constraint:
+ * - templateName is a generic identifier — no clinical meaning.
+ * - templateParams contain only first name and ISO date — no clinical data.
+ */
+export function buildWhatsAppTemplate(event: NotificationEvent): WhatsAppTemplate | null {
+  switch (event.type) {
+    case 'link_request':
+      return {
+        templateName: 'billings_solicitacao_vinculo',
+        templateParams: [event.metadata.studentName ?? 'uma aluna'],
+      };
+
+    case 'link_accepted':
+      return {
+        templateName: 'billings_vinculo_aceito',
+        templateParams: [],
+      };
+
+    case 'new_observation':
+      return {
+        templateName: 'billings_nova_observacao',
+        templateParams: [
+          event.metadata.studentName ?? 'sua aluna',
+          event.metadata.date ?? '',
+        ],
+      };
+
+    case 'conflict_detected':
+      return {
+        templateName: 'billings_conflito_versao',
+        templateParams: [
+          event.metadata.studentName ?? 'sua aluna',
+          event.metadata.date ?? '',
+        ],
+      };
+
+    default:
+      return null;
   }
 }

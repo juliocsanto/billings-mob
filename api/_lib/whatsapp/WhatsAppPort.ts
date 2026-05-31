@@ -13,10 +13,14 @@
 export interface WhatsAppMessage {
   /** Recipient phone number in E.164 format, e.g. +5511987654321 */
   to: string;
-  /** Plain text body — NO clinical data (LGPD constraint) */
+  /** Plain text body — used by MockAdapter for logging; NO clinical data (LGPD constraint) */
   body: string;
   /** Whether WhatsApp should generate a link preview (optional) */
   previewUrl?: boolean;
+  /** Name of the approved Meta template to use (CloudAdapter). When present, type=template is sent. */
+  templateName?: string;
+  /** Positional parameters {{1}}, {{2}}, etc. for the template body component. */
+  templateParams?: string[];
 }
 
 /** Result returned by every sendMessage() implementation. */

@@ -52,6 +52,10 @@
       "destination": "/api/users/push-preferences/index"
     },
     {
+      "source": "/api/webhooks/whatsapp",
+      "destination": "/api/webhooks/whatsapp"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
