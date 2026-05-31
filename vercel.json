@@ -32,6 +32,10 @@
       "destination": "/api/cycles/index"
     },
     {
+      "source": "/api/instructor-student-links/pending",
+      "destination": "/api/instructor-student-links/pending"
+    },
+    {
       "source": "/api/instructor-student-links/:id",
       "destination": "/api/instructor-student-links/[id]"
     },
