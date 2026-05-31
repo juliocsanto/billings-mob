@@ -17,6 +17,9 @@
  */
 
 import { Hono } from 'hono';
+import { handle } from 'hono/vercel';
+
+export const runtime = 'nodejs';
 
 const app = new Hono();
 
@@ -49,3 +52,6 @@ app.post('/', async (_c) => {
 });
 
 export default app;
+
+export const GET = handle(app);
+export const POST = handle(app);
