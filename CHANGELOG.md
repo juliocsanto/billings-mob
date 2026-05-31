@@ -6,6 +6,34 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.0] — 2026-05-29
+
+### Added
+
+- WhatsApp hexagonal architecture: `WhatsAppPort` interface, fully functional `MockAdapter` for development and testing, `CloudAdapter` stub (pending Meta Business approval), and env-based factory singleton — ADR-011 (S4-03)
+- `NotificationService` with WhatsApp dispatch — triggers notifications on new observation creation, conflict detection, and instructor-link requests; message payloads contain no clinical data (LGPD Art. 11 compliance) — ADR-012 (S4-04)
+- Instructor link request page in PWA — student can search for an instructor and submit a link request (S4-05)
+- `GET /api/instructor-student-links/pending` endpoint — returns pending link requests for the authenticated instructor (S4-06)
+- Push notification preferences page — student can enable/disable FCM-based push notifications per category; `GET /PUT /api/users/push-preferences` endpoints; `usePushNotifications` hook (S4-07)
+- Sprint 4 schema migrations: `push_preferences`, `notification_rate_limits`, and `whatsapp_webhook_config` tables (S4-DB)
+
+### Fixed
+
+- FCM token no longer written to `console.log`, preventing accidental exposure of a user credential — SEC4-01
+- Instructor ownership now explicitly verified on the link-accept path, preventing unauthorized acceptance — SEC4-02
+- `daily_reminder_enabled` default value aligned between the database migration and application code, eliminating a silent divergence — SEC4-03
+
+### Security
+
+- FCM token leak via server logs closed (SEC4-01)
+- Broken object-level authorization on link-accept endpoint patched — instructor can only accept requests addressed to their own account (SEC4-02)
+
+### Changed
+
+- Test suite expanded from 375 to 444 tests; branch coverage 89.53 %, function coverage 94.69 %, statement coverage 97.29 %, line coverage 98.05 % — all thresholds ≥ 80 % (S4-09)
+
+---
+
 ## [1.2.1] — 2026-05-27
 
 ### Added
