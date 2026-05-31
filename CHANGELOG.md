@@ -6,6 +6,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.2] — 2026-05-31
+
+### Fixed
+
+- WhatsApp webhook endpoint now correctly exports named `GET` and `POST` handlers via `hono/vercel` — Vercel's Node.js runtime requires explicit named exports; without them the `/api/webhooks/whatsapp` route returned 404, causing Meta's hub-challenge verification to fail (e972cc0)
+
+---
+
 ## [1.3.1] — 2026-05-29
 
 ### Added
