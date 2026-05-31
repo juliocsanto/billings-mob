@@ -68,7 +68,7 @@ function Toggle({ id, label, description, checked, onChange, disabled = false }:
       }}
     >
       <div style={{ flex: 1, paddingRight: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{label}</div>
+        <div id={id} style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{description}</div>
       </div>
       <button
@@ -299,6 +299,8 @@ export function NotificationPreferencesPage() {
         {/* Error banner */}
         {error && (
           <div
+            role="status"
+            aria-live="polite"
             style={{
               background: C.roseLight,
               border: `1px solid ${C.roseBorder}`,
@@ -384,8 +386,11 @@ export function NotificationPreferencesPage() {
               </div>
               <input
                 type="time"
+                aria-label="Horário do lembrete diário"
                 value={preferences.daily_reminder_time}
                 onChange={(e) => void handleTimeChange(e.target.value)}
+                onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
+                onBlur={e => { e.target.style.outline = 'none'; }}
                 style={{
                   background: C.surface,
                   border: `1px solid ${C.border}`,
@@ -393,7 +398,6 @@ export function NotificationPreferencesPage() {
                   padding: '8px 12px',
                   fontSize: 14,
                   color: C.text,
-                  outline: 'none',
                   fontFamily: 'Lato, sans-serif',
                 }}
               />
