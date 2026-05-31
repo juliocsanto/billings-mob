@@ -300,6 +300,72 @@ describe('NotificationService', () => {
     });
   });
 
+  // ─── SEC4-01: FCM token must never appear in log output (LGPD) ──────────
+
+  describe('LGPD — fcm_token must never be materialised in logs (SEC4-01)', () => {
+    it('does NOT log the raw fcm_token value when FCM token is present', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const TOKEN = 'super-secret-fcm-token-abc123';
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: { fcm_token: TOKEN, whatsapp_enabled: false },
+        profileData: { phone: null },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase);
+
+      const event: NotificationEvent = {
+        type: 'new_observation',
+        recipientId: 'user-001',
+        entityId: 'obs-fcm-01',
+        metadata: { studentName: 'Sec', date: '2026-01-10' },
+      };
+
+      await svc.dispatch(event);
+
+      // Every console.log call must NOT contain the raw token value
+      for (const call of consoleSpy.mock.calls) {
+        const serialized = call.map((arg) => JSON.stringify(arg)).join(' ');
+        expect(serialized).not.toContain(TOKEN);
+      }
+
+      consoleSpy.mockRestore();
+    });
+
+    it('logs "token present" phrase (not the token value) when FCM token exists', async () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+      const TOKEN = 'another-secret-token-xyz789';
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: { fcm_token: TOKEN, whatsapp_enabled: false },
+        profileData: { phone: null },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase);
+
+      const event: NotificationEvent = {
+        type: 'link_request',
+        recipientId: 'user-002',
+        entityId: 'link-fcm-01',
+        metadata: { studentName: 'Sec2' },
+      };
+
+      await svc.dispatch(event);
+
+      const allLogOutput = consoleSpy.mock.calls
+        .map((call) => call.map((arg) => String(arg)).join(' '))
+        .join('\n');
+
+      expect(allLogOutput).toContain('token present');
+
+      consoleSpy.mockRestore();
+    });
+  });
+
   // ─── Body must not contain clinical data ─────────────────────────────────
 
   describe('LGPD — body must not contain clinical data', () => {

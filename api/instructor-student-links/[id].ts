@@ -34,6 +34,12 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
     if (auth.role !== 'instructor') {
       return forbidden(c, 'Only instructors can accept invitations');
     }
+    // SEC4-02: Explicit instructor ownership check — mirrors the pattern in revoke.
+    // RLS is the last line of defence, but authz must be enforced in the use-case
+    // layer too (defence in depth).
+    if (link.instructor_id !== auth.userId) {
+      return forbidden(c, 'Only the linked instructor can accept this invitation');
+    }
     if (link.status !== 'pending') {
       return badRequest(c, 'Only pending links can be accepted');
     }
