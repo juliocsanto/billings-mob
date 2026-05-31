@@ -30,6 +30,11 @@ const instructorHeaders = {
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 const mockFrom = vi.fn();
 
+// SEC-003 FIX: requireAuth now reads role from user_profiles (same table as the handler).
+// mockFrom handles all user_profiles queries: requireAuth's role lookup returns profile.role,
+// handler's full profile fetch returns the complete row. Since mockFrom.mockReturnValue sets
+// a single chain reused by both callers and profiles include role, this works without
+// per-caller differentiation.
 vi.mock('../_lib/supabaseClient', () => ({
   createAuthenticatedClient: vi.fn((jwt: string) => {
     const isInstructor = jwt.includes('instructor');
@@ -39,7 +44,7 @@ vi.mock('../_lib/supabaseClient', () => ({
           data: {
             user: {
               id: isInstructor ? MOCK_INSTRUCTOR_ID : MOCK_STUDENT_ID,
-              user_metadata: { role: isInstructor ? 'instructor' : 'student' },
+              user_metadata: {},
             },
           },
           error: null,
