@@ -6,6 +6,23 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.1] — 2026-05-29
+
+### Added
+
+- Real WhatsApp Cloud Adapter replacing the prior stub — integrates with Meta Graph API v19.0 to send template messages; graceful degradation active while Meta Business template approval is pending (ADR-011, S4-03b)
+- `buildWhatsAppTemplate()` pure function mapping all 4 notification event types (`new_observation`, `conflict_created`, `link_request`, `link_accepted`) to approved template names and parameter lists — payloads contain no clinical data (LGPD Art. 11)
+- WhatsApp webhook endpoint (`GET /api/webhooks/whatsapp`) — handles Meta hub challenge verification handshake and `POST` delivery receipt acknowledgement
+- `vercel.json` rewrite rule for `/api/webhooks/whatsapp` serverless route
+
+### Changed
+
+- `WhatsAppMessage` interface extended with `templateName` and `templateParams` fields (ADR-011 contract update)
+- `NotificationService.sendMessage()` now forwards template fields on every call, enabling the Cloud Adapter to resolve the correct Meta template payload
+- Test suite expanded from 444 to 482 tests; statement coverage 97.28 %, branch coverage 89.19 %, function coverage 95 %
+
+---
+
 ## [1.3.0] — 2026-05-29
 
 ### Added
