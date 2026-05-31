@@ -8,6 +8,7 @@ import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffD
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
 import { generateDailyReminder, downloadICS } from './utils/ics.js';
 import { DayDetailModal } from './components/DayDetailModal.jsx';
+import { LinkInstructorPage } from './pages/LinkInstructorPage.tsx';
 
 // ── Micro-components ──────────────────────────────────────
 
@@ -252,7 +253,7 @@ export default function App({ user, session } = {}) {
           {disp && <Tag label={phaseMap[disp.id]||disp.label} color={disp.c} bg={disp.bg} border={disp.border}/>}
         </div>
         <div style={{display:'flex',gap:0}}>
-          {[{id:'hoje',l:'Hoje'},{id:'grafico',l:'Gráfico'},{id:'analise',l:'Análise'},{id:'guia',l:'Guia'},{id:'perfil',l:'Perfil'}].map(t=>(
+          {[{id:'hoje',l:'Hoje'},{id:'grafico',l:'Gráfico'},{id:'analise',l:'Análise'},{id:'guia',l:'Guia'},{id:'vinculo',l:'Vínculo'},{id:'perfil',l:'Perfil'}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{
               flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
               fontSize:11,fontWeight:tab===t.id?700:400,
@@ -702,6 +703,11 @@ export default function App({ user, session } = {}) {
         </div>
       )}
 
+      {/* ══ VÍNCULO ══════════════════════════════════ */}
+      {tab==='vinculo' && (
+        <LinkInstructorPage session={session} onBack={()=>setTab('perfil')} />
+      )}
+
       {/* ══ PERFIL ═══════════════════════════════════ */}
       {tab==='perfil' && (
         <div style={{paddingBottom:100}}>
@@ -812,7 +818,7 @@ export default function App({ user, session } = {}) {
       {/* ══ NAV ══════════════════════════════════════ */}
       <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:C.surface,borderTop:`1px solid ${C.border}`,zIndex:20,padding:'6px 16px 12px'}}>
         <div style={{display:'flex',gap:4}}>
-          {[{id:'hoje',l:'Hoje',i:'◎'},{id:'grafico',l:'Gráfico',i:'⊞'},{id:'analise',l:'Análise',i:'◈'},{id:'guia',l:'Guia',i:'✦'},{id:'perfil',l:'Perfil',i:'○'}].map(t=>(
+          {[{id:'hoje',l:'Hoje',i:'◎'},{id:'grafico',l:'Gráfico',i:'⊞'},{id:'analise',l:'Análise',i:'◈'},{id:'guia',l:'Guia',i:'✦'},{id:'vinculo',l:'Vínculo',i:'⊕'},{id:'perfil',l:'Perfil',i:'○'}].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${C.terra}18`:'transparent',border:`1px solid ${tab===t.id?C.terra:C.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
               <span style={{fontSize:16,color:tab===t.id?C.terra:C.textMuted}}>{t.i}</span>
               <span style={{fontSize:9,color:tab===t.id?C.terra:C.textMuted,fontWeight:tab===t.id?700:400}}>{t.l}</span>
