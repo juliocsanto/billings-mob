@@ -366,6 +366,110 @@ describe('NotificationService', () => {
     });
   });
 
+  // ─── WhatsApp sendMessage result.success === false ───────────────────────
+
+  describe('WhatsApp sendMessage failure (result.success === false)', () => {
+    it('resolves without throwing and does NOT insert rate limit when sendMessage returns success=false', async () => {
+      const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
+
+      const failingResultAdapter = {
+        sendMessage: vi.fn().mockResolvedValue({ success: false, error: 'Template rejected' }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const fromFn = vi.fn((table: string) => {
+        if (table === 'notification_rate_limits') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            gte: vi.fn().mockReturnThis(),
+            lt: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: null, error: null }),
+            insert: insertMock,
+          };
+        }
+        if (table === 'push_preferences') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+              data: { fcm_token: null, whatsapp_enabled: true },
+              error: null,
+            }),
+          };
+        }
+        if (table === 'user_profiles') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+              data: { phone: '+5511999999999' },
+              error: null,
+            }),
+          };
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      });
+
+      const supabase = { from: fromFn } as unknown as SupabaseClient;
+      const svc = new NotificationService(failingResultAdapter, supabase);
+
+      const event: NotificationEvent = {
+        type: 'new_observation',
+        recipientId: 'user-001',
+        entityId: 'obs-fail-01',
+        metadata: { studentName: 'Fail User', date: '2026-01-10' },
+      };
+
+      // dispatch() must not throw — notification failures are non-fatal
+      await expect(svc.dispatch(event)).resolves.toBeUndefined();
+
+      // sendMessage was called but returned success=false
+      expect(failingResultAdapter.sendMessage).toHaveBeenCalledOnce();
+
+      // insert must NOT have been called since send failed
+      expect(insertMock).not.toHaveBeenCalled();
+    });
+
+    it('logs error details when sendMessage returns success=false', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const failingResultAdapter = {
+        sendMessage: vi.fn().mockResolvedValue({ success: false, error: 'Quota exceeded' }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: { fcm_token: null, whatsapp_enabled: true },
+        profileData: { phone: '+5511999999999' },
+      });
+
+      const svc = new NotificationService(failingResultAdapter, supabase);
+
+      const event: NotificationEvent = {
+        type: 'link_request',
+        recipientId: 'user-002',
+        entityId: 'link-fail-01',
+        metadata: { studentName: 'Fail2' },
+      };
+
+      await svc.dispatch(event);
+
+      const errorLogs = consoleSpy.mock.calls.map(call =>
+        call.map(arg => JSON.stringify(arg)).join(' ')
+      ).join('\n');
+      expect(errorLogs).toContain('WhatsApp send failed');
+
+      consoleSpy.mockRestore();
+    });
+  });
+
   // ─── Body must not contain clinical data ─────────────────────────────────
 
   describe('LGPD — body must not contain clinical data', () => {

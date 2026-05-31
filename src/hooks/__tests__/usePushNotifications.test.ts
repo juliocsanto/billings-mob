@@ -288,6 +288,243 @@ describe('usePushNotifications', () => {
     expect(result.current.error).not.toBeNull();
   });
 
+  // ── load(): res.ok === false ───────────────────────────────────────────────
+
+  it('sets error when GET /api/users/push-preferences returns non-ok', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('default');
+      },
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: () => Promise.resolve({ error: 'Server error' }),
+    });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toMatch(/não foi possível carregar/i);
+  });
+
+  it('sets error when GET /api/users/push-preferences fetch throws', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('default');
+      },
+    });
+
+    mockFetch.mockRejectedValueOnce(new Error('Network down'));
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.error).toMatch(/erro ao carregar/i);
+  });
+
+  it('does nothing on mount when access token is null', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('default');
+      },
+    });
+
+    // Mock supabase to return null session
+    const { supabase } = await import('../../lib/supabaseClient');
+    vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+      data: { session: null },
+      error: null,
+    });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    // When token is null, no fetch should have been called
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
+  });
+
+  // ── requestPermission(): Notification.requestPermission throws ────────────
+
+  it('sets error when Notification.requestPermission() throws', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockRejectedValue(new Error('Permission API error'));
+      },
+    });
+
+    // GET on mount
+    mockFetch.mockResolvedValueOnce(makePrefsResponse());
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.error).toMatch(/não foi possível solicitar/i);
+  });
+
+  it('sets permission unsupported when requestPermission called but Notification absent', async () => {
+    // Remove Notification from global
+    const originalNotification = global.Notification;
+    // @ts-expect-error intentional
+    delete global.Notification;
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    expect(result.current.permission).toBe('unsupported');
+
+    global.Notification = originalNotification;
+  });
+
+  it('returns early in requestPermission when getAccessToken returns null after permission granted', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('granted');
+      },
+    });
+
+    // GET on mount → success
+    mockFetch.mockResolvedValueOnce(makePrefsResponse());
+
+    // Make getAccessToken return null
+    const { supabase } = await import('../../lib/supabaseClient');
+    vi.mocked(supabase.auth.getSession)
+      // First call: mount load
+      .mockResolvedValueOnce({
+        data: { session: { access_token: 'token-mount', user: { id: 'u1' } } as never },
+        error: null,
+      })
+      // Second call: inside requestPermission
+      .mockResolvedValueOnce({ data: { session: null }, error: null });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.requestPermission();
+    });
+
+    // No PUT for token registration since getAccessToken returned null
+    const putCalls = mockFetch.mock.calls.filter(
+      ([, opts]) => (opts as RequestInit)?.method === 'PUT',
+    );
+    expect(putCalls).toHaveLength(0);
+  });
+
+  // ── updatePreferences(): PUT returns non-ok ───────────────────────────────
+
+  it('sets error when PUT /api/users/push-preferences returns non-ok', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('default');
+      },
+    });
+
+    // GET on mount
+    mockFetch.mockResolvedValueOnce(makePrefsResponse());
+
+    // PUT fails with non-ok
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: () => Promise.resolve({ error: 'Bad request' }),
+    });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.updatePreferences({ daily_reminder_enabled: true });
+    });
+
+    expect(result.current.error).toMatch(/não foi possível salvar/i);
+  });
+
+  it('sets error when updatePreferences called but getAccessToken returns null', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'default';
+        static requestPermission = vi.fn().mockResolvedValue('default');
+      },
+    });
+
+    // GET on mount
+    mockFetch.mockResolvedValueOnce(makePrefsResponse());
+
+    // Make getAccessToken return null on the updatePreferences call
+    const { supabase } = await import('../../lib/supabaseClient');
+    vi.mocked(supabase.auth.getSession)
+      .mockResolvedValueOnce({
+        data: { session: { access_token: 'token-mount', user: { id: 'u1' } } as never },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: { session: null }, error: null });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.updatePreferences({ daily_reminder_enabled: true });
+    });
+
+    expect(result.current.error).toMatch(/sessão expirada/i);
+  });
+
+  // ── Loads fcm_token from existing preferences ─────────────────────────────
+
+  it('sets fcmToken from preferences when fcm_token is present in loaded prefs', async () => {
+    Object.defineProperty(global, 'Notification', {
+      writable: true,
+      value: class {
+        static permission = 'granted';
+        static requestPermission = vi.fn().mockResolvedValue('granted');
+      },
+    });
+
+    const prefsWithToken = { ...DEFAULT_PREFS, fcm_token: 'saved-fcm-token-xyz' };
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: prefsWithToken }),
+    });
+
+    const { result } = renderHook(() => usePushNotifications());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.fcmToken).toBe('saved-fcm-token-xyz');
+  });
+
   // ── LGPD: fcm_token not in console.log ───────────────────────────────────
 
   it('never logs fcm_token in console.log', async () => {
