@@ -181,10 +181,13 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="email"
+              aria-label="E-mail da instrutora"
               value={emailInput}
               onChange={e => setEmailInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="email da instrutora"
+              onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
+              onBlur={e => { e.target.style.outline = 'none'; }}
               style={{
                 flex: 1,
                 background: C.surface,
@@ -193,7 +196,6 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 padding: '11px 14px',
                 fontSize: 13,
                 color: C.text,
-                outline: 'none',
                 fontFamily: 'Lato, sans-serif',
               }}
             />
@@ -245,7 +247,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 animation: 'spin 0.8s linear infinite',
               }}
             />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
             Buscando...
           </div>
         )}

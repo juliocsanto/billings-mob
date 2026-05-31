@@ -61,15 +61,19 @@ export function AuthGate({ children }: AuthGateProps) {
         flexDirection: 'column',
         gap: 16,
       }}>
-        <div style={{
-          width: 40,
-          height: 40,
-          border: `3px solid ${C.border}`,
-          borderTopColor: C.terra,
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div
+          role="status"
+          aria-label="Carregando"
+          style={{
+            width: 40,
+            height: 40,
+            border: `3px solid ${C.border}`,
+            borderTopColor: C.terra,
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
         <div style={{ fontSize: 13, color: C.textMuted }}>Carregando...</div>
       </div>
     );
@@ -146,7 +150,7 @@ export function AuthGate({ children }: AuthGateProps) {
             Billings Grafico
           </div>
           <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
-            Registro do Metodo de Ovulacao Billings
+            Registro do Método de Ovulação Billings
           </div>
         </div>
 
@@ -208,28 +212,35 @@ export function AuthGate({ children }: AuthGateProps) {
               Acesse sua conta
             </div>
             <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 22, lineHeight: 1.6 }}>
-              Vamos enviar um link de acesso para o seu e-mail. Nenhuma senha necessaria.
+              Vamos enviar um link de acesso para o seu e-mail. Nenhuma senha necessária.
             </div>
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 14 }}>
-                <div style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.textMuted,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  marginBottom: 8,
-                }}>
+                <label
+                  htmlFor="email-login"
+                  style={{
+                    display: 'block',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: C.textMuted,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    marginBottom: 8,
+                  }}
+                >
                   E-mail
-                </div>
+                </label>
                 <input
+                  id="email-login"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   placeholder="seu@email.com.br"
                   required
                   autoFocus
+                  onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
+                  onBlur={e => { e.target.style.outline = 'none'; }}
                   style={{
                     width: '100%',
                     background: '#DDD3C4',
@@ -238,7 +249,6 @@ export function AuthGate({ children }: AuthGateProps) {
                     padding: '12px 14px',
                     fontSize: 14,
                     color: C.text,
-                    outline: 'none',
                     boxSizing: 'border-box',
                     fontFamily: 'Lato, sans-serif',
                   }}
@@ -289,7 +299,7 @@ export function AuthGate({ children }: AuthGateProps) {
               textAlign: 'center',
               fontStyle: 'italic',
             }}>
-              Apenas para quem ja fez consultoria com instrutora credenciada CENPLAFAM/WOOMB.
+              Apenas para quem já fez consultoria com instrutora credenciada CENPLAFAM/WOOMB.
             </div>
           </div>
         )}
