@@ -5,6 +5,7 @@ import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { badRequest, forbidden, internalError, notFound } from '../_lib/errorHandler';
 import { PatchLinkSchema } from './schema';
+import { getNotificationService } from '../_lib/notifications/factory';
 
 const app = new Hono();
 
@@ -55,6 +56,22 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
       before_data: { status: 'pending' },
       after_data: { status: 'active' },
     });
+
+    // Notify student that their link request was accepted (ADR-012)
+    // Fire-and-forget: notification failures must never interrupt the operation.
+    void (async () => {
+      try {
+        const notificationService = getNotificationService();
+        await notificationService.dispatch({
+          type: 'link_accepted',
+          recipientId: link.student_id as string,
+          entityId: id,
+          metadata: {},
+        });
+      } catch {
+        // Intentionally swallowed
+      }
+    })();
 
     return c.json({ data: updated });
   }

@@ -26,6 +26,7 @@ import {
   CreateObservationSchema,
   ListObservationsQuerySchema,
 } from './schema';
+import { getNotificationService } from '../_lib/notifications/factory';
 
 const app = new Hono();
 
@@ -122,6 +123,31 @@ app.post('/', zValidator('json', CreateObservationSchema), async (c) => {
   if (!data) {
     return internalError(c, new Error('Insert succeeded but no data returned'));
   }
+
+  // Notify instructor via NotificationService (ADR-012)
+  // Fire-and-forget: notification failures must never interrupt clinical operations.
+  void (async () => {
+    try {
+      const { data: activeLink } = await serviceClient
+        .from('instructor_student_links')
+        .select('instructor_id')
+        .eq('student_id', auth.userId)
+        .eq('status', 'active')
+        .single();
+
+      if (activeLink?.instructor_id) {
+        const notificationService = getNotificationService();
+        await notificationService.dispatch({
+          type: 'new_observation',
+          recipientId: activeLink.instructor_id as string,
+          entityId: data.id as string,
+          metadata: { date: data.date as string },
+        });
+      }
+    } catch {
+      // Intentionally swallowed — notification must not affect clinical write
+    }
+  })();
 
   // Write audit log (service role bypasses RLS — audit_log has no SELECT policy for users)
   // LGPD: sanitize before logging — strip relations and notes
