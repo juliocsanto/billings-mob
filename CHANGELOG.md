@@ -6,6 +6,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.3] — 2026-05-31
+
+### Fixed
+
+- `AuthGate`: email input now has an associated `<label>` — screen readers announce the field correctly (C-01)
+- `AuthGate`, `LinkInstructorPage`: CSS spinner animation now respects `prefers-reduced-motion: reduce` — animation is suppressed for users who disable motion (C-02)
+- All PWA inputs now show a visible 2 px focus ring on keyboard focus — `outline: none` removed, resolving WCAG 2.4.7 violation (C-03)
+- `Toggle` component `aria-labelledby` now resolves correctly — label `<div>` receives the matching `id` so screen readers announce the switch label (C-05)
+- Corrected missing Portuguese accents in UI text: "Método de Ovulação", "necessária", "já fez" (N-05)
+- Loading spinner and error banner now carry `role="status"` / `aria-live="polite"` — dynamic state changes announced to assistive technology (W-07)
+
+---
+
 ## [1.3.2] — 2026-05-31
 
 ### Fixed
