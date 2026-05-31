@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const MOCK_INSTRUCTOR_ID  = 'f47ac10b-58cc-4372-a567-0e02b2c3d480';
-const MOCK_INSTRUCTOR_ID2 = 'f47ac10b-58cc-4372-a567-0e02b2c3d490';
+
 const MOCK_STUDENT_ID     = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 const MOCK_STUDENT_ID2    = 'f47ac10b-58cc-4372-a567-0e02b2c3d491';
 const MOCK_LINK_ID        = 'f47ac10b-58cc-4372-a567-0e02b2c3d485';

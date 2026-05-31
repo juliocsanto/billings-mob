@@ -22,7 +22,7 @@
  * Clinical constraint: no fertile/infertile language.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import { render, fireEvent, cleanup, waitFor } from '@testing-library/react';
 
 // ── Mock usePushNotifications ─────────────────────────────────────────────────
 const mockRequestPermission = vi.fn().mockResolvedValue(undefined);

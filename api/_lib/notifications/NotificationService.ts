@@ -108,7 +108,7 @@ export class NotificationService {
     // 4. FCM log (real send is S4-07)
     // SEC4-01: fcm_token is LGPD personal data — NEVER materialise the value in logs.
     if (preferences.fcm_token) {
-      console.log(
+      console.warn(
         `[NotificationService] FCM queued — title: ${payload.title} (token present)`,
       );
     }

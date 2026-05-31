@@ -15,6 +15,7 @@
  * LGPD: IP is ephemeral in-memory only — never written to logs or DB.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Next } from 'hono';
 
 // ── Minimal Hono Context mock ─────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ function makeContext(ip?: string, realIp?: string): {
     json: (body: unknown, status: number) => Response;
     _headers: HeadersStore;
   };
-  next: ReturnType<typeof vi.fn>;
+  next: Next;
 } {
   const headers: HeadersStore = {};
   const c = {
@@ -47,7 +48,7 @@ function makeContext(ip?: string, realIp?: string): {
       new Response(JSON.stringify(body), { status }),
     _headers: headers,
   };
-  const next = vi.fn().mockResolvedValue(undefined);
+  const next = vi.fn().mockResolvedValue(undefined) as unknown as Next;
   return { c, next };
 }
 
@@ -85,8 +86,7 @@ describe('createRateLimiter', () => {
     await limiter(c as never, next);
     expect(c._headers['X-RateLimit-Remaining']).toBe('4');
 
-    // Second request — reset next mock
-    next.mockClear();
+    // Second request — fresh context from same IP
     const { c: c2, next: next2 } = makeContext('10.0.0.1');
     await limiter(c2 as never, next2);
     expect(c2._headers['X-RateLimit-Remaining']).toBe('3');

@@ -304,7 +304,8 @@ describe('NotificationService', () => {
 
   describe('LGPD — fcm_token must never be materialised in logs (SEC4-01)', () => {
     it('does NOT log the raw fcm_token value when FCM token is present', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const TOKEN = 'super-secret-fcm-token-abc123';
 
@@ -325,17 +326,18 @@ describe('NotificationService', () => {
 
       await svc.dispatch(event);
 
-      // Every console.log call must NOT contain the raw token value
-      for (const call of consoleSpy.mock.calls) {
+      // Every console.warn / console.error call must NOT contain the raw token value
+      for (const call of [...consoleWarnSpy.mock.calls, ...consoleErrorSpy.mock.calls]) {
         const serialized = call.map((arg) => JSON.stringify(arg)).join(' ');
         expect(serialized).not.toContain(TOKEN);
       }
 
-      consoleSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
     });
 
     it('logs "token present" phrase (not the token value) when FCM token exists', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
       const TOKEN = 'another-secret-token-xyz789';
 

@@ -149,7 +149,6 @@ export function usePushNotifications(): UsePushNotificationsResult {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── requestPermission ──────────────────────────────────────────────────────

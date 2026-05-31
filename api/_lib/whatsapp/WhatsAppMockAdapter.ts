@@ -20,7 +20,7 @@ export class WhatsAppMockAdapter implements WhatsAppPort {
 
   async sendMessage(message: WhatsAppMessage): Promise<WhatsAppSendResult> {
     // Log to console so developers can observe messages during local dev
-    console.log(`[WhatsApp Mock] TO: ${message.to} | ${message.body}`);
+    console.warn(`[WhatsApp Mock] TO: ${message.to} | ${message.body}`);
 
     // Store a shallow copy so later inbox mutations don't affect stored entries
     this.inbox.push({ ...message });

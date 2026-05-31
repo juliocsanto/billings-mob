@@ -52,16 +52,6 @@ global.fetch = mockFetch;
 import { useInstructorLink } from '../useInstructorLink';
 import { supabase } from '../../lib/supabaseClient';
 
-// ── Helpers to access internal mock functions ─────────────────────────────────
-function getSupabaseSingle() {
-  // Access the mock through the module's from chain
-  const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-  const builder = fromMock.mock.results[fromMock.mock.results.length - 1]?.value as {
-    single: ReturnType<typeof vi.fn>;
-  };
-  return builder?.single;
-}
-
 // ── Session fixtures ───────────────────────────────────────────────────────────
 const SESSION_WITH_TOKEN: Session = {
   access_token: 'mock-token-abc',

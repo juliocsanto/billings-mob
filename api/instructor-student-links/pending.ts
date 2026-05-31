@@ -87,7 +87,7 @@ app.get('/', async (c) => {
 
   if (error) return internalError(c, error);
 
-  const rows = (data ?? []) as RawLinkRow[];
+  const rows = (data ?? []) as unknown as RawLinkRow[];
 
   const links: PendingLinkItem[] = rows.map((row) => ({
     id: row.id,

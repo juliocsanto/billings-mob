@@ -89,6 +89,20 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
+      // TypeScript handles undefined references — no-undef causes false positives on DOM types
+      'no-undef': 'off',
+    },
+  },
+
+  // Test files in src/ — Vitest environment (jsdom + node globals for global.fetch mocks)
+  {
+    files: ['src/**/__tests__/**/*.{ts,tsx}', 'src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+      },
     },
   },
 
