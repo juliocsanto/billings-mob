@@ -11,6 +11,14 @@
  *   - No Authorization header is present
  *   - Token format is invalid (not "Bearer <token>")
  *   - Token is expired or invalid (Supabase getUser() returns error)
+ *
+ * SEC-003 FIX (Sprint 5): role is now read from user_profiles (PostgreSQL, RLS-protected)
+ * instead of user.user_metadata?.role (JWT claim settable by any user at sign-up).
+ * Migration 20260531000010_on_signup_create_profile ensures every new auth.users row
+ * gets a user_profiles row with role='student' via a SECURITY DEFINER trigger.
+ * Promotion to instructor/admin must be performed by an operator — never via client input.
+ * Backward-compat: if user_profiles row is missing (pre-trigger accounts), falls back to
+ * user_metadata.role ?? 'student'.
  */
 import type { Context, Next } from 'hono';
 import { createAuthenticatedClient } from './supabaseClient';
@@ -30,6 +38,10 @@ declare module 'hono' {
 /**
  * Hono middleware that validates the JWT and stores auth context.
  * Mount this on every protected route group.
+ *
+ * Role resolution order (SEC-003):
+ *   1. user_profiles.role (server-side, RLS-protected) — authoritative
+ *   2. user_metadata.role ?? 'student' — fallback for pre-trigger accounts only
  */
 export async function requireAuth(c: Context, next: Next): Promise<Response | void> {
   const authHeader = c.req.header('Authorization');
@@ -53,24 +65,36 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
     );
   }
 
+  // SEC-003 FIX: read role from user_profiles (server-side, RLS-protected) instead of
+  // user_metadata (client-controllable JWT claim). This eliminates the privilege escalation
+  // vector where any user could set role:'instructor' during sign-up.
+  //
+  // RLS policy "user_profiles_own_read" (auth.uid() = id) ensures each user can only
+  // read their own profile row, so the authenticated client is correct here.
+  //
+  // Backward-compat: if user_profiles row is absent (accounts created before the
+  // on_auth_user_created trigger was deployed — migration 20260531000010), fall back to
+  // user_metadata.role ?? 'student'. This is safe: without a profile row the user has
+  // no legitimate instructor privileges regardless.
+  let role: AuthContext['role'] = 'student';
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role) {
+    role = profile.role as AuthContext['role'];
+  } else {
+    // Backward-compat fallback for pre-trigger accounts
+    role = (user.user_metadata?.role ?? 'student') as AuthContext['role'];
+  }
+
   // Store auth context for downstream handlers
   c.set('auth', {
     userId: user.id,
-    // SEC-003 AUDIT NOTE: role is read from user_metadata which Supabase Auth allows users
-    // to set on sign-up. This is a privilege escalation risk if the sign-up flow is not
-    // locked down by a server-side Edge Function.
-    //
-    // CURRENT MITIGATION (Sprint 2): RLS policies limit the blast radius — a user claiming
-    // role=instructor can only see links where they are the instructor_id, and since no
-    // legitimate student has been linked to them, they see no data.
-    //
-    // PLANNED FIX (Sprint 4 — billings-edge): The sign-up Edge Function will use the
-    // service_role key to write user_metadata.role authoritatively, and this middleware
-    // will be updated to read role from user_profiles table (PostgreSQL, RLS-protected)
-    // instead of user_metadata.
-    //
-    // Acceptable risk until Sprint 4: MEDIUM (mitigated by RLS; no data exfiltration path).
-    role: (user.user_metadata?.role ?? 'student') as AuthContext['role'],
+    role,
     jwt,
   });
 

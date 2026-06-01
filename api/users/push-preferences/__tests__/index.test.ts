@@ -27,20 +27,32 @@ const studentHeaders = {
 const mockFrom = vi.fn();
 
 vi.mock('../../../_lib/supabaseClient', () => ({
-  createAuthenticatedClient: vi.fn((jwt: string) => ({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: {
-          user: {
-            id: MOCK_USER_ID,
-            user_metadata: { role: jwt.includes('instructor') ? 'instructor' : 'student' },
+  // SEC-003 FIX: requireAuth reads role from user_profiles table. Route user_profiles
+  // queries to a dedicated chain; route push_preferences queries to mockFrom.
+  createAuthenticatedClient: vi.fn((jwt: string) => {
+    const resolvedRole = jwt.includes('instructor') ? 'instructor' : 'student';
+    return {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: MOCK_USER_ID,
+              user_metadata: {},
+            },
           },
-        },
-        error: null,
-      }),
-    },
-    from: mockFrom,
-  })),
+          error: null,
+        }),
+      },
+      from: (table: string) => {
+        if (table === 'user_profiles') {
+          return {
+            select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { role: resolvedRole }, error: null }) }) }),
+          };
+        }
+        return mockFrom(table);
+      },
+    };
+  }),
   createServiceClient: vi.fn(() => ({ from: vi.fn() })),
 }));
 

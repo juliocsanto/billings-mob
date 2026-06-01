@@ -37,21 +37,36 @@ const studentHeaders = {
 const mockFrom = vi.fn();
 
 vi.mock('../../_lib/supabaseClient', () => ({
+  // SEC-003 FIX: requireAuth now reads role from user_profiles instead of user_metadata.
+  // The authenticated client's from() must handle both:
+  //   - 'user_profiles': return the authoritative role (instructor or student)
+  //   - other tables (instructor_student_links): delegate to mockFrom for per-test setup
   createAuthenticatedClient: vi.fn((jwt: string) => {
     const isInstructor = jwt.includes('instructor');
+    const userId = isInstructor ? MOCK_INSTRUCTOR_ID : MOCK_STUDENT_ID;
+    const resolvedRole = isInstructor ? 'instructor' : 'student';
     return {
       auth: {
         getUser: vi.fn().mockResolvedValue({
           data: {
             user: {
-              id: isInstructor ? MOCK_INSTRUCTOR_ID : MOCK_STUDENT_ID,
-              user_metadata: { role: isInstructor ? 'instructor' : 'student' },
+              id: userId,
+              user_metadata: {},
             },
           },
           error: null,
         }),
       },
-      from: mockFrom,
+      // SEC-003: route 'user_profiles' to the authoritative role lookup;
+      // route everything else to mockFrom (instructor_student_links queries).
+      from: (table: string) => {
+        if (table === 'user_profiles') {
+          return {
+            select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { role: resolvedRole }, error: null }) }) }),
+          };
+        }
+        return mockFrom(table);
+      },
     };
   }),
   createServiceClient: vi.fn(() => ({

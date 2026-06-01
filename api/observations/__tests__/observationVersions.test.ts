@@ -26,6 +26,13 @@ const studentHeaders = {
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 const mockFrom = vi.fn();
 
+// SEC-003: user_profiles chain needed because requireAuth now reads role from user_profiles
+const mockProfileChain = {
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn().mockResolvedValue({ data: { role: 'student' }, error: null }),
+};
+
 vi.mock('../../_lib/supabaseClient', () => ({
   createAuthenticatedClient: vi.fn(() => ({
     auth: {
@@ -80,12 +87,25 @@ function makeVersion(overrides: Record<string, unknown> = {}) {
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
 describe('GET /api/observations/:id/versions', () => {
+  // Helper: set up mockFrom to be table-aware (SEC-003: first call is user_profiles)
+  function setupMock(versionsReturn: { data: unknown; error: unknown }) {
+    const versionsChain = makeVersionsChain(versionsReturn);
+    mockProfileChain.select.mockReturnThis();
+    mockProfileChain.eq.mockReturnThis();
+    mockProfileChain.single.mockResolvedValue({ data: { role: 'student' }, error: null });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'user_profiles') return mockProfileChain;
+      return versionsChain;
+    });
+    return versionsChain;
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('returns 200 with empty array when observation has no versions', async () => {
-    mockFrom.mockReturnValue(makeVersionsChain({ data: [], error: null }));
+    setupMock({ data: [], error: null });
 
     const res = await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
     const body = await res.json() as { data: unknown[]; count: number };
@@ -98,8 +118,7 @@ describe('GET /api/observations/:id/versions', () => {
   it('returns 200 with version list in response', async () => {
     const v1 = makeVersion({ id: 'ver-1', created_at: '2026-05-27T10:00:00Z' });
     const v2 = makeVersion({ id: 'ver-2', created_at: '2026-05-27T14:00:00Z', vector_clock: { [MOCK_USER_ID]: 2 } });
-    // API returns DESC order (most recent first)
-    mockFrom.mockReturnValue(makeVersionsChain({ data: [v2, v1], error: null }));
+    setupMock({ data: [v2, v1], error: null });
 
     const res = await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
     const body = await res.json() as { data: typeof v1[]; count: number };
@@ -118,9 +137,7 @@ describe('GET /api/observations/:id/versions', () => {
   });
 
   it('returns 500 when database query fails', async () => {
-    mockFrom.mockReturnValue(
-      makeVersionsChain({ data: null, error: new Error('DB connection error') })
-    );
+    setupMock({ data: null, error: new Error('DB connection error') });
 
     const res = await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
     expect(res.status).toBe(500);
@@ -128,14 +145,14 @@ describe('GET /api/observations/:id/versions', () => {
 
   it('returns version data with stamp, mucus, bleeding — never relations or notes', async () => {
     const version = makeVersion();
-    mockFrom.mockReturnValue(makeVersionsChain({ data: [version], error: null }));
+    setupMock({ data: [version], error: null });
 
     const res = await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
     const body = await res.json() as { data: Array<{ data: Record<string, unknown> }> };
 
     expect(res.status).toBe(200);
     const versionData = body.data[0].data;
-    // LGPD: relations and notes must NOT appear in version data (stored without them at write time)
+    // LGPD: relations and notes must NOT appear in version data
     expect(versionData).not.toHaveProperty('relations');
     expect(versionData).not.toHaveProperty('notes');
     // Clinical constraint: no fertile/infertile classification in response body
@@ -148,23 +165,23 @@ describe('GET /api/observations/:id/versions', () => {
   });
 
   it('queries observation_versions table with correct observation_id filter', async () => {
-    const chain = makeVersionsChain({ data: [], error: null });
-    mockFrom.mockReturnValue(chain);
+    const chain = setupMock({ data: [], error: null });
 
     await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
 
+    // SEC-003: mockFrom is called twice — first for user_profiles (auth), then observation_versions
     expect(mockFrom).toHaveBeenCalledWith('observation_versions');
     expect(chain.eq).toHaveBeenCalledWith('observation_id', MOCK_OBS_ID);
     expect(chain.order).toHaveBeenCalledWith('created_at', { ascending: false });
   });
 
   it('uses explicit column selection — not SELECT *', async () => {
-    const chain = makeVersionsChain({ data: [], error: null });
-    mockFrom.mockReturnValue(chain);
+    const chain = setupMock({ data: [], error: null });
 
     await app.request(`/${MOCK_OBS_ID}/versions`, { headers: studentHeaders });
 
     expect(chain.select).toHaveBeenCalled();
+    // chain.select is for observation_versions only (user_profiles uses mockProfileChain.select)
     const selectArg = chain.select.mock.calls[0][0] as string;
     expect(selectArg.trim()).not.toBe('*');
     // Must include required fields per API contract

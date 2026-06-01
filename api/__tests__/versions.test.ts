@@ -38,8 +38,11 @@ const mockServiceFrom = vi.fn(() => ({ insert: mockAuditInsert }));
 const mockFrom = vi.fn();
 
 vi.mock('../_lib/supabaseClient', () => ({
+  // SEC-003 FIX: requireAuth reads role from user_profiles table. The 'from' factory must
+  // handle 'user_profiles' queries (role lookup) separately from handler-specific queries.
   createAuthenticatedClient: vi.fn((jwt: string) => {
     const isInstructor = jwt.includes('instructor');
+    const resolvedRole = isInstructor ? 'instructor' : 'student';
     return {
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -48,13 +51,20 @@ vi.mock('../_lib/supabaseClient', () => ({
               id: isInstructor
                 ? 'f47ac10b-58cc-4372-a567-0e02b2c3d480'
                 : 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-              user_metadata: { role: isInstructor ? 'instructor' : 'student' },
+              user_metadata: {},
             },
           },
           error: null,
         }),
       },
-      from: mockFrom,
+      from: (table: string) => {
+        if (table === 'user_profiles') {
+          return {
+            select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { role: resolvedRole }, error: null }) }) }),
+          };
+        }
+        return mockFrom(table);
+      },
     };
   }),
   createServiceClient: vi.fn(() => ({

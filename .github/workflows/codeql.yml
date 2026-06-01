@@ -1,0 +1,47 @@
+name: CodeQL SAST
+
+# CodeQL static analysis — billings-mob (PWA aluna + Hono.js API)
+# Language: javascript-typescript (covers TypeScript and JavaScript)
+# Queries: security-extended (OWASP A01-A10 + CWE top 25)
+# ADR-002: security gate runs on every PR to main/develop.
+# No autobuild — CodeQL detects JS/TS files automatically without a build step.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Weekly scan: Monday 06:00 UTC — catches newly published CVEs / query updates
+    - cron: '0 6 * * 1'
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: CodeQL — javascript-typescript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Initialize the CodeQL tools and select the language + query suite.
+      # security-extended includes all security-and-quality queries plus
+      # additional experimental security queries not in the default suite.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+
+      # No autobuild step — CodeQL resolves JS/TS sources directly from the
+      # filesystem without compilation. Autobuild is unreliable with Vite + Hono
+      # serverless projects that require env vars and Vercel-specific build flags.
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'
