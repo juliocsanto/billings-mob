@@ -31,10 +31,10 @@ export const STAMPS = [
 ];
 
 export const MUCUS = [
-  { id:'opaco',        label:'Opaco / Pegajoso',   desc:'Ponto de mudança — cérvix se abre' },
-  { id:'cremoso',      label:'Cremoso',            desc:'Fertilidade em crescimento' },
-  { id:'transparente', label:'Transparente',       desc:'Alta fertilidade' },
-  { id:'elastico',     label:'Fios elásticos',     desc:'Máxima fertilidade — próximo ao Ápice' },
+  { id:'opaco',        label:'Opaco / Pegajoso',   desc:'Espesso, esbranquiçado ou amarelado' },
+  { id:'cremoso',      label:'Cremoso',            desc:'Consistência pastosa ou leitosa' },
+  { id:'transparente', label:'Transparente',       desc:'Claro, liso ou aquoso' },
+  { id:'elastico',     label:'Fios elásticos',     desc:'Elástico como clara de ovo — próximo ao Ápice' },
 ];
 
 export const BLEEDING = [
@@ -44,6 +44,18 @@ export const BLEEDING = [
   { id:'manchas',  label:'Manchas'  },
 ];
 
+export const SENSACAO = [
+  { id: 'seca',         label: 'Seca',         desc: 'Sem sensação de umidade' },
+  { id: 'molhada',      label: 'Molhada',       desc: 'Sensação de umidade' },
+  { id: 'lubrificante', label: 'Lubrificante',  desc: 'Escorregadia / lubrificada' },
+];
+
+export const TIPO_OBSERVACAO = [
+  { id: 'sangue',  label: 'Sangue'  },
+  { id: 'manchas', label: 'Manchas' },
+  { id: 'outro',   label: 'Outro'   },
+];
+
 export const EMPTY_FORM = {
-  stamp: null, mucus: null, bleeding: null, notes: '', relations: false,
+  stamp: null, mucus: null, bleeding: null, sensacao: null, tipo_observacao: null, notes: '', relations: false,
 };

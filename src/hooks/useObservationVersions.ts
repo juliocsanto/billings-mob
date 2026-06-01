@@ -31,6 +31,8 @@ export interface ObservationVersionData {
   stamp: string;
   mucus: string | null;
   bleeding: string | null;
+  sensacao: string | null;
+  tipo_observacao: string | null;
   // LGPD: 'relations' and 'notes' are NEVER stored in observation_versions.data
   // and therefore NEVER appear here. Do not add these fields.
 }

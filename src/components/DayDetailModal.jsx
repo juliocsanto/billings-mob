@@ -22,7 +22,7 @@
  */
 
 import { useState } from 'react';
-import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from '../constants.js';
+import { C, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
 import { useObservationVersions } from '../hooks/useObservationVersions';
 
 const Lbl = ({ children }) => (
@@ -121,10 +121,9 @@ function VersionHistorySection({ versions, loading }) {
       {expanded && (
         <div>
           {versions.map((version) => {
-            // LGPD: version.data contains ONLY stamp, mucus, bleeding.
+            // LGPD: version.data contains ONLY clinical fields — never relations or notes.
             // 'relations' and 'notes' are intentionally excluded at the DB/API level.
-            // We destructure only the permitted fields to make this constraint explicit.
-            const { stamp, mucus, bleeding } = version.data;
+            const { stamp, mucus, bleeding, sensacao, tipo_observacao } = version.data;
             const stampLabel = getStampLabel(stamp);
 
             return (
@@ -152,10 +151,24 @@ function VersionHistorySection({ versions, loading }) {
                   </div>
                 )}
 
+                {/* Sensação — only rendered if present */}
+                {sensacao && (
+                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                    Sensação: {SENSACAO.find(s => s.id === sensacao)?.label ?? sensacao}
+                  </div>
+                )}
+
                 {/* Bleeding detail — only rendered if present */}
                 {bleeding && (
                   <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
                     Sangramento: {bleeding}
+                  </div>
+                )}
+
+                {/* O que observa — only rendered if present */}
+                {tipo_observacao && (
+                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                    Observação: {TIPO_OBSERVACAO.find(t => t.id === tipo_observacao)?.label ?? tipo_observacao}
                   </div>
                 )}
               </div>
@@ -173,7 +186,15 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
   const isFuture = day.date > todayDate;
 
   const initialForm = day.obs
-    ? { stamp: day.obs.stamp, mucus: day.obs.mucus, bleeding: day.obs.bleeding, notes: day.obs.notes ?? '', relations: day.obs.relations ?? false }
+    ? {
+        stamp: day.obs.stamp,
+        mucus: day.obs.mucus,
+        bleeding: day.obs.bleeding,
+        sensacao: day.obs.sensacao ?? null,
+        tipo_observacao: day.obs.tipo_observacao ?? null,
+        notes: day.obs.notes ?? '',
+        relations: day.obs.relations ?? false,
+      }
     : { ...EMPTY_FORM };
 
   const [form, setForm] = useState(initialForm);
@@ -306,7 +327,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   return (
                     <button
                       key={s.id}
-                      onClick={() => setForm(p => ({ ...p, stamp: s.id, mucus: null, bleeding: null }))}
+                      onClick={() => setForm(p => ({ ...p, stamp: s.id, mucus: null, bleeding: null, sensacao: null, tipo_observacao: null }))}
                       style={{
                         background: active ? s.bg : C.card,
                         border: `1.5px solid ${active ? s.c : C.border}`,
@@ -333,6 +354,19 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
               </div>
             </div>
 
+            {/* Sensação — disponível para todos os stamps */}
+            {form.stamp && (
+              <div style={{ marginBottom: 18 }}>
+                <Lbl>Sensação</Lbl>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {SENSACAO.map(s => (
+                    <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={C.sage}
+                      onClick={() => setForm(p => ({ ...p, sensacao: p.sensacao === s.id ? null : s.id }))} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Bleeding detail */}
             {form.stamp === 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
@@ -346,14 +380,27 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
               </div>
             )}
 
-            {/* Mucus detail */}
-            {form.stamp === 'muco' && (
+            {/* O que você observa — apenas sangramento */}
+            {form.stamp === 'sangramento' && (
+              <div style={{ marginBottom: 18 }}>
+                <Lbl>O que você observa</Lbl>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {TIPO_OBSERVACAO.map(t => (
+                    <Pill key={t.id} label={t.label} active={form.tipo_observacao === t.id} color='#A03030'
+                      onClick={() => setForm(p => ({ ...p, tipo_observacao: p.tipo_observacao === t.id ? null : t.id }))} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mucus detail — todos os stamps exceto sangramento */}
+            {form.stamp && form.stamp !== 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
                 <Lbl>Tipo de muco</Lbl>
                 {MUCUS.map(m => (
                   <button
                     key={m.id}
-                    onClick={() => setForm(p => ({ ...p, mucus: m.id }))}
+                    onClick={() => setForm(p => ({ ...p, mucus: p.mucus === m.id ? null : m.id }))}
                     style={{
                       display: 'block', width: '100%',
                       background: form.mucus === m.id ? C.amberLight : C.card,
@@ -421,7 +468,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
               <textarea
                 value={form.notes}
                 onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                placeholder="Observações adicionais..."
+                placeholder="O que você observa / observações para a instrutora..."
                 style={{
                   width: '100%', background: C.card,
                   border: `1px solid ${C.border}`, borderRadius: 10,

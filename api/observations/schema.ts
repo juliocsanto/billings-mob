@@ -19,6 +19,8 @@ const DateString = z
 export const StampValues = ['sangramento', 'seco', 'muco', 'apice'] as const;
 export const MucusValues = ['opaco', 'cremoso', 'transparente', 'elastico'] as const;
 export const BleedingValues = ['intenso', 'moderado', 'leve', 'manchas'] as const;
+export const SensacaoValues = ['seca', 'molhada', 'lubrificante'] as const;
+export const TipoObservacaoValues = ['sangue', 'manchas', 'outro'] as const;
 
 /**
  * Schema for POST /api/observations — creates a new observation.
@@ -28,6 +30,8 @@ export const CreateObservationSchema = z.object({
   stamp: z.enum(StampValues),
   mucus: z.enum(MucusValues).nullable().optional(),
   bleeding: z.enum(BleedingValues).nullable().optional(),
+  sensacao: z.enum(SensacaoValues).nullable().optional(),
+  tipo_observacao: z.enum(TipoObservacaoValues).nullable().optional(),
   // LGPD sensitive — validated but never logged
   relations: z.boolean(),
   // LGPD sensitive — validated but never logged
@@ -57,6 +61,8 @@ export const PatchObservationSchema = z
     stamp: z.enum(StampValues).optional(),
     mucus: z.enum(MucusValues).nullable().optional(),
     bleeding: z.enum(BleedingValues).nullable().optional(),
+    sensacao: z.enum(SensacaoValues).nullable().optional(),
+    tipo_observacao: z.enum(TipoObservacaoValues).nullable().optional(),
     relations: z.boolean().optional(),
     notes: z.string().max(500).optional(),
     cycle_id: z.string().uuid().nullable().optional(),
@@ -68,7 +74,7 @@ export const PatchObservationSchema = z
   .refine(
     (data) => {
       // At least one domain field must be provided (client_vector_clock alone is not enough)
-      const domainKeys = ['stamp', 'mucus', 'bleeding', 'relations', 'notes', 'cycle_id'];
+      const domainKeys = ['stamp', 'mucus', 'bleeding', 'sensacao', 'tipo_observacao', 'relations', 'notes', 'cycle_id'];
       return domainKeys.some((k) => k in data && data[k as keyof typeof data] !== undefined);
     },
     { message: 'At least one field must be provided for update' }
