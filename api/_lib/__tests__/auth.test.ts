@@ -21,7 +21,7 @@ import { MOCK_USER_ID, MOCK_JWT } from './setup';
 // Use vi.hoisted() so these mocks are available inside the vi.mock() factory,
 // which Vitest hoists before module-level const/let declarations.
 const { mockGetUser, mockProfileSingle } = vi.hoisted(() => {
-  const mockProfileSingle = vi.fn(() =>
+  const mockProfileSingle = vi.fn((): Promise<{ data: { role: string } | null; error: Error | null }> =>
     Promise.resolve({ data: null, error: null })
   );
   const mockGetUser = vi.fn();

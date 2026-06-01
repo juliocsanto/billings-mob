@@ -7,9 +7,9 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
-  // Ignora artefatos de build e dependências
+  // Ignora artefatos de build, dependências e testes E2E (Playwright — parser separado)
   {
-    ignores: ['dist/**', 'dist-api/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'dist-api/**', 'node_modules/**', 'coverage/**', 'e2e/**'],
   },
 
   // Base JS recomendado
