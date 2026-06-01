@@ -6,6 +6,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.6] — 2026-06-01
+
+### Fixed
+
+- `DayDetailModal`: opção "Sem muco" explícita adicionada na seção Tipo de muco para que a mulher possa indicar deliberadamente ausência de secreção — 7 novos testes TDD cobrem: renderização da pill, seleção, toggle (desseleção), ocultação em stamps de sangramento, limpeza ao trocar de stamp, estado padrão e snapshot (#21)
+
+---
+
 ## [1.3.5] — 2026-06-01
 
 ### Added
