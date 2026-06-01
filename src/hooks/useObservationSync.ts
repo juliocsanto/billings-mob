@@ -31,6 +31,8 @@ export interface ObservationData {
   stamp: string;
   mucus: string | null;
   bleeding: string | null;
+  sensacao: string | null;
+  tipo_observacao: string | null;
   notes: string;
   relations: boolean;
   cycle_id?: string;
@@ -85,6 +87,8 @@ export function useObservationSync(session: Session | null) {
               stamp: formData.stamp,
               mucus: formData.mucus,
               bleeding: formData.bleeding,
+              sensacao: formData.sensacao,
+              tipo_observacao: formData.tipo_observacao,
               notes: formData.notes,
               relations: formData.relations,
               client_vector_clock: clientClock,
@@ -125,6 +129,8 @@ export function useObservationSync(session: Session | null) {
               stamp: formData.stamp,
               mucus: formData.mucus,
               bleeding: formData.bleeding,
+              sensacao: formData.sensacao,
+              tipo_observacao: formData.tipo_observacao,
               notes: formData.notes,
               relations: formData.relations,
               cycle_id: formData.cycle_id,
