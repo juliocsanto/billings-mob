@@ -73,6 +73,8 @@ const FORM_DATA: ObservationData = {
   bleeding: null,
   notes: '',
   relations: false,
+  sensacao: null,
+  tipo_observacao: null,
 };
 
 function makeOkResponse(body: object) {
