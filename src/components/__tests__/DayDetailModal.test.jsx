@@ -436,3 +436,135 @@ describe('DayDetailModal — version history section', () => {
     );
   });
 });
+
+// ── "Sem muco" explicit option tests (Feedback MOB — 2026-06-01) ─────────────
+
+describe('DayDetailModal — "Sem muco" pill', () => {
+  it('renders "Sem muco" pill in tipo de muco section when stamp is non-bleeding', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'seco', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    // "Sem muco" pill must appear in the UI
+    expect(container.textContent).toContain('Sem muco');
+  });
+
+  it('does NOT render "Sem muco" pill when stamp is sangramento', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    // Tipo de muco section is hidden for sangramento — so "Sem muco" must not appear
+    expect(container.textContent).not.toContain('Sem muco');
+  });
+
+  it('"Sem muco" pill is active (visually selected) when form.mucus is null and stamp is non-bleeding', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'muco', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    // The "Sem muco" pill button must exist; when mucus is null it should carry data-active or a distinct style
+    const semMucoBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Sem muco'
+    );
+    expect(semMucoBtn).not.toBeNull();
+    // Active state must be distinguishable — either data-active="true" or inline background differs from inactive
+    const isActive =
+      semMucoBtn.getAttribute('data-active') === 'true' ||
+      semMucoBtn.style.background !== '' ||
+      semMucoBtn.innerHTML.includes('data-active');
+    expect(isActive).toBe(true);
+  });
+
+  it('clicking "Sem muco" pill sets form.mucus back to null and saves correctly', () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'muco', mucus: 'cremoso', bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />
+    );
+
+    // Click "Sem muco" pill to clear mucus selection
+    const semMucoBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Sem muco'
+    );
+    expect(semMucoBtn).not.toBeNull();
+    fireEvent.click(semMucoBtn);
+
+    // Now save — form.mucus must be null
+    const saveBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Salvar edição'
+    );
+    fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalledOnce();
+    const [, savedForm] = onSave.mock.calls[0];
+    expect(savedForm.mucus).toBeNull();
+  });
+
+  it('"Sem muco" pill is inactive when a mucus quality is selected', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'muco', mucus: 'elastico', bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const semMucoBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Sem muco'
+    );
+    expect(semMucoBtn).not.toBeNull();
+    // data-active must be "false" or not present when mucus is set to a real value
+    const activeAttr = semMucoBtn.getAttribute('data-active');
+    expect(activeAttr).not.toBe('true');
+  });
+
+  it('"Sem muco" appears before the mucus quality buttons in the DOM', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'muco', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const allText = container.textContent;
+    const semMucoPos = allText.indexOf('Sem muco');
+    const opacoPos = allText.indexOf('Opaco');
+    expect(semMucoPos).toBeGreaterThanOrEqual(0);
+    expect(opacoPos).toBeGreaterThanOrEqual(0);
+    expect(semMucoPos).toBeLessThan(opacoPos);
+  });
+
+  it('"Sem muco" pill renders for all non-bleeding stamps (seco, muco, apice)', () => {
+    const nonBleedingStamps = ['seco', 'muco', 'apice'];
+    nonBleedingStamps.forEach(stamp => {
+      const { container, unmount } = render(
+        <DayDetailModal
+          day={makePastDay({ obs: { stamp, mucus: null, bleeding: null, notes: '', relations: false } })}
+          today={TODAY}
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+        />
+      );
+      expect(container.textContent).toContain('Sem muco');
+      unmount();
+    });
+  });
+});

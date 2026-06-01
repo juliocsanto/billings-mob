@@ -35,7 +35,7 @@ const Lbl = ({ children }) => (
 );
 
 const Pill = ({ label, active, color, onClick }) => (
-  <button onClick={onClick} style={{
+  <button onClick={onClick} data-active={active ? 'true' : 'false'} style={{
     background: active ? `${color}22` : C.card,
     border: `1.5px solid ${active ? color : C.border}`,
     borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 500,
@@ -397,6 +397,14 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {form.stamp && form.stamp !== 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
                 <Lbl>Tipo de muco</Lbl>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <Pill
+                    label="Sem muco"
+                    active={form.mucus === null}
+                    color={C.sage}
+                    onClick={() => setForm(p => ({ ...p, mucus: null }))}
+                  />
+                </div>
                 {MUCUS.map(m => (
                   <button
                     key={m.id}
