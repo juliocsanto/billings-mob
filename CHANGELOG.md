@@ -6,6 +6,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.5] — 2026-06-01
+
+### Added
+
+- `sensacao` field on the `observations` table — values: `seca`, `molhada`, `lubrificante`. Full-stack: SQL migration (`20260601000001_add_sensacao_tipo_observacao.sql`), Zod `SensacaoValues` enum, API `GET /api/observations`, `POST /api/observations`, and `PATCH /api/observations/:id` handlers persist and return the field, `ObservationData` interface updated in `useObservationSync` and `useObservationVersions` hooks, `DayDetailModal` renders the Sensação section for all observation stamps
+- `tipo_observacao` field on the `observations` table — values: `sangue`, `manchas`, `outro`. Full-stack: same migration, Zod `TipoObservacaoValues` enum, API handlers updated, `DayDetailModal` renders "O que você observa" for bleeding stamps and "Tipo de muco" for non-bleeding stamps
+- `SENSACAO` and `TIPO_OBSERVACAO` constants in `src/constants.js`
+
+### Changed
+
+- `MUCUS` constant descriptions updated to clinically precise language aligned with the Billings Ovulation Method — neutral terminology replaces prior imprecise descriptions
+
+---
+
 ## [1.3.4] — 2026-06-01
 
 ### Added
