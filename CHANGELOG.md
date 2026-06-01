@@ -6,6 +6,23 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.4] — 2026-06-01
+
+### Added
+- CodeQL SAST workflow (`.github/workflows/codeql.yml`) — javascript-typescript, security-extended queries, weekly schedule
+- Playwright E2E test suite: 12 golden-path scenarios across 4 spec files (auth, observation, link-instructor, notification-preferences)
+
+### Security
+- **SEC-003 (CVSS 8.8 → 0.0):** `requireAuth` middleware now reads role from `user_profiles` (PostgreSQL, RLS-protected) instead of `user_metadata` (client-settable JWT claim)
+- Migration `20260531000010_on_signup_create_profile.sql`: `handle_new_user()` SECURITY DEFINER trigger assigns `role='student'` to every new `auth.users` row
+- 10 test files updated to use table-aware Supabase mock pattern (user_profiles + domain table)
+
+### Fixed
+- CI TypeCheck: `auth.test.ts` mock explicit return type annotation (TS2322)
+- CI Lint: `e2e/**` added to ESLint global ignores (Playwright specs parsed without TypeScript parser)
+
+---
+
 ## [1.3.3] — 2026-05-31
 
 ### Fixed
