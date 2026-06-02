@@ -194,6 +194,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         tipo_observacao: day.obs.tipo_observacao ?? null,
         notes: day.obs.notes ?? '',
         relations: day.obs.relations ?? false,
+        observacao_descricao: day.obs.observacao_descricao ?? null,
       }
     : { ...EMPTY_FORM };
 
@@ -390,6 +391,26 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                       onClick={() => setForm(p => ({ ...p, tipo_observacao: p.tipo_observacao === t.id ? null : t.id }))} />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Descreva o que você vê — campo livre, apenas sangramento, NÃO é LGPD-sensível */}
+            {form.stamp === 'sangramento' && (
+              <div style={{ marginBottom: 18 }}>
+                <Lbl>Descreva o que você vê</Lbl>
+                <textarea
+                  data-testid="observacao-descricao"
+                  value={form.observacao_descricao ?? ''}
+                  onChange={e => setForm(p => ({ ...p, observacao_descricao: e.target.value || null }))}
+                  placeholder="Ex: fluxo com muco elástico, coloração rosada..."
+                  maxLength={500}
+                  style={{
+                    width: '100%', background: C.card,
+                    border: `1px solid ${C.border}`, borderRadius: 10,
+                    padding: '10px 14px', fontSize: 13, color: C.text,
+                    minHeight: 64, boxSizing: 'border-box', outline: 'none', lineHeight: 1.6,
+                  }}
+                />
               </div>
             )}
 
