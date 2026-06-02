@@ -6,6 +6,21 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] — 2026-06-02
+
+### Added
+
+- Sentry React SDK (`@sentry/react`) integrado em `src/main.jsx` — captura de erros no PWA com `lgpdBeforeSend` e `lgpdBeforeBreadcrumb` que removem campos clínicos e de identificação pessoal antes de qualquer transmissão ao Sentry
+- Sentry Node SDK (`@sentry/node`) integrado em `api/_lib/errorHandler.ts` — captura de exceções da API Hono.js com a mesma política LGPD de `beforeSend`
+- `@sentry/vite-plugin` adicionado em `vite.config.js` para geração de source maps em builds de CI (ativado condicionalmente via `SENTRY_AUTH_TOKEN`); entry `*.map` adicionada ao `.gitignore` como medida de segurança
+- Placeholders `VITE_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_AUTH_TOKEN` adicionados ao `.env.example`; consulte `docs/runbooks/sentry-setup.md` para instruções de ativação no Vercel
+
+### Security
+
+- NC-02 ISO 27001:2022 (Não-Conformidade MAIOR): lacuna de monitoramento em produção resolvida — rastreamento de erros via Sentry agora disponível no PWA billings-mob e na camada de API Hono.js; campos `notes`, `observacao_descricao`, `fcm_token` e padrões de e-mail são redactados pelo scrubber LGPD antes de qualquer envio ao Sentry
+
+---
+
 ## [1.3.8] — 2026-06-01
 
 ### Added
