@@ -6,6 +6,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.8] — 2026-06-01
+
+### Added
+
+- Campo `observacao_descricao` (texto livre, até 500 caracteres) no `DayDetailModal` exibido exclusivamente para o stamp de sangramento, permitindo que a mulher descreva livremente o que observa (data-testid `observacao-descricao`)
+- Migration `20260601000002_add_observacao_descricao.sql`: coluna `observacao_descricao text` (nullable) adicionada à tabela `observations`; campo incluído nos schemas Zod `CreateObservationSchema` e `PatchObservationSchema`
+- 14 cenários Playwright E2E em `e2e/day-detail-modal-combinations.spec.ts` cobrindo combinações de sensação + tipo de muco + campo de descrição livre por stamp (grupos A: seco/muco/ápice; B: sangramento; C: ápice com lubrificante+transparente)
+
+---
+
 ## [1.3.7] — 2026-06-01
 
 ### Fixed
