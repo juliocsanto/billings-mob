@@ -6,6 +6,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.7] — 2026-06-01
+
+### Fixed
+
+- PWA: registrar `onNeedRefresh` no Service Worker para recarregar automaticamente a página ao receber novo deploy — usuárias agora recebem atualizações sem precisar fazer hard refresh manual (#22)
+
+---
+
 ## [1.3.6] — 2026-06-01
 
 ### Fixed
