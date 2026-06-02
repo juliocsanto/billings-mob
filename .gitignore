@@ -6,3 +6,10 @@ dist
 .claude/
 .vercel
 coverage/
+
+# Source maps — generated only in CI when SENTRY_AUTH_TOKEN is set.
+# The sentryVitePlugin deletes them after upload (filesToDeleteAfterUpload).
+# This entry is a safety net so .map files never reach the repo even if
+# the plugin fails to delete them.
+*.map
+
