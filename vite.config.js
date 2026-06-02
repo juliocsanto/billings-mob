@@ -2,6 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { VitePWA } from 'vite-plugin-pwa';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+
+// Sentry source maps upload is only active in CI/production builds
+// where SENTRY_AUTH_TOKEN is set as a GitHub Secret / Vercel env var.
+// In local dev (no token) the sentryVitePlugin is excluded entirely —
+// builds remain fast and source maps are not generated.
+const hasSentryToken = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 export default defineConfig({
   plugins: [
@@ -95,7 +102,34 @@ export default defineConfig({
         enabled: false, // disable in dev to avoid interfering with HMR
       },
     }),
+    // Sentry vite plugin — uploads source maps after each production build.
+    // Must be the last plugin so Rollup chunk hashes are already final.
+    // Plugin is excluded when SENTRY_AUTH_TOKEN is absent (local dev, PR previews).
+    ...(hasSentryToken
+      ? [
+          sentryVitePlugin({
+            org: process.env.SENTRY_ORG,
+            project: process.env.SENTRY_PROJECT ?? 'billings-mob',
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            // Upload source maps for JS assets only — never .map files via CDN
+            sourcemaps: {
+              assets: './dist/**',
+              ignore: ['node_modules'],
+              // Delete local source maps after upload so they are never served
+              filesToDeleteAfterUpload: './dist/**/*.map',
+            },
+          }),
+        ]
+      : []),
   ],
+
+  build: {
+    // Source maps are generated only when Sentry will upload them.
+    // Without the auth token, no .map files are produced — avoids accidental
+    // exposure of source code through public CDN.
+    sourcemap: hasSentryToken,
+  },
+
   base: '/',
   define: { global: 'globalThis' },
   optimizeDeps: {
