@@ -57,5 +57,5 @@ export const TIPO_OBSERVACAO = [
 ];
 
 export const EMPTY_FORM = {
-  stamp: null, mucus: null, bleeding: null, sensacao: null, tipo_observacao: null, notes: '', relations: false,
+  stamp: null, mucus: null, bleeding: null, sensacao: null, tipo_observacao: null, notes: '', relations: false, observacao_descricao: null,
 };

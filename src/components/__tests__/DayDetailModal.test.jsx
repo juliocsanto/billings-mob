@@ -568,3 +568,163 @@ describe('DayDetailModal — "Sem muco" pill', () => {
     });
   });
 });
+
+// ── observacao_descricao field tests (feat: add free-text field for sangramento) ─
+
+describe('DayDetailModal — observacao_descricao field', () => {
+  it('renders "Descreva o que você vê" textarea when stamp is sangramento', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false, observacao_descricao: null } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    expect(container.textContent).toContain('Descreva o que você vê');
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).not.toBeNull();
+  });
+
+  it('does NOT render "Descreva o que você vê" textarea when stamp is seco', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'seco', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).toBeNull();
+  });
+
+  it('does NOT render "Descreva o que você vê" textarea when stamp is muco', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'muco', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).toBeNull();
+  });
+
+  it('does NOT render "Descreva o que você vê" textarea when stamp is apice', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'apice', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).toBeNull();
+  });
+
+  it('typing in observacao_descricao textarea updates form state', () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false, observacao_descricao: null } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />
+    );
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).not.toBeNull();
+    fireEvent.change(textarea, { target: { value: 'fluxo com muco elástico' } });
+
+    // Save and check payload
+    const saveBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Salvar edição'
+    );
+    fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalledOnce();
+    const [, savedForm] = onSave.mock.calls[0];
+    expect(savedForm.observacao_descricao).toBe('fluxo com muco elástico');
+  });
+
+  it('onSave is called with observacao_descricao in payload when stamp is sangramento', () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false, observacao_descricao: 'coloração rosada' } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />
+    );
+    const saveBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent.trim() === 'Salvar edição'
+    );
+    fireEvent.click(saveBtn);
+
+    expect(onSave).toHaveBeenCalledOnce();
+    const [, savedForm] = onSave.mock.calls[0];
+    expect('observacao_descricao' in savedForm).toBe(true);
+    expect(savedForm.observacao_descricao).toBe('coloração rosada');
+  });
+
+  it('initialForm loads observacao_descricao from day.obs.observacao_descricao', () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false, observacao_descricao: 'fluxo intenso marrom' } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />
+    );
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).not.toBeNull();
+    expect(textarea.value).toBe('fluxo intenso marrom');
+  });
+
+  it('EMPTY_FORM has observacao_descricao as null (new day with no obs)', () => {
+    const onSave = vi.fn();
+    const { container } = render(
+      <DayDetailModal
+        day={{ date: PAST_DATE, n: 5, obs: null }}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={onSave}
+      />
+    );
+    // Select sangramento stamp so the textarea appears
+    const buttons = container.querySelectorAll('button');
+    const sangramentoBtn = Array.from(buttons).find(b => b.textContent.includes('Sangramento'));
+    fireEvent.click(sangramentoBtn);
+
+    const textarea = container.querySelector('textarea[data-testid="observacao-descricao"]');
+    expect(textarea).not.toBeNull();
+    // When loaded from EMPTY_FORM, value should be empty string (null rendered as '')
+    expect(textarea.value).toBe('');
+  });
+
+  it('observacao_descricao textarea appears below "O que você observa" pills and above notes field', () => {
+    const { container } = render(
+      <DayDetailModal
+        day={makePastDay({ obs: { stamp: 'sangramento', mucus: null, bleeding: null, notes: '', relations: false } })}
+        today={TODAY}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+    const allText = container.textContent;
+    const tipoObservacaoPos = allText.indexOf('O que você observa');
+    const descrPos = allText.indexOf('Descreva o que você vê');
+    const notesPos = allText.indexOf('Notas para a instrutora');
+
+    expect(tipoObservacaoPos).toBeGreaterThanOrEqual(0);
+    expect(descrPos).toBeGreaterThanOrEqual(0);
+    expect(notesPos).toBeGreaterThanOrEqual(0);
+    expect(tipoObservacaoPos).toBeLessThan(descrPos);
+    expect(descrPos).toBeLessThan(notesPos);
+  });
+});

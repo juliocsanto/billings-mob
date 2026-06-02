@@ -37,6 +37,8 @@ export const CreateObservationSchema = z.object({
   // LGPD sensitive — validated but never logged
   notes: z.string().max(500).optional().default(''),
   cycle_id: z.string().uuid().optional(),
+  // Clinical observation text for sangramento — not LGPD-sensitive
+  observacao_descricao: z.string().max(500).nullable().optional(),
 });
 
 export type CreateObservationInput = z.infer<typeof CreateObservationSchema>;
@@ -66,6 +68,8 @@ export const PatchObservationSchema = z
     relations: z.boolean().optional(),
     notes: z.string().max(500).optional(),
     cycle_id: z.string().uuid().nullable().optional(),
+    // Clinical observation text for sangramento — not LGPD-sensitive
+    observacao_descricao: z.string().max(500).nullable().optional(),
     // ADR-004: client sends the clock it had when it last read this record.
     // Server uses this to detect concurrent edits (not the newly-incremented clock).
     client_vector_clock: z.record(z.string(), z.number()).optional(),
@@ -74,7 +78,7 @@ export const PatchObservationSchema = z
   .refine(
     (data) => {
       // At least one domain field must be provided (client_vector_clock alone is not enough)
-      const domainKeys = ['stamp', 'mucus', 'bleeding', 'sensacao', 'tipo_observacao', 'relations', 'notes', 'cycle_id'];
+      const domainKeys = ['stamp', 'mucus', 'bleeding', 'sensacao', 'tipo_observacao', 'relations', 'notes', 'cycle_id', 'observacao_descricao'];
       return domainKeys.some((k) => k in data && data[k as keyof typeof data] !== undefined);
     },
     { message: 'At least one field must be provided for update' }
