@@ -284,7 +284,7 @@ describe('DayDetailModal — version history section', () => {
       />
     );
 
-    expect(container.textContent).toContain('Histórico de edições');
+    expect(container.textContent).toContain('Histórico de versões');
   });
 
   it('renders stamp label for each version', () => {

@@ -23,6 +23,32 @@ export const C = {
   shadow:      'rgba(44,26,16,0.12)',
 };
 
+/**
+ * DS — Wise-inspired design system tokens (Sprint 6.5)
+ * Use these for all new or redesigned components.
+ * Legacy C tokens remain for backwards compatibility with untouched components.
+ */
+export const DS = {
+  // Palette
+  primary:    '#37517E',
+  secondary:  '#2EC4B6',
+  bg:         '#F7F8FA',
+  surface:    '#FFFFFF',
+  textMain:   '#1A2B4A',
+  textSec:    '#6B7280',
+  border:     '#E5E7EB',
+  success:    '#10B981',
+  warning:    '#F59E0B',
+  error:      '#EF4444',
+  // Shape & shadow tokens
+  radiusCard:   8,
+  radiusBtn:    24,
+  radiusInput:  8,
+  shadowCard:   '0 1px 3px rgba(0,0,0,0.08)',
+  shadowModal:  '0 4px 24px rgba(26,43,74,0.18)',
+  shadowFAB:    '0 4px 16px rgba(55,81,126,0.4)',
+};
+
 export const STAMPS = [
   { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',          c:'#A03030', bg:'#F5E8E8', border:'#D4A0A0' },
   { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',      c:'#2E6040', bg:'#E4F0E8', border:'#7AB498' },

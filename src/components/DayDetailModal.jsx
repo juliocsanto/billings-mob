@@ -22,13 +22,13 @@
  */
 
 import { useState } from 'react';
-import { C, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
+import { C, DS, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
 import { useObservationVersions } from '../hooks/useObservationVersions';
 
 const Lbl = ({ children }) => (
   <div style={{
     fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-    color: C.textMuted, marginBottom: 8,
+    color: DS.textSec, marginBottom: 8,
   }}>
     {children}
   </div>
@@ -36,10 +36,10 @@ const Lbl = ({ children }) => (
 
 const Pill = ({ label, active, color, onClick }) => (
   <button onClick={onClick} data-active={active ? 'true' : 'false'} style={{
-    background: active ? `${color}22` : C.card,
-    border: `1.5px solid ${active ? color : C.border}`,
-    borderRadius: 20, padding: '6px 14px', fontSize: 12, fontWeight: 500,
-    color: active ? color : C.textSec, cursor: 'pointer', fontFamily: 'inherit',
+    background: active ? DS.primary : DS.bg,
+    border: `1.5px solid ${active ? DS.primary : DS.border}`,
+    borderRadius: DS.radiusBtn, padding: '6px 14px', fontSize: 12, fontWeight: 500,
+    color: active ? DS.surface : DS.textSec, cursor: 'pointer', fontFamily: 'inherit',
     transition: 'all 0.15s',
   }}>
     {label}
@@ -99,7 +99,7 @@ function VersionHistorySection({ versions, loading }) {
   return (
     <div
       data-testid="version-history"
-      style={{ marginTop: 20, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}
+      style={{ marginTop: 20, borderTop: `1px solid ${DS.border}`, paddingTop: 16 }}
     >
       {/* Collapsible header */}
       <button
@@ -110,10 +110,10 @@ function VersionHistorySection({ versions, loading }) {
           cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.textMuted }}>
-          Histórico de edições
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.primary }}>
+          Histórico de versões
         </div>
-        <span style={{ fontSize: 12, color: C.textMuted }}>
+        <span style={{ fontSize: 12, color: DS.textSec }}>
           {expanded ? '▲' : '▼'}
         </span>
       </button>
@@ -234,18 +234,18 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
       onClick={handleBackdropClick}
       style={{
         position: 'fixed', inset: 0, zIndex: 50,
-        background: 'rgba(36,20,8,0.45)',
+        background: 'rgba(26,43,74,0.5)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}
     >
       <div style={{
-        background: C.bg,
-        borderRadius: '20px 20px 0 0',
+        background: DS.surface,
+        borderRadius: '24px 24px 0 0',
         width: '100%', maxWidth: 430,
         maxHeight: '90vh',
         overflowY: 'auto',
         padding: '0 0 32px',
-        boxShadow: '0 -4px 32px rgba(36,20,8,0.18)',
+        boxShadow: DS.shadowModal,
       }}>
         {/* Handle bar */}
         <div style={{
@@ -253,35 +253,36 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         }}>
           <div style={{
             width: 40, height: 4, borderRadius: 2,
-            background: C.border,
+            background: DS.border,
           }} />
         </div>
 
         {/* Header */}
         <div style={{
           padding: '16px 22px 14px',
-          borderBottom: `1px solid ${C.border}`,
+          borderBottom: `1px solid ${DS.border}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         }}>
           <div>
             <div style={{
               fontFamily: 'Cormorant Garamond, serif',
-              fontSize: 20, color: C.text, textTransform: 'capitalize',
+              fontSize: 20, color: DS.textMain, textTransform: 'capitalize',
             }}>
               {dateLabel}
             </div>
-            <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
               Dia {day.n} do ciclo
-              {isToday && <span style={{ color: C.terra, fontWeight: 700 }}> · Hoje</span>}
-              {isPast && <span style={{ color: C.textMuted }}> · Edição de registro passado</span>}
-              {isFuture && <span style={{ color: C.textMuted }}> · Dia futuro</span>}
+              {isToday && <span style={{ color: DS.primary, fontWeight: 700 }}> · Hoje</span>}
+              {isPast && <span style={{ color: DS.textSec }}> · Edição de registro passado</span>}
+              {isFuture && <span style={{ color: DS.textSec }}> · Dia futuro</span>}
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Fechar modal"
             style={{
               background: 'none', border: 'none', fontSize: 20,
-              color: C.textMuted, cursor: 'pointer', padding: '0 0 0 12px',
+              color: DS.textSec, cursor: 'pointer', padding: '0 0 0 12px',
               lineHeight: 1,
             }}
           >
@@ -291,7 +292,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
 
         {/* Future day: read-only message */}
         {isFuture ? (
-          <div style={{ padding: '32px 22px', textAlign: 'center', color: C.textMuted, fontStyle: 'italic', fontSize: 13 }}>
+          <div style={{ padding: '32px 22px', textAlign: 'center', color: DS.textSec, fontStyle: 'italic', fontSize: 13 }}>
             Este dia ainda não chegou. Registre suas observações quando chegar.
           </div>
         ) : (
@@ -299,21 +300,21 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Save success */}
             {saved && (
               <div style={{
-                background: C.sageLight, border: `1px solid ${C.sageBorder}`,
-                borderRadius: 10, padding: '10px 14px', marginBottom: 16,
+                background: '#D1FAE5', border: `1px solid ${DS.success}`,
+                borderRadius: DS.radiusCard, padding: '10px 14px', marginBottom: 16,
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                <span style={{ color: C.sage }}>✓</span>
-                <span style={{ fontSize: 13, color: C.sage }}>Observação salva</span>
+                <span style={{ color: DS.success }}>✓</span>
+                <span style={{ fontSize: 13, color: DS.success }}>Observação salva</span>
               </div>
             )}
 
             {/* Past-day notice */}
             {isPast && (
               <div style={{
-                background: C.amberLight, border: `1px solid ${C.amberBorder}`,
-                borderRadius: 10, padding: '10px 14px', marginBottom: 16,
-                fontSize: 12, color: C.textSec, lineHeight: 1.6,
+                background: '#FEF3C7', border: `1px solid ${DS.warning}`,
+                borderRadius: DS.radiusCard, padding: '10px 14px', marginBottom: 16,
+                fontSize: 12, color: DS.textMain, lineHeight: 1.6,
               }}>
                 Você está editando um registro passado. As alterações substituem o registro original.
               </div>
@@ -330,25 +331,26 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                       key={s.id}
                       onClick={() => setForm(p => ({ ...p, stamp: s.id, mucus: null, bleeding: null, sensacao: null, tipo_observacao: null }))}
                       style={{
-                        background: active ? s.bg : C.card,
-                        border: `1.5px solid ${active ? s.c : C.border}`,
-                        borderRadius: 12, padding: '12px 12px',
+                        background: active ? DS.primary : DS.bg,
+                        border: `1.5px solid ${active ? DS.primary : DS.border}`,
+                        borderRadius: DS.radiusCard, padding: '12px 12px',
                         textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
                         transition: 'all 0.2s',
+                        boxShadow: active ? DS.shadowCard : 'none',
                       }}
                     >
                       <div style={{
                         width: 28, height: 28, borderRadius: '50%',
-                        background: active ? C.white : s.bg,
-                        border: `1.5px solid ${s.c}`,
+                        background: active ? DS.surface : s.bg,
+                        border: `1.5px solid ${active ? DS.primary : s.c}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 15, color: s.c, marginBottom: 8,
+                        fontSize: 15, color: active ? DS.primary : s.c, marginBottom: 8,
                         fontFamily: 'Georgia, serif', fontWeight: 700,
                       }}>
                         {s.sym}
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? s.c : C.text }}>{s.label}</div>
-                      <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{s.sub}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: active ? DS.surface : DS.textMain }}>{s.label}</div>
+                      <div style={{ fontSize: 11, color: active ? 'rgba(255,255,255,0.8)' : DS.textSec, marginTop: 2 }}>{s.sub}</div>
                     </button>
                   );
                 })}
@@ -405,9 +407,9 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   placeholder="Ex: fluxo com muco elástico, coloração rosada..."
                   maxLength={500}
                   style={{
-                    width: '100%', background: C.card,
-                    border: `1px solid ${C.border}`, borderRadius: 10,
-                    padding: '10px 14px', fontSize: 13, color: C.text,
+                    width: '100%', background: DS.bg,
+                    border: `1.5px solid ${DS.border}`, borderRadius: DS.radiusInput,
+                    padding: '10px 14px', fontSize: 13, color: DS.textMain,
                     minHeight: 64, boxSizing: 'border-box', outline: 'none', lineHeight: 1.6,
                   }}
                 />
@@ -422,7 +424,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   <Pill
                     label="Sem muco"
                     active={form.mucus === null}
-                    color={C.sage}
+                    color={DS.primary}
                     onClick={() => setForm(p => ({ ...p, mucus: null }))}
                   />
                 </div>
@@ -432,15 +434,15 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                     onClick={() => setForm(p => ({ ...p, mucus: p.mucus === m.id ? null : m.id }))}
                     style={{
                       display: 'block', width: '100%',
-                      background: form.mucus === m.id ? C.amberLight : C.card,
-                      border: `1px solid ${form.mucus === m.id ? C.amber : C.border}`,
-                      borderRadius: 10, padding: '10px 14px', textAlign: 'left',
+                      background: form.mucus === m.id ? DS.primary : DS.bg,
+                      border: `1.5px solid ${form.mucus === m.id ? DS.primary : DS.border}`,
+                      borderRadius: DS.radiusCard, padding: '10px 14px', textAlign: 'left',
                       cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6,
                       transition: 'all 0.15s',
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 700, color: form.mucus === m.id ? C.amber : C.text }}>{m.label}</div>
-                    <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{m.desc}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: form.mucus === m.id ? DS.surface : DS.textMain }}>{m.label}</div>
+                    <div style={{ fontSize: 11, color: form.mucus === m.id ? 'rgba(255,255,255,0.8)' : DS.textSec, marginTop: 2 }}>{m.desc}</div>
                   </button>
                 ))}
               </div>
@@ -449,15 +451,15 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Apex info */}
             {form.stamp === 'apice' && (
               <div style={{
-                background: C.terraLight, border: `1px solid ${C.terraBorder}`,
-                borderRadius: 12, padding: '12px 14px', marginBottom: 18,
+                background: '#FEF3C7', border: `1px solid ${DS.warning}`,
+                borderRadius: DS.radiusCard, padding: '12px 14px', marginBottom: 18,
               }}>
-                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: C.terra, marginBottom: 4, fontStyle: 'italic' }}>
+                <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: DS.warning, marginBottom: 4, fontStyle: 'italic' }}>
                   Ápice marcado
                 </div>
-                <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.7 }}>
+                <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.7 }}>
                   Último dia de sensação lubrificante ou escorregadia.<br />
-                  <span style={{ color: C.textMuted }}>Informe sua instrutora certificada.</span>
+                  <span style={{ color: DS.textSec }}>Informe sua instrutora certificada.</span>
                 </div>
               </div>
             )}
@@ -469,23 +471,23 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 onClick={() => setForm(p => ({ ...p, relations: !p.relations }))}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  background: form.relations ? C.roseLight : C.card,
-                  border: `1.5px solid ${form.relations ? C.rose : C.border}`,
-                  borderRadius: 12, padding: '10px 14px',
+                  background: form.relations ? '#FEE2E2' : DS.bg,
+                  border: `1.5px solid ${form.relations ? DS.error : DS.border}`,
+                  borderRadius: DS.radiusCard, padding: '10px 14px',
                   cursor: 'pointer', fontFamily: 'inherit', width: '100%',
                   textAlign: 'left', transition: 'all 0.2s',
                 }}
               >
                 <div style={{
                   width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  background: form.relations ? C.rose : 'transparent',
-                  border: `1.5px solid ${form.relations ? C.rose : C.borderStrong}`,
+                  background: form.relations ? DS.error : 'transparent',
+                  border: `1.5px solid ${form.relations ? DS.error : DS.border}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, color: '#F0E8DC', transition: 'all 0.2s',
+                  fontSize: 11, color: DS.surface, transition: 'all 0.2s',
                 }}>
                   {form.relations ? '♥' : ''}
                 </div>
-                <span style={{ fontSize: 13, color: form.relations ? C.rose : C.text }}>
+                <span style={{ fontSize: 13, color: form.relations ? DS.error : DS.textMain }}>
                   {form.relations ? 'Sim — houve relações' : 'Não houve relações'}
                 </span>
               </button>
@@ -499,9 +501,9 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
                 placeholder="O que você observa / observações para a instrutora..."
                 style={{
-                  width: '100%', background: C.card,
-                  border: `1px solid ${C.border}`, borderRadius: 10,
-                  padding: '10px 14px', fontSize: 13, color: C.text,
+                  width: '100%', background: DS.bg,
+                  border: `1.5px solid ${DS.border}`, borderRadius: DS.radiusInput,
+                  padding: '10px 14px', fontSize: 13, color: DS.textMain,
                   minHeight: 64, boxSizing: 'border-box', outline: 'none', lineHeight: 1.6,
                 }}
               />
@@ -513,16 +515,34 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
               disabled={!form.stamp || saved}
               style={{
                 width: '100%',
-                background: form.stamp && !saved ? C.terra : C.border,
-                color: form.stamp && !saved ? C.white : C.textMuted,
-                border: 'none', borderRadius: 12, padding: '14px',
+                background: form.stamp && !saved ? DS.primary : DS.border,
+                color: form.stamp && !saved ? DS.surface : DS.textSec,
+                border: 'none', borderRadius: DS.radiusBtn, padding: '14px 0',
                 fontSize: 14, fontWeight: 700, letterSpacing: '0.05em',
                 cursor: form.stamp && !saved ? 'pointer' : 'default',
                 fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
+                marginBottom: 10,
               }}
             >
               {saved ? 'Salvo ✓' : isPast ? 'Salvar edição' : 'Salvar observação'}
             </button>
+            {/* Cancel button */}
+            {!saved && (
+              <button
+                onClick={onClose}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: `1.5px solid ${DS.border}`,
+                  color: DS.textMain,
+                  borderRadius: DS.radiusBtn, padding: '14px 0',
+                  fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer', fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
+                }}
+              >
+                Cancelar
+              </button>
+            )}
 
             {/* Version history — only for past and today days, and only when versions exist.
                 LGPD: VersionHistorySection never renders relations or notes.

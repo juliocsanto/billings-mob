@@ -15,8 +15,10 @@
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { DS } from '../constants.js';
 import type { User, Session } from '@supabase/supabase-js';
 
+// Legacy palette kept for non-redesigned bits; DS used for all new/redesigned elements
 const C = {
   bg:          '#DDD3C4',
   surface:     '#D4C9B8',
@@ -52,7 +54,7 @@ export function AuthGate({ children }: AuthGateProps) {
   if (loading) {
     return (
       <div style={{
-        background: C.bg,
+        background: DS.bg,
         height: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -67,14 +69,14 @@ export function AuthGate({ children }: AuthGateProps) {
           style={{
             width: 40,
             height: 40,
-            border: `3px solid ${C.border}`,
-            borderTopColor: C.terra,
+            border: `3px solid ${DS.border}`,
+            borderTopColor: DS.primary,
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
           }}
         />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
-        <div style={{ fontSize: 13, color: C.textMuted }}>Carregando...</div>
+        <div style={{ fontSize: 13, color: DS.textSec }}>Carregando...</div>
       </div>
     );
   }
@@ -130,7 +132,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   return (
     <div style={{
-      background: C.bg,
+      background: DS.bg,
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -142,14 +144,15 @@ export function AuthGate({ children }: AuthGateProps) {
         {/* Logo / heading */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
-            fontFamily: 'Cormorant Garamond, serif',
-            fontSize: 28,
-            color: C.text,
+            fontFamily: 'Lato, sans-serif',
+            fontSize: 24,
+            fontWeight: 700,
+            color: DS.primary,
             marginBottom: 6,
           }}>
-            Billings Grafico
+            Billings Gráfico
           </div>
-          <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
             Registro do Método de Ovulação Billings
           </div>
         </div>
@@ -157,24 +160,26 @@ export function AuthGate({ children }: AuthGateProps) {
         {sent ? (
           /* Success state */
           <div style={{
-            background: C.sageLight,
-            border: `1px solid ${C.sageBorder}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 16,
             padding: '28px 24px',
             textAlign: 'center',
+            boxShadow: DS.shadowCard,
           }}>
-            <div style={{ fontSize: 28, marginBottom: 12, color: C.sage }}>✓</div>
+            <div style={{ fontSize: 28, marginBottom: 12, color: DS.success }}>✓</div>
             <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'Lato, sans-serif',
               fontSize: 18,
-              color: C.sage,
+              fontWeight: 700,
+              color: DS.success,
               marginBottom: 8,
             }}>
               Link enviado
             </div>
-            <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.7 }}>
+            <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.7 }}>
               Verifique seu e-mail —{' '}
-              <strong style={{ color: C.text }}>{email}</strong>
+              <strong style={{ color: DS.textMain }}>{email}</strong>
               <br />
               O link de acesso chega em instantes.
             </div>
@@ -183,11 +188,11 @@ export function AuthGate({ children }: AuthGateProps) {
               style={{
                 marginTop: 20,
                 background: 'transparent',
-                border: `1px solid ${C.sageBorder}`,
-                borderRadius: 10,
+                border: `1.5px solid ${DS.border}`,
+                borderRadius: DS.radiusBtn,
                 padding: '9px 20px',
                 fontSize: 12,
-                color: C.sage,
+                color: DS.textMain,
                 cursor: 'pointer',
                 fontFamily: 'Lato, sans-serif',
               }}
@@ -198,20 +203,22 @@ export function AuthGate({ children }: AuthGateProps) {
         ) : (
           /* Login form */
           <div style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 16,
             padding: '28px 24px',
+            boxShadow: DS.shadowCard,
           }}>
             <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'Lato, sans-serif',
               fontSize: 18,
-              color: C.text,
+              fontWeight: 700,
+              color: DS.textMain,
               marginBottom: 6,
             }}>
               Acesse sua conta
             </div>
-            <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 22, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: DS.textSec, marginBottom: 22, lineHeight: 1.6 }}>
               Vamos enviar um link de acesso para o seu e-mail. Nenhuma senha necessária.
             </div>
 
@@ -223,7 +230,7 @@ export function AuthGate({ children }: AuthGateProps) {
                     display: 'block',
                     fontSize: 10,
                     fontWeight: 700,
-                    color: C.textMuted,
+                    color: DS.textSec,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
                     marginBottom: 8,
@@ -239,16 +246,16 @@ export function AuthGate({ children }: AuthGateProps) {
                   placeholder="seu@email.com.br"
                   required
                   autoFocus
-                  onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
-                  onBlur={e => { e.target.style.outline = 'none'; }}
+                  onFocus={e => { (e.target as HTMLInputElement).style.outline = `2px solid ${DS.primary}`; (e.target as HTMLInputElement).style.outlineOffset = '2px'; }}
+                  onBlur={e => { (e.target as HTMLInputElement).style.outline = 'none'; }}
                   style={{
                     width: '100%',
-                    background: '#DDD3C4',
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 10,
+                    background: DS.surface,
+                    border: `1.5px solid ${DS.border}`,
+                    borderRadius: DS.radiusInput,
                     padding: '12px 14px',
                     fontSize: 14,
-                    color: C.text,
+                    color: DS.textMain,
                     boxSizing: 'border-box',
                     fontFamily: 'Lato, sans-serif',
                   }}
@@ -256,15 +263,18 @@ export function AuthGate({ children }: AuthGateProps) {
               </div>
 
               {error && (
-                <div style={{
-                  background: '#E8C8C8',
-                  border: '1px solid #C09090',
-                  borderRadius: 8,
-                  padding: '9px 12px',
-                  fontSize: 12,
-                  color: '#7A2828',
-                  marginBottom: 14,
-                }}>
+                <div
+                  role="alert"
+                  style={{
+                    background: '#FEE2E2',
+                    border: `1px solid ${DS.error}`,
+                    borderRadius: DS.radiusInput,
+                    padding: '9px 12px',
+                    fontSize: 12,
+                    color: DS.error,
+                    marginBottom: 14,
+                  }}
+                >
                   {error}
                 </div>
               )}
@@ -274,10 +284,10 @@ export function AuthGate({ children }: AuthGateProps) {
                 disabled={!email.trim() || submitting}
                 style={{
                   width: '100%',
-                  background: email.trim() && !submitting ? C.terra : C.border,
-                  color: email.trim() && !submitting ? C.white : C.textMuted,
+                  background: email.trim() && !submitting ? DS.primary : DS.border,
+                  color: email.trim() && !submitting ? DS.surface : DS.textSec,
                   border: 'none',
-                  borderRadius: 12,
+                  borderRadius: DS.radiusBtn,
                   padding: '14px',
                   fontSize: 14,
                   fontWeight: 700,
@@ -294,7 +304,7 @@ export function AuthGate({ children }: AuthGateProps) {
             <div style={{
               marginTop: 20,
               fontSize: 11,
-              color: C.textMuted,
+              color: DS.textSec,
               lineHeight: 1.6,
               textAlign: 'center',
               fontStyle: 'italic',
