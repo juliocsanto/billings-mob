@@ -253,17 +253,19 @@ export default function App({ user, session } = {}) {
           </div>
           {disp && <Tag label={phaseMap[disp.id]||disp.label} color={disp.c} bg={disp.bg} border={disp.border}/>}
         </div>
-        <div style={{display:'flex',gap:0}}>
-          {[{id:'hoje',l:'Hoje'},{id:'grafico',l:'Gráfico'},{id:'analise',l:'Análise'},{id:'guia',l:'Guia'},{id:'vinculo',l:'Vínculo'},{id:'notificacoes',l:'Notific.'},{id:'perfil',l:'Perfil'}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{
-              flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
-              fontSize:11,fontWeight:tab===t.id?700:400,
-              color:tab===t.id?DS.primary:DS.textSec,
-              borderBottom:`2px solid ${tab===t.id?DS.primary:'transparent'}`,
-              transition:'all 0.2s',fontFamily:'inherit',
-            }}>{t.l}</button>
-          ))}
-        </div>
+        <nav role="navigation" aria-label="Abas do aplicativo">
+          <div role="tablist" style={{display:'flex',gap:0}}>
+            {[{id:'hoje',l:'Hoje'},{id:'grafico',l:'Gráfico'},{id:'analise',l:'Análise'},{id:'guia',l:'Guia'},{id:'vinculo',l:'Vínculo'},{id:'notificacoes',l:'Notific.'},{id:'perfil',l:'Perfil'}].map(t=>(
+              <button key={t.id} role="tab" aria-selected={tab===t.id} onClick={()=>setTab(t.id)} style={{
+                flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
+                fontSize:11,fontWeight:tab===t.id?700:400,
+                color:tab===t.id?DS.primary:DS.textSec,
+                borderBottom:`2px solid ${tab===t.id?DS.primary:'transparent'}`,
+                transition:'all 0.2s',fontFamily:'inherit',
+              }}>{t.l}</button>
+            ))}
+          </div>
+        </nav>
       </div>
 
       {/* ══ HOJE ══════════════════════════════════════ */}
@@ -832,16 +834,16 @@ export default function App({ user, session } = {}) {
       )}
 
       {/* ══ NAV ══════════════════════════════════════ */}
-      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
-        <div style={{display:'flex',gap:4}}>
+      <nav role="navigation" aria-label="Navegação principal" style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
+        <div role="tablist" style={{display:'flex',gap:4}}>
           {[{id:'hoje',l:'Hoje',i:'◎'},{id:'grafico',l:'Gráfico',i:'⊞'},{id:'analise',l:'Análise',i:'◈'},{id:'guia',l:'Guia',i:'✦'},{id:'vinculo',l:'Vínculo',i:'⊕'},{id:'notificacoes',l:'Notific.',i:'◉'},{id:'perfil',l:'Perfil',i:'○'}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===t.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
+            <button key={t.id} role="tab" aria-selected={tab===t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===t.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
               <span style={{fontSize:16,color:tab===t.id?DS.primary:DS.textSec}}>{t.i}</span>
               <span style={{fontSize:9,color:tab===t.id?DS.primary:DS.textSec,fontWeight:tab===t.id?700:400}}>{t.l}</span>
             </button>
           ))}
         </div>
-      </div>
+      </nav>
 
       {/* ══ DAY DETAIL MODAL ══════════════════════ */}
       {selectedDay && (
