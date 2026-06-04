@@ -6,6 +6,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.1] — 2026-06-04
+
+### Changed
+
+- Design system Wise-inspired aplicado ao PWA: paleta navy (`#1B2B4B`), teal (`#2BBFBF`) e cinza (`#F0F4F8`) definida no objeto `DS` em `src/constants.js` como fonte única de tokens de cor, tipografia e espaçamento
+- `DayDetailModal` redesenhado: overlay navy semitransparente, chips de stamp coloridos por categoria, botões de ação com estilos primário/secundário alinhados ao `DS`
+- Calendário em `App.jsx`: chip teal para o dia atual, chip navy para dias com registro, chip cinza para dias sem registro; botão FAB estilizado com tokens do `DS`
+- Tela de login em `AuthGate.tsx`: cores e estilos de input/botão atualizados para refletir a paleta do design system
+
+---
+
 ## [1.4.0] — 2026-06-02
 
 ### Added
