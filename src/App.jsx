@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
-import { C, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
+import { C, DS, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
 import { loadUserData, saveUserData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
 import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffDays } from './utils/dates.js';
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
@@ -228,28 +228,28 @@ export default function App({ user, session } = {}) {
   const stats    = computeMultiCycleStats({start:cycleStart,obs}, history);
 
   if (!loaded) return (
-    <div style={{background:C.bg,height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Lato,sans-serif',color:C.textMuted}}>
+    <div style={{background:DS.bg,height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Lato,sans-serif',color:DS.textSec}}>
       Carregando...
     </div>
   );
 
   return (
-    <div style={{background:C.bg,minHeight:'100vh',fontFamily:'Lato,sans-serif',color:C.text,maxWidth:430,margin:'0 auto',position:'relative'}}>
+    <div style={{background:DS.bg,minHeight:'100vh',fontFamily:'Lato,sans-serif',color:DS.textMain,maxWidth:430,margin:'0 auto',position:'relative'}}>
 
       {/* Daily reminder banner */}
       {showBanner && (
-        <div style={{background:C.terra,color:C.white,padding:'10px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',animation:'fadeIn 0.3s ease',position:'sticky',top:0,zIndex:30}}>
+        <div style={{background:DS.primary,color:DS.surface,padding:'10px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',animation:'fadeIn 0.3s ease',position:'sticky',top:0,zIndex:30}}>
           <span style={{fontSize:12}}>Não esqueça de anotar suas observações de hoje</span>
-          <button onClick={()=>setShowBanner(false)} style={{background:'none',border:'none',color:C.white,cursor:'pointer',fontSize:16,padding:0}}>✕</button>
+          <button onClick={()=>setShowBanner(false)} style={{background:'none',border:'none',color:DS.surface,cursor:'pointer',fontSize:16,padding:0}}>✕</button>
         </div>
       )}
 
       {/* ── HEADER ─────────────────────────────── */}
-      <div style={{padding:'20px 22px 0',background:C.surface,borderBottom:`1px solid ${C.border}`,position:'sticky',top:showBanner?42:0,zIndex:20}}>
+      <div style={{padding:'20px 22px 0',background:DS.surface,borderBottom:`1px solid ${DS.border}`,boxShadow:DS.shadowCard,position:'sticky',top:showBanner?42:0,zIndex:20}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:14}}>
           <div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:C.text}}>Billings Gráfico</div>
-            <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>Dia {todayN} do ciclo · {new Date(today()+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:DS.textMain,fontWeight:700}}>Billings Gráfico</div>
+            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Dia {todayN} do ciclo · {new Date(today()+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
           </div>
           {disp && <Tag label={phaseMap[disp.id]||disp.label} color={disp.c} bg={disp.bg} border={disp.border}/>}
         </div>
@@ -258,8 +258,8 @@ export default function App({ user, session } = {}) {
             <button key={t.id} onClick={()=>setTab(t.id)} style={{
               flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
               fontSize:11,fontWeight:tab===t.id?700:400,
-              color:tab===t.id?C.terra:C.textMuted,
-              borderBottom:`2px solid ${tab===t.id?C.terra:'transparent'}`,
+              color:tab===t.id?DS.primary:DS.textSec,
+              borderBottom:`2px solid ${tab===t.id?DS.primary:'transparent'}`,
               transition:'all 0.2s',fontFamily:'inherit',
             }}>{t.l}</button>
           ))}
@@ -465,31 +465,36 @@ export default function App({ user, session } = {}) {
               <div style={{overflowX:'auto'}}>
                 <div style={{minWidth:vDays.length*34+80,padding:'0 22px'}}>
                   {[
-                    {key:'n', label:'Dia',   render:d=><div style={{fontSize:10,color:d.date===today()&&!selCycle?C.terra:C.textMuted,fontWeight:d.date===today()&&!selCycle?700:400,textAlign:'center'}}>{d.n}</div>},
-                    {key:'date', label:'Data', render:d=><div style={{fontSize:9,color:C.textMuted,textAlign:'center'}}>{getDay(d.date)}</div>},
+                    {key:'n', label:'Dia',   render:d=><div style={{fontSize:10,color:d.date===today()&&!selCycle?DS.secondary:DS.textSec,fontWeight:d.date===today()&&!selCycle?700:400,textAlign:'center'}}>{d.n}</div>},
+                    {key:'date', label:'Data', render:d=><div style={{fontSize:9,color:DS.textSec,textAlign:'center'}}>{getDay(d.date)}</div>},
                   ].map(row=>(
                     <div key={row.key} style={{display:'flex',alignItems:'center',marginBottom:2}}>
-                      <div style={{width:60,flexShrink:0,fontSize:9,color:C.textMuted}}>{row.label}</div>
+                      <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec}}>{row.label}</div>
                       {vDays.map(d=><div key={d.n} style={{width:32,flexShrink:0}}>{row.render(d)}</div>)}
                     </div>
                   ))}
                   {/* Stamps row — each day circle is clickable (opens DayDetailModal) */}
-                  <div style={{display:'flex',alignItems:'center',marginBottom:6,paddingBottom:6,borderBottom:`1px solid ${C.border}`}}>
-                    <div style={{width:60,flexShrink:0,fontSize:9,color:C.textMuted,fontWeight:600}}>Obs.</div>
+                  <div style={{display:'flex',alignItems:'center',marginBottom:6,paddingBottom:6,borderBottom:`1px solid ${DS.border}`}}>
+                    <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec,fontWeight:600}}>Obs.</div>
                     {vDays.map(d=>{
                       const s=STAMPS.find(x=>x.id===d.obs?.stamp);
                       const isToday=d.date===today()&&!selCycle, isFut=d.date>today()&&!selCycle;
+                      const hasObs = !!s && !isFut;
                       const clickable = !selCycle; // only current cycle is editable
+                      // DS color rules: hoje=secondary/teal, registrado=primary/navy, vazio=border/gray
+                      const chipBg = isFut ? 'transparent' : isToday ? DS.secondary : hasObs ? DS.primary : DS.border;
+                      const chipColor = isFut ? DS.textSec : (isToday || hasObs) ? DS.surface : DS.textSec;
+                      const chipBorder = isFut ? DS.border : isToday ? DS.secondary : hasObs ? DS.primary : DS.border;
                       return (
                         <div key={d.n} style={{width:32,flexShrink:0,display:'flex',justifyContent:'center'}}>
                           <div
                             onClick={clickable ? () => setSelectedDay(d) : undefined}
-                            style={{width:24,height:24,borderRadius:'50%',background:isFut?'transparent':s?s.bg:C.card,
-                              border:`1.5px solid ${isToday?C.terra:isFut?C.border:s?s.c:C.borderStrong}`,
+                            style={{width:24,height:24,borderRadius:'50%',background:chipBg,
+                              border:`1.5px solid ${chipBorder}`,
                               display:'flex',alignItems:'center',justifyContent:'center',
-                              fontFamily:'Georgia,serif',fontSize:12,color:s?s.c:C.textMuted,fontWeight:700,
-                              opacity:isFut?0.2:1,
-                              boxShadow:isToday?`0 0 0 3px ${C.terraLight},0 0 0 4.5px ${C.terra}`:'none',
+                              fontFamily:'Georgia,serif',fontSize:12,color:chipColor,fontWeight:700,
+                              opacity:isFut?0.25:1,
+                              boxShadow:isToday?`0 0 0 2px ${DS.surface},0 0 0 4px ${DS.secondary}`:'none',
                               cursor:clickable?'pointer':'default',
                             }}>
                             {s?s.sym:''}
@@ -827,12 +832,12 @@ export default function App({ user, session } = {}) {
       )}
 
       {/* ══ NAV ══════════════════════════════════════ */}
-      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:C.surface,borderTop:`1px solid ${C.border}`,zIndex:20,padding:'6px 16px 12px'}}>
+      <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
         <div style={{display:'flex',gap:4}}>
           {[{id:'hoje',l:'Hoje',i:'◎'},{id:'grafico',l:'Gráfico',i:'⊞'},{id:'analise',l:'Análise',i:'◈'},{id:'guia',l:'Guia',i:'✦'},{id:'vinculo',l:'Vínculo',i:'⊕'},{id:'notificacoes',l:'Notific.',i:'◉'},{id:'perfil',l:'Perfil',i:'○'}].map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${C.terra}18`:'transparent',border:`1px solid ${tab===t.id?C.terra:C.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
-              <span style={{fontSize:16,color:tab===t.id?C.terra:C.textMuted}}>{t.i}</span>
-              <span style={{fontSize:9,color:tab===t.id?C.terra:C.textMuted,fontWeight:tab===t.id?700:400}}>{t.l}</span>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===t.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
+              <span style={{fontSize:16,color:tab===t.id?DS.primary:DS.textSec}}>{t.i}</span>
+              <span style={{fontSize:9,color:tab===t.id?DS.primary:DS.textSec,fontWeight:tab===t.id?700:400}}>{t.l}</span>
             </button>
           ))}
         </div>
