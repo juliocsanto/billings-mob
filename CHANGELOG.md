@@ -6,6 +6,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.3] - 2026-06-04
+
+### Changed
+- Design System Wise-inspired aplicado em 100% dos componentes: DayDetailModal, App.jsx (todas as abas), AuthGate, LinkInstructorPage, NotificationPreferencesPage
+- 8 novos tokens semânticos: primaryLight/Border, successLight/Border, warningLight/Border, errorLight/Border
+
+### Fixed
+- SELECT * eliminado em api/observations/[id].ts, api/cycles/index.ts, api/observations/versions/index.ts — resolve DT-006
+- DayDetailModal: role="dialog", aria-modal, aria-labelledby, focus trap, Escape handler — WCAG 2.1 AA
+- App.jsx: role="navigation", role="tablist", aria-selected nos botões de aba — WCAG 2.1 AA
+
+### Security
+- Restrição clínica: removida classificação "Fase Fértil" do phaseMap — label neutro "Muco" via fallback (decisão Tech Lead 2026-06-04)
+
+---
+
 ## [1.4.2] — 2026-06-04
 
 ### Fixed
