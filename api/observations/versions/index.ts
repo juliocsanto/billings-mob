@@ -124,7 +124,7 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
   // Fetch the conflicting version record (RLS ensures instructor is linked to this student)
   const { data: conflictVersion, error: fetchErr } = await supabase
     .from('observation_versions')
-    .select('*, observations!inner(id, stamp, mucus, bleeding, vector_clock, version, user_id)')
+    .select('id, observation_id, stamp, mucus_type, sensation, observacao_descricao, vector_clock, created_at, created_by, observations!inner(id, stamp, mucus, bleeding, vector_clock, version, user_id)')
     .eq('id', versionId)
     .eq('conflict_resolved', false)
     .single();

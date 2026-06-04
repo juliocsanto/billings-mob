@@ -53,7 +53,7 @@ app.post('/', zValidator('json', CreateCycleSchema), async (c) => {
       apex_date: body.apex_date ?? null,
       status: 'active',
     })
-    .select()
+    .select('id, user_id, start_date, end_date, apex_date, status, created_at, updated_at')
     .single();
 
   if (error) {
@@ -126,7 +126,7 @@ app.patch('/:id', zValidator('json', PatchCycleSchema), async (c) => {
     .from('cycles')
     .update(body)
     .eq('id', id)
-    .select()
+    .select('id, user_id, start_date, end_date, apex_date, status, created_at, updated_at')
     .single();
 
   if (updateErr || !updated) return internalError(c, updateErr);
