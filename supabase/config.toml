@@ -55,7 +55,7 @@ enabled = false
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
+site_url = "https://billings-web.vercel.app"
 additional_redirect_urls = [
   "http://localhost:5173",
   "http://localhost:5174",

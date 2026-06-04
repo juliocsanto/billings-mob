@@ -115,7 +115,7 @@ app.patch('/:id', zValidator('json', PatchCycleSchema), async (c) => {
 
   const { data: current, error: fetchErr } = await supabase
     .from('cycles')
-    .select('*')
+    .select('id, user_id, start_date, end_date, apex_date, status, cycle_number, created_at, updated_at')
     .eq('id', id)
     .single();
 

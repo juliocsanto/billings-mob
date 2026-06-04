@@ -1,69 +1,134 @@
-# billings-mob — API Backend
+# Billings Grafico — API Backend (billings-mob)
 
-API serverless do sistema Billings Grafico. Expoe os endpoints consumidos pelo PWA da aluna e pelo dashboard da instrutora.
+[![CI](https://github.com/juliocsanto/billings-mob/actions/workflows/ci.yml/badge.svg)](https://github.com/juliocsanto/billings-mob/actions/workflows/ci.yml)
+[![Sentry](https://img.shields.io/badge/monitorado%20por-Sentry-362D59?logo=sentry)](https://sentry.io)
+[![Cobertura de testes](https://img.shields.io/badge/cobertura-%3E80%25-brightgreen)](https://github.com/juliocsanto/billings-mob/actions)
+[![Licenca](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
 
-Producao: https://billings-mob.vercel.app
+API serverless e PWA de suporte ao **Metodo de Ovulacao Billings (MOB)**.
+Producao: **https://billings-mob.vercel.app**
 
-## O que e este repositorio
+---
 
-Este repositorio contem:
+## O que e este projeto
 
-- API Hono.js deployada como Vercel Serverless Functions (diretorio `api/`)
-- PWA legado (diretorio `src/`) — substituido progressivamente pelo billings-web
+O **Billings Grafico** e um sistema digital para apoio ao Metodo de Ovulacao Billings — metodologia certificada pela CENPLAFAM/WOOMB. Ele conecta:
 
-O projeto usa o Metodo de Ovulacao Billings (MOB). A aluna registra observacoes diarias do ciclo; a instrutora acompanha e orienta. A API gerencia Registros diarios, Ciclos, Selos e vinculacoes entre Aluna e Instrutora.
+- **Aluna** — registra observacoes diarias do ciclo (selo, muco, sangramento, sensacao) via PWA mobile-first
+- **Instrutora** — acompanha o progresso da aluna, revisa registros e emite orientacoes clinicas via dashboard web
+
+Este repositorio contem a **API Hono.js** deployada como Vercel Serverless Functions (diretorio `api/`) e o **PWA legado** da aluna (diretorio `src/`, progressivamente substituido).
+
+> **Restricao clinica inviolavel:** O sistema *nunca* classifica automaticamente um dia como fertil ou infertil. Toda interpretacao clinica e competencia exclusiva da instrutora certificada CENPLAFAM/WOOMB.
+
+---
+
+## Para quem e este sistema
+
+| Perfil | Como usa |
+|---|---|
+| Aluna MOB | Registra observacoes diarias pelo PWA no celular |
+| Instrutora CENPLAFAM/WOOMB | Acompanha alunas pelo dashboard web |
+| Desenvolvedor contribuidor | Este README — continue lendo |
+
+---
 
 ## Stack
 
-- Hono.js + TypeScript — framework HTTP para Vercel Serverless Functions
-- Supabase (PostgreSQL + RLS) — banco de dados e autenticacao
-- Zod — validacao de schemas de entrada
-- Vector clock (CRDT) — resolucao de conflitos de versao offline/online (ADR-004)
-- Vercel Serverless Functions — runtime de producao (ADR-007)
+| Componente | Tecnologia |
+|---|---|
+| Framework HTTP | Hono.js + TypeScript (Vercel Serverless Functions) |
+| Banco de dados | Supabase PostgreSQL com Row Level Security (RLS) |
+| Autenticacao | Supabase Auth — JWT + magic link |
+| Validacao | Zod em todas as fronteiras da API |
+| Sync offline | Vector Clock (CRDT simplificado) — ADR-004 |
+| Notificacoes | WhatsApp Cloud API + Mock Adapter (padrao Hexagonal) |
+| Observabilidade | Sentry + UptimeRobot (3 monitores ativos) |
+| Deploy | Vercel Serverless Functions |
+| Testes | Vitest (unit + integration) |
 
-## Endpoints da API
+---
 
-Todos os endpoints exigem header `Authorization: Bearer <jwt>`.
-
-| Metodo | Caminho | Descricao |
-|---|---|---|
-| GET | /api/observations | Lista Registros diarios da Aluna autenticada |
-| POST | /api/observations | Cria novo Registro diario |
-| GET | /api/observations/:id | Retorna Registro diario por ID |
-| PATCH | /api/observations/:id | Atualiza Registro diario (vector clock) |
-| GET | /api/observations/versions | Lista versoes com Conflito de versao aberto |
-| GET | /api/cycles | Lista Ciclos da Aluna |
-| POST | /api/cycles | Cria novo Ciclo |
-| GET | /api/cycles/:id | Retorna Ciclo por ID |
-| PATCH | /api/cycles/:id | Atualiza Ciclo |
-| GET | /api/users/me | Retorna perfil da Aluna ou Instrutora autenticada |
-| POST | /api/instructor-student-links | Vincula Instrutora a Aluna |
-| PATCH | /api/instructor-student-links/:id | Atualiza vinculacao (aceitar/revogar) |
-
-## Variaveis de ambiente
-
-Criar `.env.local` (nunca commitar):
+## Arquitetura resumida
 
 ```
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=xxx
-SUPABASE_ANON_KEY=xxx
+Aluna (PWA mobile)           Instrutora (billings-web)
+       |                              |
+       +----------+  +----------------+
+                  |  |
+         [Vercel Serverless Functions]
+         API Hono.js — /api/*
+                  |
+         [Supabase — Sao Paulo]
+         PostgreSQL + RLS + Auth + Realtime
 ```
 
-No Vercel, configurar as mesmas variaveis em Settings > Environment Variables.
+**Arquitetura em camadas (Clean Architecture):**
 
-## Desenvolvimento local
+```
+api/
+  observations/    — endpoint de registros diarios (POST, GET, PATCH)
+  cycles/          — endpoint de ciclos
+  users/           — perfil do usuario autenticado
+  instructor-student-links/  — vinculacao aluna-instrutora
+  webhooks/        — recepcao de webhooks WhatsApp
+  _lib/
+    vectorClock.ts      — dominio puro: CRDT (sem imports externos)
+    whatsapp/           — Port + Adapters (hexagonal)
+    notifications/      — servico de notificacoes + factory
+    auth.ts             — middleware de autenticacao JWT
+    rateLimit.ts        — rate limiting sliding-window
+    sanitizeAuditData.ts — sanitizacao LGPD antes de logs
+```
 
-Prerequisitos: Node.js 22+, npm.
+Documentacao completa de arquitetura: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+
+---
+
+## Como rodar localmente
+
+### Pre-requisitos
+
+- Node.js 22+
+- npm
+- Conta no Supabase (projeto criado)
+- Vercel CLI: `npm i -g vercel`
+
+### Instalacao
 
 ```bash
 git clone https://github.com/juliocsanto/billings-mob.git
 cd billings-mob
+
+# Dependencias do PWA
 npm install
+
+# Dependencias da API
 cd api && npm install && cd ..
 ```
 
-Para rodar a API localmente via Vercel CLI:
+### Configuracao de ambiente
+
+Copie o template e preencha os valores:
+
+```bash
+cp .env.example .env.local
+```
+
+Variaveis necessarias (obtenha no [Supabase Dashboard](https://app.supabase.com)):
+
+```
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=xxx   # NUNCA exponha no frontend
+SUPABASE_ANON_KEY=xxx
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
+SENTRY_DSN=xxx                  # opcional para dev local
+```
+
+> **Atencao:** Nunca commite `.env.local` ou qualquer arquivo com valores reais. O `.gitignore` ja protege esses arquivos.
+
+### Rodando a API
 
 ```bash
 npx vercel dev
@@ -71,19 +136,54 @@ npx vercel dev
 
 A API estara disponivel em `http://localhost:3000/api/`.
 
-## Testes
+### Rodando os testes
 
 ```bash
 cd api
-npm test
+npm test           # executa todos os testes
+npm run test:coverage  # com relatorio de cobertura
 ```
 
-Os testes de integracao cobrem os 12 cenarios definidos pelo QA (ver `api/__tests__/`).
+---
+
+## Endpoints da API
+
+Todos os endpoints exigem header `Authorization: Bearer <jwt>` (Supabase JWT).
+
+| Metodo | Caminho | Descricao |
+|---|---|---|
+| GET | /api/observations | Lista registros diarios da aluna autenticada |
+| POST | /api/observations | Cria novo registro diario |
+| GET | /api/observations/:id | Retorna registro por ID (com historico de versoes) |
+| PATCH | /api/observations/:id | Atualiza registro (vector clock + conflict detection) |
+| GET | /api/observations/versions | Lista versoes com conflito aberto |
+| GET | /api/cycles | Lista ciclos da aluna |
+| POST | /api/cycles | Cria novo ciclo |
+| GET | /api/users/me | Retorna perfil do usuario autenticado |
+| POST | /api/instructor-student-links | Vincula instrutora a aluna |
+| PATCH | /api/instructor-student-links/:id | Atualiza vinculacao (aceitar/revogar) |
+
+Documentacao OpenAPI: disponivel via `ARCHITECTURE.md` secao 6.
+
+---
+
+## Links uteis
+
+| Recurso | URL |
+|---|---|
+| Producao (API + PWA) | https://billings-mob.vercel.app |
+| Dashboard da instrutora | https://billings-web.vercel.app |
+| Supabase Dashboard | https://app.supabase.com/project/gcwxwrjzbbqkuzcweyut |
+| Sentry (observabilidade) | https://sentry.io |
+| Vercel Dashboard | https://vercel.com/juliocsanto/billings-mob |
+
+---
 
 ## Repositorios relacionados
 
-- Dashboard da instrutora: https://github.com/juliocsanto/billings-web (producao: https://billings-web.vercel.app)
-- Arquitetura completa: `AACHITECTURE.md` neste repositorio
+- **billings-web** (dashboard da instrutora): https://github.com/juliocsanto/billings-web
+
+---
 
 ## Aviso legal
 

@@ -22,6 +22,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { requireAuth } from '../../_lib/auth';
+import { apiRateLimit } from '../../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../../_lib/supabaseClient';
 import { sanitizeForAuditLog } from '../../_lib/sanitizeAuditData';
 import { mergeVectorClocks, type VectorClock } from '../../_lib/vectorClock';
@@ -29,6 +30,8 @@ import { badRequest, forbidden, internalError, notFound } from '../../_lib/error
 
 const app = new Hono();
 
+// Rate limiting (SEC-001) — before auth to limit unauthenticated probing
+app.use('*', apiRateLimit);
 app.use('*', requireAuth);
 
 // ─── Schema ────────────────────────────────────────────────────────────────
@@ -139,10 +142,11 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
       return badRequest(c, 'student_version_id is required when keep is "student"');
     }
 
-    // Fetch the student's version to restore
+    // Fetch the student's version to restore.
+    // `data` column contains the snapshotted observation fields (no relations/notes — sanitized at write time).
     const { data: studentVersion, error: svErr } = await supabase
       .from('observation_versions')
-      .select('*')
+      .select('id, observation_id, vector_clock, data, author_id, author_role, conflict_resolved, resolved_by, resolved_at, created_at')
       .eq('id', body.student_version_id)
       .eq('observation_id', observationId)
       .single();

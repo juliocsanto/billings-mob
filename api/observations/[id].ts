@@ -44,7 +44,22 @@ app.get('/:id', async (c) => {
 
   const { data: observation, error: obsError } = await supabase
     .from('observations')
-    .select('*')
+    .select(`
+      id,
+      date,
+      stamp,
+      mucus,
+      bleeding,
+      sensacao,
+      tipo_observacao,
+      relations,
+      notes,
+      vector_clock,
+      version,
+      cycle_id,
+      created_at,
+      updated_at
+    `)
     .eq('id', id)
     .single();
 
@@ -88,10 +103,27 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
   const supabase = createAuthenticatedClient(auth.jwt);
   const serviceClient = createServiceClient();
 
-  // Fetch current state — RLS ensures the requester has access
+  // Fetch current state — RLS ensures the requester has access.
+  // Explicit column list: relations and notes are needed here because the PATCH
+  // payload may include them, and the version snapshot must preserve them.
   const { data: current, error: fetchError } = await supabase
     .from('observations')
-    .select('*')
+    .select(`
+      id,
+      date,
+      stamp,
+      mucus,
+      bleeding,
+      sensacao,
+      tipo_observacao,
+      relations,
+      notes,
+      vector_clock,
+      version,
+      cycle_id,
+      created_at,
+      updated_at
+    `)
     .eq('id', id)
     .single();
 
