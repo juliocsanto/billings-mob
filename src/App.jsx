@@ -224,7 +224,7 @@ export default function App({ user, session } = {}) {
   const aStamp   = STAMPS.find(s=>s.id===form.stamp);
   const sStamp   = STAMPS.find(s=>s.id===obs[today()]?.stamp);
   const disp     = aStamp || sStamp;
-  const phaseMap = {sangramento:'Menstruação',seco:'PBI',muco:'Fase Fértil',apice:'Ápice'};
+  const phaseMap = {sangramento:'Menstruação',seco:'PBI',apice:'Ápice'};
   const stats    = computeMultiCycleStats({start:cycleStart,obs}, history);
 
   if (!loaded) return (

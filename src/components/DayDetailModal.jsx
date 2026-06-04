@@ -21,7 +21,7 @@
  *   observationId  — UUID da observação no Supabase (opcional; sem id = sem histórico)
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { C, DS, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
 import { useObservationVersions } from '../hooks/useObservationVersions';
 
@@ -185,6 +185,8 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
   const isPast = day.date < todayDate;
   const isFuture = day.date > todayDate;
 
+  const modalRef = useRef(null);
+
   const initialForm = day.obs
     ? {
         stamp: day.obs.stamp,
@@ -200,6 +202,37 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
 
   const [form, setForm] = useState(initialForm);
   const [saved, setSaved] = useState(false);
+
+  // Fix 3 — Focus trap: move focus to first focusable element when modal opens
+  useEffect(() => {
+    const focusable = modalRef.current?.querySelector(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.focus();
+  }, []);
+
+  // Fix 4 + Fix 5 — Tab cycle and Escape key handler
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = modalRef.current?.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
 
   // The JWT is not directly available in this component — the hook handles the null case
   // gracefully (returns versions=[] without fetching). When the parent passes observationId
@@ -238,15 +271,21 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}
     >
-      <div style={{
-        background: DS.surface,
-        borderRadius: '24px 24px 0 0',
-        width: '100%', maxWidth: 430,
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        padding: '0 0 32px',
-        boxShadow: DS.shadowModal,
-      }}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="day-detail-modal-title"
+        onKeyDown={handleKeyDown}
+        style={{
+          background: DS.surface,
+          borderRadius: '24px 24px 0 0',
+          width: '100%', maxWidth: 430,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '0 0 32px',
+          boxShadow: DS.shadowModal,
+        }}>
         {/* Handle bar */}
         <div style={{
           display: 'flex', justifyContent: 'center', padding: '12px 0 0',
@@ -264,10 +303,13 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         }}>
           <div>
-            <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: 20, color: DS.textMain, textTransform: 'capitalize',
-            }}>
+            <div
+              id="day-detail-modal-title"
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 20, color: DS.textMain, textTransform: 'capitalize',
+              }}
+            >
               {dateLabel}
             </div>
             <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
