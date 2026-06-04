@@ -411,51 +411,51 @@ export default function App({ user, session } = {}) {
         const ml = {opaco:'Op',cremoso:'Cr',transparente:'Tr',elastico:'El'};
         return (
           <div style={{paddingBottom:100}}>
-            <div style={{padding:'24px 22px 16px',background:C.surface,borderBottom:`1px solid ${C.border}`}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:C.textMuted,marginBottom:4}}>Histórico de Ciclos</div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.text,fontStyle:'italic'}}>{selCycle?selCycle.label:'Ciclo atual'}</div>
-              <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>
+            <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Histórico de Ciclos</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>{selCycle?selCycle.label:'Ciclo atual'}</div>
+              <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>
                 {selCycle?`Início: ${fmtShort(selCycle.start)} · ${selCycle.duration||Object.keys(selCycle.obs||{}).length} dias`
                   :`Início: ${fmtShort(cycleStart)} · Dia ${todayN} · ${Object.keys(obs).length} registros`}
               </div>
             </div>
 
             {/* Cycle selector */}
-            <div style={{overflowX:'auto',borderBottom:`1px solid ${C.border}`,background:C.surface}}>
+            <div style={{overflowX:'auto',borderBottom:`1px solid ${DS.border}`,background:DS.surface}}>
               <div style={{display:'flex',minWidth:'max-content',padding:'0 16px'}}>
-                <button onClick={()=>setSelCycle(null)} style={{background:'none',border:'none',borderBottom:`2px solid ${!selCycle?C.terra:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
-                  <div style={{fontSize:12,fontWeight:600,color:!selCycle?C.terra:C.textSec}}>Atual</div>
-                  <div style={{fontSize:10,color:C.textMuted}}>Dia {todayN}</div>
+                <button onClick={()=>setSelCycle(null)} style={{background:'none',border:'none',borderBottom:`2px solid ${!selCycle?DS.primary:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
+                  <div style={{fontSize:12,fontWeight:600,color:!selCycle?DS.primary:DS.textSec}}>Atual</div>
+                  <div style={{fontSize:10,color:DS.textSec}}>Dia {todayN}</div>
                 </button>
                 {history.map((c,i)=>(
-                  <button key={i} onClick={()=>setSelCycle(c)} style={{background:'none',border:'none',borderBottom:`2px solid ${selCycle===c?C.terra:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
-                    <div style={{fontSize:12,fontWeight:600,color:selCycle===c?C.terra:C.textSec}}>{c.label}</div>
-                    <div style={{fontSize:10,color:C.textMuted}}>{c.duration||Object.keys(c.obs||{}).length} dias</div>
+                  <button key={i} onClick={()=>setSelCycle(c)} style={{background:'none',border:'none',borderBottom:`2px solid ${selCycle===c?DS.primary:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
+                    <div style={{fontSize:12,fontWeight:600,color:selCycle===c?DS.primary:DS.textSec}}>{c.label}</div>
+                    <div style={{fontSize:10,color:DS.textSec}}>{c.duration||Object.keys(c.obs||{}).length} dias</div>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Stats */}
-            <div style={{display:'flex',gap:8,padding:'14px 22px',borderBottom:`1px solid ${C.border}`}}>
+            <div style={{display:'flex',gap:8,padding:'14px 22px',borderBottom:`1px solid ${DS.border}`}}>
               {[
                 {l:'Registros', v:Object.keys(vObs).length},
                 {l:'Ápice',     v:apiceN?`Dia ${apiceN}`:'—'},
                 {l:'Fase Lútea',v:apiceN?`Dia ${apiceN+4}+`:'—'},
               ].map(s=>(
-                <div key={s.l} style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:'10px',textAlign:'center'}}>
-                  <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Cormorant Garamond,serif'}}>{s.v}</div>
-                  <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{s.l}</div>
+                <div key={s.l} style={{flex:1,background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:DS.radiusCard,padding:'10px',textAlign:'center',boxShadow:DS.shadowCard}}>
+                  <div style={{fontSize:16,fontWeight:700,color:DS.textMain,fontFamily:'Cormorant Garamond,serif'}}>{s.v}</div>
+                  <div style={{fontSize:10,color:DS.textSec,marginTop:2}}>{s.l}</div>
                 </div>
               ))}
             </div>
 
             {/* Legenda */}
-            <div style={{padding:'12px 22px',display:'flex',gap:12,flexWrap:'wrap',borderBottom:`1px solid ${C.border}`,background:C.surface}}>
+            <div style={{padding:'12px 22px',display:'flex',gap:12,flexWrap:'wrap',borderBottom:`1px solid ${DS.border}`,background:DS.surface}}>
               {STAMPS.map(s=>(
                 <div key={s.id} style={{display:'flex',alignItems:'center',gap:6}}>
                   <div style={{width:16,height:16,borderRadius:'50%',background:s.bg,border:`1.5px solid ${s.c}`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Georgia,serif',fontSize:9,color:s.c,fontWeight:700}}>{s.sym}</div>
-                  <span style={{fontSize:11,color:C.textSec}}>{s.label}</span>
+                  <span style={{fontSize:11,color:DS.textSec}}>{s.label}</span>
                 </div>
               ))}
             </div>
@@ -505,12 +505,12 @@ export default function App({ user, session } = {}) {
                   </div>
                   {/* Muco, Sang, Rel rows */}
                   {[
-                    {label:'Muco', render:d=>ml[d.obs?.mucus]||'', color:C.amber},
-                    {label:'Sang.', render:d=>d.obs?.bleeding?bm[d.obs.bleeding]||'●':'', color:C.rose},
-                    {label:'Rel.',  render:d=>d.obs?.relations?'♥':'', color:C.rose},
+                    {label:'Muco', render:d=>ml[d.obs?.mucus]||'', color:DS.warning},
+                    {label:'Sang.', render:d=>d.obs?.bleeding?bm[d.obs.bleeding]||'●':'', color:DS.error},
+                    {label:'Rel.',  render:d=>d.obs?.relations?'♥':'', color:DS.error},
                   ].map(row=>(
                     <div key={row.label} style={{display:'flex',alignItems:'center',marginBottom:4}}>
-                      <div style={{width:60,flexShrink:0,fontSize:9,color:C.textMuted}}>{row.label}</div>
+                      <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec}}>{row.label}</div>
                       {vDays.map(d=>(
                         <div key={d.n} style={{width:32,flexShrink:0,textAlign:'center',fontSize:row.label==='Rel.'?11:9,color:row.color}}>{row.render(d)}</div>
                       ))}
@@ -522,11 +522,11 @@ export default function App({ user, session } = {}) {
 
             {/* Apex card */}
             {apiceN && (
-              <div style={{margin:'12px 22px 0',background:C.terraLight,border:`1px solid ${C.terraBorder}`,borderRadius:12,padding:'12px 16px',display:'flex',gap:12,alignItems:'center'}}>
-                <div style={{width:32,height:32,borderRadius:'50%',background:C.terra,display:'flex',alignItems:'center',justifyContent:'center',color:C.white,fontFamily:'Georgia,serif',fontSize:14,fontWeight:700,flexShrink:0}}>✕</div>
+              <div style={{margin:'12px 22px 0',background:'#FEF3C7',border:`1px solid ${DS.warning}`,borderRadius:DS.radiusCard,padding:'12px 16px',display:'flex',gap:12,alignItems:'center'}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:DS.warning,display:'flex',alignItems:'center',justifyContent:'center',color:DS.surface,fontFamily:'Georgia,serif',fontSize:14,fontWeight:700,flexShrink:0}}>✕</div>
                 <div>
-                  <div style={{fontSize:13,fontWeight:600,color:C.terra}}>Ápice no dia {apiceN}</div>
-                  <div style={{fontSize:12,color:C.textSec,marginTop:2}}>Fase Lútea a partir do dia {apiceN+4}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:'#92400E'}}>Ápice no dia {apiceN}</div>
+                  <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Fase Lútea a partir do dia {apiceN+4}</div>
                 </div>
               </div>
             )}
@@ -534,31 +534,31 @@ export default function App({ user, session } = {}) {
             {/* PDF button */}
             <div style={{padding:'16px 22px 0'}}>
               <button onClick={handlePDFDownload} disabled={pdfLoading}
-                style={{width:'100%',background:pdfLoading?C.border:C.terra,color:pdfLoading?C.textMuted:C.white,border:'none',borderRadius:12,padding:'13px',fontSize:13,fontWeight:700,letterSpacing:'0.04em',cursor:pdfLoading?'default':'pointer',fontFamily:'Lato,sans-serif',marginBottom:8}}>
+                style={{width:'100%',background:pdfLoading?DS.border:DS.primary,color:pdfLoading?DS.textSec:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,letterSpacing:'0.04em',cursor:pdfLoading?'default':'pointer',fontFamily:'Lato,sans-serif',marginBottom:8}}>
                 {pdfLoading?'Gerando PDF...':'↓ Exportar gráfico PDF (CENPLAFAM)'}
               </button>
             </div>
 
             {/* Recent list */}
-            <div style={{padding:'20px 22px 0'}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:C.text,marginBottom:14,fontStyle:'italic'}}>Registros recentes</div>
+            <div style={{padding:'20px 22px 0',background:DS.bg}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14,fontStyle:'italic'}}>Registros recentes</div>
               {!Object.keys(vObs).length ? (
-                <div style={{textAlign:'center',padding:'28px 0',color:C.textMuted,fontSize:13,fontStyle:'italic'}}>Nenhum registro.</div>
+                <div style={{textAlign:'center',padding:'28px 0',color:DS.textSec,fontSize:13,fontStyle:'italic'}}>Nenhum registro.</div>
               ) : Object.entries(vObs).sort(([a],[b])=>b.localeCompare(a)).slice(0,10).map(([date,o])=>{
                 const s=STAMPS.find(x=>x.id===o.stamp);
                 return (
-                  <div key={date} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:'12px 14px',marginBottom:8,display:'flex',gap:12,alignItems:'flex-start'}}>
-                    <div style={{width:38,height:38,borderRadius:'50%',background:s?.bg||C.surface,border:`1.5px solid ${s?.c||C.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Georgia,serif',fontSize:18,color:s?.c||C.textMuted,flexShrink:0,fontWeight:700}}>{s?.sym||'·'}</div>
+                  <div key={date} style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:DS.radiusCard,padding:'12px 14px',marginBottom:8,display:'flex',gap:12,alignItems:'flex-start',boxShadow:DS.shadowCard}}>
+                    <div style={{width:38,height:38,borderRadius:'50%',background:s?.bg||DS.surface,border:`1.5px solid ${s?.c||DS.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Georgia,serif',fontSize:18,color:s?.c||DS.textSec,flexShrink:0,fontWeight:700}}>{s?.sym||'·'}</div>
                     <div style={{flex:1}}>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
-                        <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,fontWeight:500}}>{fmtShort(date)}</span>
+                        <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,fontWeight:500,color:DS.textMain}}>{fmtShort(date)}</span>
                         <div style={{display:'flex',gap:6}}>
-                          {o.stamp==='apice'&&<Tag label="Ápice" color={C.terra} bg={C.terraLight} border={C.terraBorder}/>}
-                          {o.relations&&<span style={{color:C.rose,fontSize:14}}>♥</span>}
+                          {o.stamp==='apice'&&<Tag label="Ápice" color='#92400E' bg='#FEF3C7' border={DS.warning}/>}
+                          {o.relations&&<span style={{color:DS.error,fontSize:14}}>♥</span>}
                         </div>
                       </div>
-                      <div style={{fontSize:12,color:C.textSec}}>{s?.label}{o.mucus&&` · ${MUCUS.find(m=>m.id===o.mucus)?.label}`}{o.bleeding&&` · ${o.bleeding}`}</div>
-                      {o.notes&&<div style={{fontSize:11,color:C.textMuted,marginTop:3,fontStyle:'italic'}}>{o.notes}</div>}
+                      <div style={{fontSize:12,color:DS.textSec}}>{s?.label}{o.mucus&&` · ${MUCUS.find(m=>m.id===o.mucus)?.label}`}{o.bleeding&&` · ${o.bleeding}`}</div>
+                      {o.notes&&<div style={{fontSize:11,color:DS.textSec,marginTop:3,fontStyle:'italic'}}>{o.notes}</div>}
                     </div>
                   </div>
                 );
