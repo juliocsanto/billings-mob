@@ -181,7 +181,7 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
     .from('observations')
     .update(updatePayload)
     .eq('id', id)
-    .select()
+    .select('id, cycle_id, user_id, date, stamp, mucus, bleeding, sensacao, tipo_observacao, relations, notes, vector_clock, version, created_at, updated_at')
     .single();
 
   if (updateError || !updated) {

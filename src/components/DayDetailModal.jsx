@@ -21,7 +21,7 @@
  *   observationId  — UUID da observação no Supabase (opcional; sem id = sem histórico)
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { C, DS, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
 import { useObservationVersions } from '../hooks/useObservationVersions';
 
@@ -86,7 +86,7 @@ function VersionHistorySection({ versions, loading }) {
 
   if (loading) {
     return (
-      <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: C.textMuted, fontSize: 12 }}>
+      <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: DS.textSec, fontSize: 12 }}>
         Carregando histórico...
       </div>
     );
@@ -130,44 +130,44 @@ function VersionHistorySection({ versions, loading }) {
               <div
                 key={version.id}
                 style={{
-                  background: C.card, border: `1px solid ${C.border}`,
+                  background: DS.bg, border: `1px solid ${DS.border}`,
                   borderRadius: 10, padding: '10px 12px', marginBottom: 8,
                 }}
               >
                 {/* Timestamp */}
-                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: DS.textSec, marginBottom: 4 }}>
                   {formatVersionDate(version.created_at)}
                 </div>
 
                 {/* Stamp label */}
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: DS.textMain }}>
                   {stampLabel}
                 </div>
 
                 {/* Mucus detail — only rendered if present */}
                 {mucus && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Muco: {MUCUS.find(m => m.id === mucus)?.label ?? mucus}
                   </div>
                 )}
 
                 {/* Sensação — only rendered if present */}
                 {sensacao && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Sensação: {SENSACAO.find(s => s.id === sensacao)?.label ?? sensacao}
                   </div>
                 )}
 
                 {/* Bleeding detail — only rendered if present */}
                 {bleeding && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Sangramento: {bleeding}
                   </div>
                 )}
 
                 {/* O que observa — only rendered if present */}
                 {tipo_observacao && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Observação: {TIPO_OBSERVACAO.find(t => t.id === tipo_observacao)?.label ?? tipo_observacao}
                   </div>
                 )}
@@ -185,6 +185,8 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
   const isPast = day.date < todayDate;
   const isFuture = day.date > todayDate;
 
+  const modalRef = useRef(null);
+
   const initialForm = day.obs
     ? {
         stamp: day.obs.stamp,
@@ -200,6 +202,37 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
 
   const [form, setForm] = useState(initialForm);
   const [saved, setSaved] = useState(false);
+
+  // Fix 3 — Focus trap: move focus to first focusable element when modal opens
+  useEffect(() => {
+    const focusable = modalRef.current?.querySelector(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.focus();
+  }, []);
+
+  // Fix 4 + Fix 5 — Tab cycle and Escape key handler
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+      return;
+    }
+    if (e.key === 'Tab') {
+      const focusable = modalRef.current?.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
 
   // The JWT is not directly available in this component — the hook handles the null case
   // gracefully (returns versions=[] without fetching). When the parent passes observationId
@@ -238,15 +271,21 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       }}
     >
-      <div style={{
-        background: DS.surface,
-        borderRadius: '24px 24px 0 0',
-        width: '100%', maxWidth: 430,
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        padding: '0 0 32px',
-        boxShadow: DS.shadowModal,
-      }}>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="day-detail-modal-title"
+        onKeyDown={handleKeyDown}
+        style={{
+          background: DS.surface,
+          borderRadius: '24px 24px 0 0',
+          width: '100%', maxWidth: 430,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          padding: '0 0 32px',
+          boxShadow: DS.shadowModal,
+        }}>
         {/* Handle bar */}
         <div style={{
           display: 'flex', justifyContent: 'center', padding: '12px 0 0',
@@ -264,10 +303,13 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
         }}>
           <div>
-            <div style={{
-              fontFamily: 'Cormorant Garamond, serif',
-              fontSize: 20, color: DS.textMain, textTransform: 'capitalize',
-            }}>
+            <div
+              id="day-detail-modal-title"
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 20, color: DS.textMain, textTransform: 'capitalize',
+              }}
+            >
               {dateLabel}
             </div>
             <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
@@ -363,7 +405,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 <Lbl>Sensação</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {SENSACAO.map(s => (
-                    <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={C.sage}
+                    <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={DS.secondary}
                       onClick={() => setForm(p => ({ ...p, sensacao: p.sensacao === s.id ? null : s.id }))} />
                   ))}
                 </div>
