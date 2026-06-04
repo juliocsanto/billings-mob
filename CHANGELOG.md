@@ -6,6 +6,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.2] — 2026-06-04
+
+### Fixed
+
+- Aba Gráfico em `App.jsx` (linhas 404–569): todos os tokens de cor legados `C.*` substituídos pelos equivalentes `DS.*` do Design System Wise-inspired, completando a migração iniciada na v1.4.1
+- Cards de estatísticas agora usam fundo branco com sombra (`DS.surface` + `DS.shadowCard`) em vez de bege creme (`C.card`), alinhando-se ao restante do layout
+- Botão "Exportar PDF" atualizado para `DS.primary` (navy `#37517E`) com texto branco (`DS.surface`), eliminando o marrom/bordô antigo (`C.terra`)
+- Card "Ápice" atualizado para tint âmbar `#FEF3C7` (anteriormente salmon `C.terraLight`), melhorando a distinção visual do evento
+- Seletor de ciclo: indicador de tab ativo migrado de `C.terra` para sublinhado `DS.primary` (navy), mantendo consistência com os demais controles de navegação
+- Header, legenda, linhas de gráfico (Muco/Sangramento) e lista recente: tokens `C.textSec`, `C.amber`, `C.rose`, `C.textMuted` substituídos pelos equivalentes `DS.*`
+
+---
+
 ## [1.4.1] — 2026-06-04
 
 ### Changed
