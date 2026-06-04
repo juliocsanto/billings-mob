@@ -97,11 +97,11 @@ export function AuthGate({ children }: AuthGateProps) {
             title="Sair da conta"
             style={{
               background: 'transparent',
-              border: `1px solid ${C.border}`,
+              border: `1px solid ${DS.border}`,
               borderRadius: 8,
               padding: '4px 10px',
               fontSize: 10,
-              color: C.textMuted,
+              color: DS.textSec,
               cursor: 'pointer',
               fontFamily: 'Lato, sans-serif',
             }}

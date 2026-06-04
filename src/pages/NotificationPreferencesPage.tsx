@@ -18,31 +18,8 @@
  * ADR-005: session-based auth — hook reads access_token from Supabase session.
  */
 import React from 'react';
+import { DS } from '../constants.js';
 import { usePushNotifications } from '../hooks/usePushNotifications';
-
-// ─── Design tokens (matches App.jsx C palette) ────────────────────────────────
-const C = {
-  bg:          '#FAF7F4',
-  surface:     '#FFFFFF',
-  card:        '#F5F0EB',
-  border:      '#E8E0D8',
-  terra:       '#8C3C28',
-  terraLight:  '#FDF3EE',
-  terraBorder: '#E8C8BB',
-  sage:        '#4A7C5C',
-  sageLight:   '#EAF4EE',
-  sageBorder:  '#B0D4BC',
-  amber:       '#A07828',
-  amberLight:  '#FDF6E8',
-  amberBorder: '#E8D4A0',
-  rose:        '#B05070',
-  roseLight:   '#FEF0F4',
-  roseBorder:  '#E8C0CC',
-  text:        '#2D2520',
-  textSec:     '#6B5B52',
-  textMuted:   '#9E8E84',
-  white:       '#FFFFFF',
-};
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -63,13 +40,13 @@ function Toggle({ id, label, description, checked, onChange, disabled = false }:
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         padding: '14px 0',
-        borderBottom: `1px solid ${C.border}`,
+        borderBottom: `1px solid ${DS.border}`,
         opacity: disabled ? 0.5 : 1,
       }}
     >
       <div style={{ flex: 1, paddingRight: 16 }}>
-        <div id={id} style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>{description}</div>
+        <div id={id} style={{ fontSize: 14, fontWeight: 600, color: DS.textMain, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.5 }}>{description}</div>
       </div>
       <button
         role="switch"
@@ -82,7 +59,7 @@ function Toggle({ id, label, description, checked, onChange, disabled = false }:
           height: 28,
           borderRadius: 14,
           border: 'none',
-          background: checked ? C.terra : C.border,
+          background: checked ? DS.primary : DS.border,
           cursor: disabled ? 'default' : 'pointer',
           position: 'relative',
           flexShrink: 0,
@@ -97,7 +74,7 @@ function Toggle({ id, label, description, checked, onChange, disabled = false }:
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: C.white,
+            background: DS.surface,
             transition: 'left 0.2s',
             boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
           }}
@@ -122,14 +99,14 @@ function PermissionBanner({
     return (
       <div
         style={{
-          background: C.amberLight,
-          border: `1px solid ${C.amberBorder}`,
+          background: DS.warningLight,
+          border: `1px solid ${DS.warningBorder}`,
           borderRadius: 12,
           padding: '12px 16px',
           marginBottom: 20,
         }}
       >
-        <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.6 }}>
           Seu navegador não suporta notificações push. Considere usar o app em um
           navegador compatível (Chrome, Firefox, Edge ou Safari no iOS 16.4+).
         </div>
@@ -141,17 +118,17 @@ function PermissionBanner({
     return (
       <div
         style={{
-          background: C.roseLight,
-          border: `1px solid ${C.roseBorder}`,
+          background: DS.errorLight,
+          border: `1px solid ${DS.errorBorder}`,
           borderRadius: 12,
           padding: '12px 16px',
           marginBottom: 20,
         }}
       >
-        <div style={{ fontSize: 13, fontWeight: 600, color: C.rose, marginBottom: 6 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: DS.error, marginBottom: 6 }}>
           Notificações bloqueadas
         </div>
-        <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
           Para receber notificações, acesse as configurações do seu navegador e
           permita notificações para este site. No Chrome: clique no cadeado na barra
           de endereços &rarr; Notificações &rarr; Permitir.
@@ -164,8 +141,8 @@ function PermissionBanner({
     return (
       <div
         style={{
-          background: C.sageLight,
-          border: `1px solid ${C.sageBorder}`,
+          background: DS.successLight,
+          border: `1px solid ${DS.successBorder}`,
           borderRadius: 12,
           padding: '12px 16px',
           marginBottom: 20,
@@ -174,8 +151,8 @@ function PermissionBanner({
           gap: 8,
         }}
       >
-        <span style={{ color: C.sage, fontSize: 16 }}>✓</span>
-        <div style={{ fontSize: 13, color: C.sage, fontWeight: 500 }}>
+        <span style={{ color: DS.success, fontSize: 16 }}>✓</span>
+        <div style={{ fontSize: 13, color: DS.success, fontWeight: 500 }}>
           Notificações push ativadas neste dispositivo
         </div>
       </div>
@@ -187,21 +164,21 @@ function PermissionBanner({
     <div style={{ marginBottom: 20 }}>
       <div
         style={{
-          background: C.terraLight,
-          border: `1px solid ${C.terraBorder}`,
+          background: DS.primaryLight,
+          border: `1px solid ${DS.primaryBorder}`,
           borderRadius: 12,
           padding: '14px 16px',
           marginBottom: 12,
         }}
       >
-        <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.6, marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.6, marginBottom: 12 }}>
           Ative as notificações para receber lembretes de registro e avisos sobre
           comentários da instrutora.
         </div>
         <div
           style={{
             fontSize: 11,
-            color: C.textMuted,
+            color: DS.textSec,
             lineHeight: 1.6,
             fontStyle: 'italic',
             marginBottom: 12,
@@ -214,8 +191,8 @@ function PermissionBanner({
           disabled={loading}
           style={{
             width: '100%',
-            background: loading ? C.border : C.terra,
-            color: loading ? C.textMuted : C.white,
+            background: loading ? DS.border : DS.primary,
+            color: loading ? DS.textSec : DS.surface,
             border: 'none',
             borderRadius: 10,
             padding: '12px',
@@ -267,8 +244,8 @@ export function NotificationPreferencesPage() {
       <div
         style={{
           padding: '24px 22px 16px',
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
+          background: DS.surface,
+          borderBottom: `1px solid ${DS.border}`,
         }}
       >
         <div
@@ -277,7 +254,7 @@ export function NotificationPreferencesPage() {
             fontSize: 13,
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: C.textMuted,
+            color: DS.textSec,
             marginBottom: 4,
           }}
         >
@@ -287,7 +264,7 @@ export function NotificationPreferencesPage() {
           style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: 24,
-            color: C.text,
+            color: DS.textMain,
             fontStyle: 'italic',
           }}
         >
@@ -302,13 +279,13 @@ export function NotificationPreferencesPage() {
             role="status"
             aria-live="polite"
             style={{
-              background: C.roseLight,
-              border: `1px solid ${C.roseBorder}`,
+              background: DS.errorLight,
+              border: `1px solid ${DS.errorBorder}`,
               borderRadius: 10,
               padding: '10px 14px',
               marginBottom: 16,
               fontSize: 13,
-              color: C.rose,
+              color: DS.error,
             }}
           >
             {error}
@@ -320,7 +297,7 @@ export function NotificationPreferencesPage() {
           style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: 18,
-            color: C.text,
+            color: DS.textMain,
             marginBottom: 14,
           }}
         >
@@ -338,7 +315,7 @@ export function NotificationPreferencesPage() {
           style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: 18,
-            color: C.text,
+            color: DS.textMain,
             marginBottom: 14,
             marginTop: 8,
           }}
@@ -348,8 +325,8 @@ export function NotificationPreferencesPage() {
 
         <div
           style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 14,
             padding: '0 16px',
             marginBottom: 20,
@@ -369,14 +346,14 @@ export function NotificationPreferencesPage() {
             <div
               style={{
                 padding: '14px 0',
-                borderBottom: `1px solid ${C.border}`,
+                borderBottom: `1px solid ${DS.border}`,
               }}
             >
               <div
                 style={{
                   fontSize: 12,
                   fontWeight: 700,
-                  color: C.textMuted,
+                  color: DS.textSec,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
                   marginBottom: 8,
@@ -389,15 +366,15 @@ export function NotificationPreferencesPage() {
                 aria-label="Horário do lembrete diário"
                 value={preferences.daily_reminder_time}
                 onChange={(e) => void handleTimeChange(e.target.value)}
-                onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
+                onFocus={e => { e.target.style.outline = `2px solid ${DS.primary}`; e.target.style.outlineOffset = '2px'; }}
                 onBlur={e => { e.target.style.outline = 'none'; }}
                 style={{
-                  background: C.surface,
-                  border: `1px solid ${C.border}`,
+                  background: DS.surface,
+                  border: `1px solid ${DS.border}`,
                   borderRadius: 8,
                   padding: '8px 12px',
                   fontSize: 14,
-                  color: C.text,
+                  color: DS.textMain,
                   fontFamily: 'Lato, sans-serif',
                 }}
               />
@@ -410,7 +387,7 @@ export function NotificationPreferencesPage() {
           style={{
             fontFamily: 'Cormorant Garamond, serif',
             fontSize: 18,
-            color: C.text,
+            color: DS.textMain,
             marginBottom: 14,
           }}
         >
@@ -419,8 +396,8 @@ export function NotificationPreferencesPage() {
 
         <div
           style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 14,
             padding: '0 16px',
             marginBottom: 20,
@@ -447,8 +424,8 @@ export function NotificationPreferencesPage() {
         {/* Privacy notice */}
         <div
           style={{
-            background: C.surface,
-            border: `1px solid ${C.border}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 12,
             padding: '12px 14px',
           }}
@@ -456,7 +433,7 @@ export function NotificationPreferencesPage() {
           <div
             style={{
               fontSize: 11,
-              color: C.textMuted,
+              color: DS.textSec,
               lineHeight: 1.7,
               textAlign: 'center',
               fontStyle: 'italic',

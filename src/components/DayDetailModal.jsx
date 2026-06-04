@@ -86,7 +86,7 @@ function VersionHistorySection({ versions, loading }) {
 
   if (loading) {
     return (
-      <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: C.textMuted, fontSize: 12 }}>
+      <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: DS.textSec, fontSize: 12 }}>
         Carregando histórico...
       </div>
     );
@@ -130,44 +130,44 @@ function VersionHistorySection({ versions, loading }) {
               <div
                 key={version.id}
                 style={{
-                  background: C.card, border: `1px solid ${C.border}`,
+                  background: DS.bg, border: `1px solid ${DS.border}`,
                   borderRadius: 10, padding: '10px 12px', marginBottom: 8,
                 }}
               >
                 {/* Timestamp */}
-                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: DS.textSec, marginBottom: 4 }}>
                   {formatVersionDate(version.created_at)}
                 </div>
 
                 {/* Stamp label */}
-                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: DS.textMain }}>
                   {stampLabel}
                 </div>
 
                 {/* Mucus detail — only rendered if present */}
                 {mucus && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Muco: {MUCUS.find(m => m.id === mucus)?.label ?? mucus}
                   </div>
                 )}
 
                 {/* Sensação — only rendered if present */}
                 {sensacao && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Sensação: {SENSACAO.find(s => s.id === sensacao)?.label ?? sensacao}
                   </div>
                 )}
 
                 {/* Bleeding detail — only rendered if present */}
                 {bleeding && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Sangramento: {bleeding}
                   </div>
                 )}
 
                 {/* O que observa — only rendered if present */}
                 {tipo_observacao && (
-                  <div style={{ fontSize: 11, color: C.textSec, marginTop: 2 }}>
+                  <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                     Observação: {TIPO_OBSERVACAO.find(t => t.id === tipo_observacao)?.label ?? tipo_observacao}
                   </div>
                 )}
@@ -363,7 +363,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 <Lbl>Sensação</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {SENSACAO.map(s => (
-                    <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={C.sage}
+                    <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={DS.secondary}
                       onClick={() => setForm(p => ({ ...p, sensacao: p.sensacao === s.id ? null : s.id }))} />
                   ))}
                 </div>

@@ -16,38 +16,14 @@
  */
 import { useState, useEffect } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { DS } from '../constants.js';
 import { useInstructorLink } from '../hooks/useInstructorLink';
-
-// ── Color palette (same as App.jsx / AuthGate.tsx) ───────────────────────────
-const C = {
-  bg:          '#DDD3C4',
-  surface:     '#D4C9B8',
-  card:        '#E4D8C8',
-  border:      '#B8A898',
-  borderStrong:'#8A7868',
-  text:        '#241408',
-  textSec:     '#6A5040',
-  textMuted:   '#9A8070',
-  terra:       '#8C3C28',
-  terraLight:  '#E8C8BC',
-  terraBorder: '#C49080',
-  sage:        '#3E5E48',
-  sageLight:   '#C8D8CC',
-  sageBorder:  '#7EA48A',
-  amber:       '#846010',
-  amberLight:  '#E4D4A0',
-  amberBorder: '#B89848',
-  rose:        '#8C3848',
-  roseLight:   '#E8C8CC',
-  roseBorder:  '#C49098',
-  white:       '#F0E8DC',
-};
 
 // ── Status label config ───────────────────────────────────────────────────────
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending:  { label: 'Pendente',  color: C.amber,  bg: C.amberLight, border: C.amberBorder },
-  active:   { label: 'Ativo',     color: C.sage,   bg: C.sageLight,  border: C.sageBorder },
-  revoked:  { label: 'Revogado',  color: C.rose,   bg: C.roseLight,  border: C.roseBorder },
+  pending:  { label: 'Pendente',  color: DS.warning,  bg: DS.warningLight, border: DS.warningBorder },
+  active:   { label: 'Ativo',     color: DS.success,   bg: DS.successLight,  border: DS.successBorder },
+  revoked:  { label: 'Revogado',  color: DS.error,   bg: DS.errorLight,  border: DS.errorBorder },
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -88,10 +64,10 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
   return (
     <div
       style={{
-        background: C.bg,
+        background: DS.bg,
         minHeight: '100vh',
         fontFamily: 'Lato, sans-serif',
-        color: C.text,
+        color: DS.textMain,
         maxWidth: 430,
         margin: '0 auto',
         padding: '0 0 80px',
@@ -101,8 +77,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
       <div
         style={{
           padding: '20px 22px 16px',
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
+          background: DS.surface,
+          borderBottom: `1px solid ${DS.border}`,
           position: 'sticky',
           top: 0,
           zIndex: 10,
@@ -117,7 +93,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: C.textMuted,
+                color: DS.textSec,
                 fontSize: 18,
                 padding: 0,
                 fontFamily: 'inherit',
@@ -133,7 +109,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 fontSize: 13,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: C.textMuted,
+                color: DS.textSec,
                 marginBottom: 2,
               }}
             >
@@ -143,7 +119,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               style={{
                 fontFamily: 'Cormorant Garamond, serif',
                 fontSize: 22,
-                color: C.text,
+                color: DS.textMain,
                 fontStyle: 'italic',
               }}
             >
@@ -158,8 +134,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         {/* ── Search section ─────────────────────────────────────── */}
         <div
           style={{
-            background: C.card,
-            border: `1px solid ${C.border}`,
+            background: DS.surface,
+            border: `1px solid ${DS.border}`,
             borderRadius: 14,
             padding: '18px',
             marginBottom: 20,
@@ -169,7 +145,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: C.textMuted,
+              color: DS.textSec,
               letterSpacing: '0.1em',
               textTransform: 'uppercase',
               marginBottom: 8,
@@ -186,16 +162,16 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               onChange={e => setEmailInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="email da instrutora"
-              onFocus={e => { e.target.style.outline = '2px solid #8C3C28'; e.target.style.outlineOffset = '2px'; }}
+              onFocus={e => { e.target.style.outline = `2px solid ${DS.primary}`; e.target.style.outlineOffset = '2px'; }}
               onBlur={e => { e.target.style.outline = 'none'; }}
               style={{
                 flex: 1,
-                background: C.surface,
-                border: `1px solid ${C.border}`,
+                background: DS.surface,
+                border: `1px solid ${DS.border}`,
                 borderRadius: 10,
                 padding: '11px 14px',
                 fontSize: 13,
-                color: C.text,
+                color: DS.textMain,
                 fontFamily: 'Lato, sans-serif',
               }}
             />
@@ -203,8 +179,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               onClick={handleSearch}
               disabled={!emailInput.trim() || loading}
               style={{
-                background: emailInput.trim() && !loading ? C.terra : C.border,
-                color: emailInput.trim() && !loading ? C.white : C.textMuted,
+                background: emailInput.trim() && !loading ? DS.primary : DS.border,
+                color: emailInput.trim() && !loading ? DS.surface : DS.textSec,
                 border: 'none',
                 borderRadius: 10,
                 padding: '11px 18px',
@@ -233,7 +209,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               justifyContent: 'center',
               gap: 8,
               padding: '16px 0',
-              color: C.textMuted,
+              color: DS.textSec,
               fontSize: 13,
             }}
           >
@@ -241,8 +217,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               style={{
                 width: 18,
                 height: 18,
-                border: `2px solid ${C.border}`,
-                borderTopColor: C.terra,
+                border: `2px solid ${DS.border}`,
+                borderTopColor: DS.primary,
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
               }}
@@ -256,13 +232,13 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         {error && !loading && (
           <div
             style={{
-              background: C.roseLight,
-              border: `1px solid ${C.roseBorder}`,
+              background: DS.errorLight,
+              border: `1px solid ${DS.errorBorder}`,
               borderRadius: 12,
               padding: '12px 14px',
               marginBottom: 16,
               fontSize: 13,
-              color: C.rose,
+              color: DS.error,
             }}
           >
             {error}
@@ -273,8 +249,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         {requestSent && !error && !loading && (
           <div
             style={{
-              background: C.sageLight,
-              border: `1px solid ${C.sageBorder}`,
+              background: DS.successLight,
+              border: `1px solid ${DS.successBorder}`,
               borderRadius: 12,
               padding: '12px 14px',
               marginBottom: 16,
@@ -282,7 +258,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               alignItems: 'center',
               gap: 8,
               fontSize: 13,
-              color: C.sage,
+              color: DS.success,
             }}
           >
             <span style={{ fontSize: 16 }}>✓</span>
@@ -294,8 +270,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         {instructor && !loading && (
           <div
             style={{
-              background: C.card,
-              border: `1px solid ${C.sageBorder}`,
+              background: DS.surface,
+              border: `1px solid ${DS.successBorder}`,
               borderRadius: 14,
               padding: '16px',
               marginBottom: 20,
@@ -307,23 +283,23 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                   width: 44,
                   height: 44,
                   borderRadius: '50%',
-                  background: C.sageLight,
-                  border: `1.5px solid ${C.sageBorder}`,
+                  background: DS.successLight,
+                  border: `1.5px solid ${DS.successBorder}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 20,
-                  color: C.sage,
+                  color: DS.success,
                   flexShrink: 0,
                 }}
               >
                 ○
               </div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: DS.textMain }}>
                   {instructor.full_name}
                 </div>
-                <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
                   Instrutora certificada
                 </div>
               </div>
@@ -334,8 +310,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               disabled={loading || requestSent}
               style={{
                 width: '100%',
-                background: requestSent ? C.border : C.sage,
-                color: requestSent ? C.textMuted : C.white,
+                background: requestSent ? DS.border : DS.success,
+                color: requestSent ? DS.textSec : DS.surface,
                 border: 'none',
                 borderRadius: 12,
                 padding: '13px',
@@ -359,7 +335,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               style={{
                 fontFamily: 'Cormorant Garamond, serif',
                 fontSize: 18,
-                color: C.text,
+                color: DS.textMain,
                 marginBottom: 12,
                 fontStyle: 'italic',
               }}
@@ -373,8 +349,8 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 <div
                   key={link.id}
                   style={{
-                    background: C.card,
-                    border: `1px solid ${C.border}`,
+                    background: DS.surface,
+                    border: `1px solid ${DS.border}`,
                     borderRadius: 12,
                     padding: '12px 14px',
                     marginBottom: 8,
@@ -385,10 +361,10 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: DS.textMain }}>
                       {link.instructor_name || 'Instrutora'}
                     </div>
-                    <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
                       Instrutora
                     </div>
                   </div>
@@ -419,7 +395,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
             style={{
               textAlign: 'center',
               padding: '28px 0',
-              color: C.textMuted,
+              color: DS.textSec,
             }}
           >
             <div style={{ fontSize: 32, marginBottom: 10 }}>○</div>
@@ -427,13 +403,13 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               style={{
                 fontFamily: 'Cormorant Garamond, serif',
                 fontSize: 16,
-                color: C.textSec,
+                color: DS.textSec,
                 marginBottom: 6,
               }}
             >
               Nenhum vínculo ainda
             </div>
-            <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
               Busque a instrutora pelo e-mail cadastrado e envie uma solicitação.
             </div>
           </div>
@@ -443,14 +419,14 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         <div
           style={{
             marginTop: 24,
-            background: C.amberLight,
-            border: `1px solid ${C.amberBorder}`,
+            background: DS.warningLight,
+            border: `1px solid ${DS.warningBorder}`,
             borderRadius: 12,
             padding: '12px 14px',
           }}
         >
-          <div style={{ fontSize: 11, color: C.textMuted, lineHeight: 1.7 }}>
-            <strong style={{ color: C.amber }}>Aviso</strong> — A instrutora receberá uma
+          <div style={{ fontSize: 11, color: DS.textSec, lineHeight: 1.7 }}>
+            <strong style={{ color: DS.warning }}>Aviso</strong> — A instrutora receberá uma
             notificação e deverá aprovar o vínculo antes de ter acesso aos seus registros.
           </div>
         </div>

@@ -22,17 +22,17 @@ const Tag = ({ label, color, bg, border }) => (
 
 const Lbl = ({ children }) => (
   <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase',
-    color:C.textMuted, marginBottom:10 }}>
+    color:DS.textSec, marginBottom:10 }}>
     {children}
   </div>
 );
 
 const Pill = ({ label, active, color, onClick }) => (
   <button onClick={onClick} style={{
-    background: active ? `${color}22` : C.card,
-    border:`1.5px solid ${active ? color : C.border}`,
+    background: active ? DS.primary : DS.bg,
+    border:`1.5px solid ${active ? DS.primary : DS.border}`,
     borderRadius:20, padding:'6px 14px', fontSize:12, fontWeight:500,
-    color: active ? color : C.textSec, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s',
+    color: active ? DS.surface : DS.textSec, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s',
   }}>{label}</button>
 );
 
@@ -270,9 +270,9 @@ export default function App({ user, session } = {}) {
       {tab==='hoje' && (
         <div style={{padding:'24px 22px 100px'}}>
           {saved && (
-            <div style={{background:C.sageLight,border:`1px solid ${C.sageBorder}`,borderRadius:12,padding:'10px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
-              <span style={{color:C.sage,fontSize:14}}>✓</span>
-              <span style={{fontSize:13,color:C.sage}}>Observação de hoje salva</span>
+            <div style={{background:DS.successLight,border:`1px solid ${DS.successBorder}`,borderRadius:12,padding:'10px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
+              <span style={{color:DS.success,fontSize:14}}>✓</span>
+              <span style={{fontSize:13,color:DS.success}}>Observação de hoje salva</span>
             </div>
           )}
 
@@ -284,14 +284,14 @@ export default function App({ user, session } = {}) {
                 const active = form.stamp===s.id;
                 return (
                   <button key={s.id} onClick={()=>setForm(p=>({...p,stamp:s.id,mucus:null,bleeding:null}))}
-                    style={{background:active?s.bg:C.card,border:`1.5px solid ${active?s.c:C.border}`,borderRadius:14,
+                    style={{background:active?DS.primary:DS.surface,border:`1.5px solid ${active?DS.primary:DS.border}`,borderRadius:14,
                       padding:'16px 14px',textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'all 0.2s',
-                      boxShadow:active?`0 2px 12px ${C.shadow}`:`0 1px 4px ${C.shadow}`}}>
-                    <div style={{width:34,height:34,borderRadius:'50%',background:active?C.white:s.bg,
+                      boxShadow:active?DS.shadowCard:'none'}}>
+                    <div style={{width:34,height:34,borderRadius:'50%',background:active?DS.surface:s.bg,
                       border:`1.5px solid ${s.c}`,display:'flex',alignItems:'center',justifyContent:'center',
-                      fontSize:18,color:s.c,marginBottom:10,fontFamily:'Georgia,serif',fontWeight:700}}>{s.sym}</div>
-                    <div style={{fontSize:14,fontWeight:700,color:active?s.c:C.text}}>{s.label}</div>
-                    <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{s.sub}</div>
+                      fontSize:18,color:active?DS.primary:s.c,marginBottom:10,fontFamily:'Georgia,serif',fontWeight:700}}>{s.sym}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:active?DS.surface:DS.textMain}}>{s.label}</div>
+                    <div style={{fontSize:11,color:active?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{s.sub}</div>
                   </button>
                 );
               })}
@@ -317,11 +317,11 @@ export default function App({ user, session } = {}) {
               <Lbl>Tipo de muco</Lbl>
               {MUCUS.map(m=>(
                 <button key={m.id} onClick={()=>setForm(p=>({...p,mucus:m.id}))}
-                  style={{display:'block',width:'100%',background:form.mucus===m.id?C.amberLight:C.card,
-                    border:`1px solid ${form.mucus===m.id?C.amber:C.border}`,borderRadius:12,
+                  style={{display:'block',width:'100%',background:form.mucus===m.id?DS.primary:DS.bg,
+                    border:`1px solid ${form.mucus===m.id?DS.primary:DS.border}`,borderRadius:12,
                     padding:'11px 14px',textAlign:'left',cursor:'pointer',fontFamily:'inherit',marginBottom:8,transition:'all 0.15s'}}>
-                  <div style={{fontSize:13,fontWeight:700,color:form.mucus===m.id?C.amber:C.text}}>{m.label}</div>
-                  <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>{m.desc}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:form.mucus===m.id?DS.surface:DS.textMain}}>{m.label}</div>
+                  <div style={{fontSize:11,color:form.mucus===m.id?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{m.desc}</div>
                 </button>
               ))}
             </div>
@@ -329,12 +329,12 @@ export default function App({ user, session } = {}) {
 
           {/* Apex info */}
           {form.stamp==='apice' && (
-            <div style={{background:C.terraLight,border:`1px solid ${C.terraBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:22}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:C.terra,marginBottom:6,fontStyle:'italic'}}>Ápice marcado</div>
-              <div style={{fontSize:12,color:C.textSec,lineHeight:1.8}}>
+            <div style={{background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:22}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:DS.warning,marginBottom:6,fontStyle:'italic'}}>Ápice marcado</div>
+              <div style={{fontSize:12,color:DS.textSec,lineHeight:1.8}}>
                 Último dia de sensação lubrificante ou escorregadia.<br/>
                 A partir do <strong>4º dia após o Ápice</strong> inicia a Fase Lútea.<br/>
-                <span style={{color:C.textMuted}}>Informe sua instrutora certificada.</span>
+                <span style={{color:DS.textSec}}>Informe sua instrutora certificada.</span>
               </div>
             </div>
           )}
@@ -343,19 +343,19 @@ export default function App({ user, session } = {}) {
           <div style={{marginBottom:22}}>
             <Lbl>Relações íntimas</Lbl>
             <button onClick={()=>setForm(p=>({...p,relations:!p.relations}))}
-              style={{display:'flex',alignItems:'center',gap:12,background:form.relations?C.roseLight:C.card,
-                border:`1.5px solid ${form.relations?C.rose:C.border}`,borderRadius:12,padding:'12px 16px',
+              style={{display:'flex',alignItems:'center',gap:12,background:form.relations?DS.errorLight:DS.bg,
+                border:`1.5px solid ${form.relations?DS.error:DS.border}`,borderRadius:12,padding:'12px 16px',
                 cursor:'pointer',fontFamily:'inherit',width:'100%',textAlign:'left',transition:'all 0.2s'}}>
               <div style={{width:22,height:22,borderRadius:'50%',flexShrink:0,
-                background:form.relations?C.rose:'transparent',border:`1.5px solid ${form.relations?C.rose:C.borderStrong}`,
-                display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:'#F0E8DC',transition:'all 0.2s'}}>
+                background:form.relations?DS.error:'transparent',border:`1.5px solid ${form.relations?DS.error:DS.border}`,
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:DS.surface,transition:'all 0.2s'}}>
                 {form.relations?'♥':''}
               </div>
               <div>
-                <div style={{fontSize:13,fontWeight:600,color:form.relations?C.rose:C.text}}>
+                <div style={{fontSize:13,fontWeight:600,color:form.relations?DS.error:DS.textMain}}>
                   {form.relations?'Sim — houve relações hoje':'Não houve relações hoje'}
                 </div>
-                <div style={{fontSize:11,color:C.textMuted,marginTop:2}}>Visível apenas para a instrutora</div>
+                <div style={{fontSize:11,color:DS.textSec,marginTop:2}}>Visível apenas para a instrutora</div>
               </div>
             </button>
           </div>
@@ -365,35 +365,35 @@ export default function App({ user, session } = {}) {
             <Lbl>Notas para a instrutora</Lbl>
             <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}
               placeholder="Observações adicionais..."
-              style={{width:'100%',background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
-                padding:'12px 16px',fontSize:13,color:C.text,minHeight:72,
+              style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:12,
+                padding:'12px 16px',fontSize:13,color:DS.textMain,minHeight:72,
                 boxSizing:'border-box',outline:'none',lineHeight:1.6}}
             />
           </div>
 
           {/* Save */}
           <button onClick={()=>form.stamp&&persist(form)}
-            style={{width:'100%',background:form.stamp?C.terra:C.border,color:form.stamp?C.white:C.textMuted,
-              border:'none',borderRadius:12,padding:'15px',fontSize:14,fontWeight:700,letterSpacing:'0.06em',
+            style={{width:'100%',background:form.stamp?DS.primary:DS.border,color:form.stamp?DS.surface:DS.textSec,
+              border:'none',borderRadius:DS.radiusBtn,padding:'15px',fontSize:14,fontWeight:700,letterSpacing:'0.06em',
               textTransform:'uppercase',cursor:form.stamp?'pointer':'default',fontFamily:'Lato,sans-serif',
-              transition:'all 0.2s',boxShadow:form.stamp?`0 4px 16px rgba(140,60,40,0.25)`:'none',marginBottom:10}}>
+              transition:'all 0.2s',boxShadow:form.stamp?DS.shadowFAB:'none',marginBottom:10}}>
             Salvar observação
           </button>
 
           {!confirmNew ? (
             <button onClick={()=>setConfirmNew(true)}
-              style={{width:'100%',background:'transparent',color:C.textMuted,border:`1px solid ${C.border}`,
-                borderRadius:12,padding:'12px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+              style={{width:'100%',background:'transparent',color:DS.textSec,border:`1px solid ${DS.border}`,
+                borderRadius:DS.radiusBtn,padding:'12px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
               + Iniciar novo ciclo
             </button>
           ) : (
-            <div style={{background:C.roseLight,border:`1px solid ${C.roseBorder}`,borderRadius:14,padding:16}}>
-              <div style={{fontSize:13,color:C.rose,marginBottom:12}}>Reinicia o gráfico a partir de hoje. Confirma?</div>
+            <div style={{background:DS.errorLight,border:`1px solid ${DS.errorBorder}`,borderRadius:14,padding:16}}>
+              <div style={{fontSize:13,color:DS.error,marginBottom:12}}>Reinicia o gráfico a partir de hoje. Confirma?</div>
               <div style={{display:'flex',gap:8}}>
                 <button onClick={()=>{const f={...EMPTY_FORM,stamp:'sangramento',bleeding:'moderado'};archiveAndReset(f,today());setConfirmNew(false);}}
-                  style={{flex:1,background:C.rose,color:C.white,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
+                  style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
                 <button onClick={()=>setConfirmNew(false)}
-                  style={{flex:1,background:C.card,color:C.textSec,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                  style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
               </div>
             </div>
           )}
@@ -571,14 +571,14 @@ export default function App({ user, session } = {}) {
       {/* ══ ANÁLISE ══════════════════════════════════ */}
       {tab==='analise' && (
         <div style={{paddingBottom:100}}>
-          <div style={{padding:'24px 22px 16px',background:C.surface,borderBottom:`1px solid ${C.border}`}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:C.textMuted,marginBottom:4}}>Padrões</div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.text,fontStyle:'italic'}}>Análise de ciclos</div>
-            <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>Baseada nos últimos {stats?.cycleCount||0} ciclos registrados</div>
+          <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Padrões</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>Análise de ciclos</div>
+            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Baseada nos últimos {stats?.cycleCount||0} ciclos registrados</div>
           </div>
 
           {!stats ? (
-            <div style={{padding:'40px 22px',textAlign:'center',color:C.textMuted,fontStyle:'italic',fontSize:13}}>
+            <div style={{padding:'40px 22px',textAlign:'center',color:DS.textSec,fontStyle:'italic',fontSize:13}}>
               Registre pelo menos 2 ciclos completos para ver a análise.
             </div>
           ) : (
@@ -601,13 +601,13 @@ export default function App({ user, session } = {}) {
                     {l:'Mais tarde',v:stats.maxApice?`Dia ${stats.maxApice}`:'—'},
                 ]},
               ].map(section=>(
-                <div key={section.title} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px',marginBottom:14}}>
-                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:C.text,marginBottom:12}}>{section.title}</div>
+                <div key={section.title} style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',marginBottom:14,boxShadow:DS.shadowCard}}>
+                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textMain,marginBottom:12}}>{section.title}</div>
                   <div style={{display:'flex',gap:8}}>
                     {section.items.map(item=>(
-                      <div key={item.l} style={{flex:1,background:C.surface,borderRadius:10,padding:'10px 8px',textAlign:'center'}}>
-                        <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:'Cormorant Garamond,serif'}}>{item.v}</div>
-                        <div style={{fontSize:10,color:C.textMuted,marginTop:2}}>{item.l}</div>
+                      <div key={item.l} style={{flex:1,background:DS.bg,borderRadius:10,padding:'10px 8px',textAlign:'center'}}>
+                        <div style={{fontSize:16,fontWeight:700,color:DS.textMain,fontFamily:'Cormorant Garamond,serif'}}>{item.v}</div>
+                        <div style={{fontSize:10,color:DS.textSec,marginTop:2}}>{item.l}</div>
                       </div>
                     ))}
                   </div>
@@ -615,12 +615,12 @@ export default function App({ user, session } = {}) {
               ))}
 
               {/* BIP status */}
-              <div style={{background:stats.bipConfirmed?C.sageLight:C.amberLight,border:`1px solid ${stats.bipConfirmed?C.sageBorder:C.amberBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:14}}>
+              <div style={{background:stats.bipConfirmed?DS.successLight:DS.warningLight,border:`1px solid ${stats.bipConfirmed?DS.successBorder:DS.warningBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:14}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                  <span style={{fontSize:16,color:stats.bipConfirmed?C.sage:C.amber}}>{stats.bipConfirmed?'✓':'○'}</span>
-                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:stats.bipConfirmed?C.sage:C.amber}}>Padrão Básico de Infertilidade (PBI)</div>
+                  <span style={{fontSize:16,color:stats.bipConfirmed?DS.success:DS.warning}}>{stats.bipConfirmed?'✓':'○'}</span>
+                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:stats.bipConfirmed?DS.success:DS.warning}}>Padrão Básico de Infertilidade (PBI)</div>
                 </div>
-                <div style={{fontSize:12,color:C.textSec,lineHeight:1.6}}>
+                <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6}}>
                   {stats.bipConfirmed
                     ? 'PBI confirmado em 3 ciclos consecutivos de menos de 35 dias com padrão inalterado.'
                     : 'PBI ainda em confirmação. São necessários 3 ciclos seguidos com padrão inalterado para confirmar.'}
@@ -629,26 +629,26 @@ export default function App({ user, session } = {}) {
 
               {/* Flags */}
               <div style={{marginBottom:14}}>
-                <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:C.text,marginBottom:12}}>Observações clínicas</div>
+                <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textMain,marginBottom:12}}>Observações clínicas</div>
                 {stats.flags.map((flag,i)=>{
                   const flagColors = {
-                    ok:        {bg:C.sageLight,  border:C.sageBorder,  text:C.sage,  icon:'✓'},
-                    informação:{bg:C.amberLight, border:C.amberBorder, text:C.amber, icon:'ℹ'},
-                    atenção:   {bg:C.roseLight,  border:C.roseBorder,  text:C.rose,  icon:'!'},
+                    ok:        {bg:DS.successLight, border:DS.successBorder, text:DS.success,  icon:'✓'},
+                    informação:{bg:DS.warningLight,  border:DS.warningBorder, text:DS.warning,  icon:'ℹ'},
+                    atenção:   {bg:DS.errorLight,    border:DS.errorBorder,   text:DS.error,    icon:'!'},
                   };
                   const fc = flagColors[flag.level] || flagColors.informação;
                   return (
                     <div key={i} style={{background:fc.bg,border:`1px solid ${fc.border}`,borderRadius:12,padding:'12px 14px',marginBottom:10,display:'flex',gap:10,alignItems:'flex-start'}}>
                       <span style={{color:fc.text,fontSize:14,flexShrink:0,marginTop:1}}>{fc.icon}</span>
-                      <div style={{fontSize:12,color:C.textSec,lineHeight:1.7}}>{flag.msg}</div>
+                      <div style={{fontSize:12,color:DS.textSec,lineHeight:1.7}}>{flag.msg}</div>
                     </div>
                   );
                 })}
               </div>
 
               {/* Disclaimer */}
-              <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:'12px 14px'}}>
-                <div style={{fontSize:11,color:C.textMuted,lineHeight:1.6,textAlign:'center',fontStyle:'italic'}}>
+              <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:12,padding:'12px 14px',boxShadow:DS.shadowCard}}>
+                <div style={{fontSize:11,color:DS.textSec,lineHeight:1.6,textAlign:'center',fontStyle:'italic'}}>
                   Esta análise é uma ferramenta de apoio ao registro. A interpretação clínica do ciclo é responsabilidade exclusiva da instrutora credenciada CENPLAFAM/WOOMB.
                 </div>
               </div>
@@ -661,10 +661,10 @@ export default function App({ user, session } = {}) {
       {tab==='guia' && (
         <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 72px)'}}>
           <div style={{padding:'20px 22px 0'}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,marginBottom:8,color:C.text}}>Guia de anotações</div>
-            <div style={{background:C.amberLight,border:`1px solid ${C.amberBorder}`,borderRadius:12,padding:'10px 14px',marginBottom:10}}>
-              <div style={{fontSize:12,color:C.textSec,lineHeight:1.6}}>
-                Ajuda com o uso do app. <strong style={{color:C.amber}}>Interpretação do ciclo</strong> é exclusiva da sua instrutora. {!apiKey&&<span style={{color:C.rose}}> Adicione sua chave API na aba Perfil para ativar.</span>}
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,marginBottom:8,color:DS.textMain}}>Guia de anotações</div>
+            <div style={{background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:12,padding:'10px 14px',marginBottom:10}}>
+              <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6}}>
+                Ajuda com o uso do app. <strong style={{color:DS.warning}}>Interpretação do ciclo</strong> é exclusiva da sua instrutora. {!apiKey&&<span style={{color:DS.error}}> Adicione sua chave API na aba Perfil para ativar.</span>}
               </div>
             </div>
           </div>
@@ -672,9 +672,9 @@ export default function App({ user, session } = {}) {
           <div style={{flex:1,overflowY:'auto',padding:'0 22px 12px'}}>
             {!msgs.length && (
               <div>
-                <div style={{fontSize:11,color:C.textMuted,marginBottom:10,fontFamily:'Cormorant Garamond,serif',fontStyle:'italic'}}>Perguntas frequentes</div>
+                <div style={{fontSize:11,color:DS.textSec,marginBottom:10,fontFamily:'Cormorant Garamond,serif',fontStyle:'italic'}}>Perguntas frequentes</div>
                 {['Como registro o Ápice (✕)?','O que é o PBI — Padrão Básico de Infertilidade?','Diferença entre os tipos de muco','Esqueci de registrar ontem','Como compartilhar com a instrutora?'].map(q=>(
-                  <button key={q} onClick={()=>sendAI(q)} style={{display:'block',width:'100%',background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:'11px 14px',textAlign:'left',fontSize:13,color:C.textSec,cursor:'pointer',marginBottom:8,fontFamily:'inherit'}}>
+                  <button key={q} onClick={()=>sendAI(q)} style={{display:'block',width:'100%',background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',textAlign:'left',fontSize:13,color:DS.textSec,cursor:'pointer',marginBottom:8,fontFamily:'inherit',boxShadow:DS.shadowCard}}>
                     {q}
                   </button>
                 ))}
@@ -684,27 +684,27 @@ export default function App({ user, session } = {}) {
               <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-end':'flex-start',marginBottom:10}}>
                 <div style={{maxWidth:'82%',padding:'10px 14px',fontSize:13,lineHeight:1.6,
                   borderRadius:m.role==='user'?'16px 16px 4px 16px':'16px 16px 16px 4px',
-                  background:m.role==='user'?C.terra:C.card,color:m.role==='user'?C.white:C.text,
-                  border:m.role==='assistant'?`1px solid ${C.border}`:'none'}}>
+                  background:m.role==='user'?DS.primary:DS.surface,color:m.role==='user'?DS.surface:DS.textMain,
+                  border:m.role==='assistant'?`1px solid ${DS.border}`:'none',boxShadow:m.role==='assistant'?DS.shadowCard:'none'}}>
                   {m.content}
                 </div>
               </div>
             ))}
             {aiLoading && (
               <div style={{display:'flex',gap:4,padding:'4px 0 12px'}}>
-                {[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:'50%',background:C.terra,animation:`dot 1s ${i*0.2}s infinite`}}/>)}
+                {[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:'50%',background:DS.primary,animation:`dot 1s ${i*0.2}s infinite`}}/>)}
               </div>
             )}
             <div ref={chatEnd}/>
           </div>
 
-          <div style={{padding:'10px 22px 24px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',gap:8}}>
+          <div style={{padding:'10px 22px 24px',borderTop:`1px solid ${DS.border}`,background:DS.surface,display:'flex',gap:8}}>
             <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendAI()}
               placeholder="Dúvida sobre anotações..."
-              style={{flex:1,background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:'11px 14px',fontSize:13,color:C.text,outline:'none'}}
+              style={{flex:1,background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:12,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none'}}
             />
             <button onClick={()=>sendAI()} disabled={aiLoading||!input.trim()}
-              style={{background:input.trim()?C.terra:C.border,color:input.trim()?C.white:C.textMuted,border:'none',borderRadius:12,padding:'11px 18px',cursor:input.trim()?'pointer':'default',fontSize:15}}>↑</button>
+              style={{background:input.trim()?DS.primary:DS.border,color:input.trim()?DS.surface:DS.textSec,border:'none',borderRadius:12,padding:'11px 18px',cursor:input.trim()?'pointer':'default',fontSize:15}}>↑</button>
           </div>
         </div>
       )}
@@ -719,7 +719,7 @@ export default function App({ user, session } = {}) {
         <NotificationPreferencesPage />
       )}
       {tab==='notificacoes' && !user && (
-        <div style={{padding:'40px 22px',textAlign:'center',color:C.textMuted,fontStyle:'italic',fontSize:13}}>
+        <div style={{padding:'40px 22px',textAlign:'center',color:DS.textSec,fontStyle:'italic',fontSize:13}}>
           Faça login para gerenciar suas notificações.
         </div>
       )}
@@ -727,66 +727,66 @@ export default function App({ user, session } = {}) {
       {/* ══ PERFIL ═══════════════════════════════════ */}
       {tab==='perfil' && (
         <div style={{paddingBottom:100}}>
-          <div style={{padding:'24px 22px 16px',background:C.surface,borderBottom:`1px solid ${C.border}`}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:C.textMuted,marginBottom:4}}>Conta</div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.text,fontStyle:'italic'}}>Perfil</div>
+          <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Conta</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>Perfil</div>
           </div>
 
           <div style={{padding:'22px'}}>
             {/* Instructor */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:C.text,marginBottom:14}}>Minha Instrutora</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14}}>Minha Instrutora</div>
             {!instructor ? (
               <div>
-                <div style={{textAlign:'center',padding:'16px 0 20px',color:C.textMuted}}>
+                <div style={{textAlign:'center',padding:'16px 0 20px',color:DS.textSec}}>
                   <div style={{fontSize:32,marginBottom:8}}>○</div>
-                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:C.textSec,marginBottom:4}}>Nenhuma instrutora associada</div>
+                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textSec,marginBottom:4}}>Nenhuma instrutora associada</div>
                 </div>
-                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'18px',marginBottom:16}}>
+                <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'18px',marginBottom:16,boxShadow:DS.shadowCard}}>
                   {[{key:'name',label:'Nome',ph:'Nome da instrutora',type:'text'},{key:'email',label:'E-mail',ph:'email@instrutora.com.br',type:'email'}].map(f=>(
                     <div key={f.key} style={{marginBottom:14}}>
-                      <div style={{fontSize:10,fontWeight:700,color:C.textMuted,letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>{f.label}</div>
+                      <div style={{fontSize:10,fontWeight:700,color:DS.textSec,letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>{f.label}</div>
                       <input value={instrForm[f.key]} type={f.type} onChange={e=>setInstrForm(p=>({...p,[f.key]:e.target.value}))}
                         placeholder={f.ph}
-                        style={{width:'100%',background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:C.text,outline:'none',boxSizing:'border-box'}}
+                        style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none',boxSizing:'border-box'}}
                       />
                     </div>
                   ))}
                   <button onClick={()=>{if(instrForm.name.trim()&&instrForm.email.trim())saveInstructor({name:instrForm.name.trim(),email:instrForm.email.trim()});}}
-                    style={{width:'100%',background:instrForm.name.trim()&&instrForm.email.trim()?C.sage:C.border,color:instrForm.name.trim()&&instrForm.email.trim()?C.white:C.textMuted,border:'none',borderRadius:12,padding:'13px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
+                    style={{width:'100%',background:instrForm.name.trim()&&instrForm.email.trim()?DS.primary:DS.border,color:instrForm.name.trim()&&instrForm.email.trim()?DS.surface:DS.textSec,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
                     Associar instrutora
                   </button>
                 </div>
               </div>
             ) : (
               <div style={{marginBottom:16}}>
-                <div style={{background:C.card,border:`1px solid ${C.sageBorder}`,borderRadius:14,padding:'16px',marginBottom:10}}>
+                <div style={{background:DS.surface,border:`1px solid ${DS.primaryBorder}`,borderRadius:14,padding:'16px',marginBottom:10,boxShadow:DS.shadowCard}}>
                   <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:12}}>
-                    <div style={{width:44,height:44,borderRadius:'50%',background:C.sageLight,border:`1.5px solid ${C.sageBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:C.sage,flexShrink:0}}>○</div>
+                    <div style={{width:44,height:44,borderRadius:'50%',background:DS.primaryLight,border:`1.5px solid ${DS.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,color:DS.primary,flexShrink:0}}>○</div>
                     <div>
-                      <div style={{fontSize:15,fontWeight:700,color:C.text}}>{instructor.name}</div>
-                      <div style={{fontSize:12,color:C.textMuted,marginTop:2}}>{instructor.email}</div>
+                      <div style={{fontSize:15,fontWeight:700,color:DS.textMain}}>{instructor.name}</div>
+                      <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>{instructor.email}</div>
                     </div>
                   </div>
-                  <div style={{display:'flex',alignItems:'center',gap:6,background:C.sageLight,border:`1px solid ${C.sageBorder}`,borderRadius:8,padding:'7px 12px'}}>
-                    <span style={{color:C.sage,fontSize:12}}>✓</span>
-                    <span style={{fontSize:12,color:C.sage,fontWeight:600}}>Associação ativa — instrutora temporária</span>
+                  <div style={{display:'flex',alignItems:'center',gap:6,background:DS.successLight,border:`1px solid ${DS.successBorder}`,borderRadius:8,padding:'7px 12px'}}>
+                    <span style={{color:DS.success,fontSize:12}}>✓</span>
+                    <span style={{fontSize:12,color:DS.success,fontWeight:600}}>Associação ativa — instrutora temporária</span>
                   </div>
                 </div>
                 <button onClick={()=>window.open(`https://wa.me/?text=${encodeURIComponent(`Olá ${instructor.name}! Segue meu gráfico do Método Billings para nossa consulta. Ciclo atual: dia ${todayN}, início em ${fmtShort(cycleStart)}.`)}`, '_blank')}
-                  style={{width:'100%',background:C.sage,color:C.white,border:'none',borderRadius:12,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                  style={{width:'100%',background:DS.secondary,color:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
                   <span>↗</span> Compartilhar via WhatsApp
                 </button>
                 {!instrConfirm ? (
                   <button onClick={()=>setInstrConfirm(true)}
-                    style={{width:'100%',background:'transparent',color:C.textMuted,border:`1px solid ${C.border}`,borderRadius:12,padding:'11px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{width:'100%',background:'transparent',color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:DS.radiusBtn,padding:'11px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
                     Desassociar instrutora
                   </button>
                 ) : (
-                  <div style={{background:C.roseLight,border:`1px solid ${C.roseBorder}`,borderRadius:14,padding:14}}>
-                    <div style={{fontSize:13,color:C.rose,marginBottom:12}}>Remover associação com <strong>{instructor.name}</strong>?</div>
+                  <div style={{background:DS.errorLight,border:`1px solid ${DS.errorBorder}`,borderRadius:14,padding:14}}>
+                    <div style={{fontSize:13,color:DS.error,marginBottom:12}}>Remover associação com <strong>{instructor.name}</strong>?</div>
                     <div style={{display:'flex',gap:8}}>
-                      <button onClick={removeInstructor} style={{flex:1,background:C.rose,color:C.white,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
-                      <button onClick={()=>setInstrConfirm(false)} style={{flex:1,background:C.card,color:C.textSec,border:`1px solid ${C.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                      <button onClick={removeInstructor} style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
+                      <button onClick={()=>setInstrConfirm(false)} style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
                     </div>
                   </div>
                 )}
@@ -794,37 +794,37 @@ export default function App({ user, session } = {}) {
             )}
 
             {/* Reminders */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:C.text,marginBottom:12,marginTop:16}}>Lembretes</div>
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px',marginBottom:16}}>
-              <div style={{fontSize:13,color:C.textSec,lineHeight:1.6,marginBottom:14}}>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:16}}>Lembretes</div>
+            <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',marginBottom:16,boxShadow:DS.shadowCard}}>
+              <div style={{fontSize:13,color:DS.textSec,lineHeight:1.6,marginBottom:14}}>
                 Baixe o lembrete diário para seu calendário (iOS, Google, Outlook). O alarme disparará às 21h todos os dias.
               </div>
               <button onClick={()=>downloadICS(generateDailyReminder({hour:21}))}
-                style={{width:'100%',background:C.terra,color:C.white,border:'none',borderRadius:12,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
+                style={{width:'100%',background:DS.primary,color:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
                 ↓ Baixar lembrete diário (.ics)
               </button>
             </div>
 
             {/* API Key */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:C.text,marginBottom:12,marginTop:4}}>Guia IA</div>
-            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px'}}>
-              <div style={{fontSize:12,color:C.textMuted,lineHeight:1.6,marginBottom:12}}>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:4}}>Guia IA</div>
+            <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',boxShadow:DS.shadowCard}}>
+              <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6,marginBottom:12}}>
                 Para usar o Guia IA, insira sua chave da API Anthropic. Ela fica salva apenas neste dispositivo.
               </div>
               <input value={apiKey} onChange={e=>setApiKey(e.target.value)} type="password"
                 placeholder="sk-ant-..."
-                style={{width:'100%',background:C.surface,border:`1px solid ${C.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:C.text,outline:'none',boxSizing:'border-box',marginBottom:10}}
+                style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none',boxSizing:'border-box',marginBottom:10}}
               />
               <button onClick={()=>saveApiKey(apiKey)}
-                style={{width:'100%',background:apiKey?C.sage:C.border,color:apiKey?C.white:C.textMuted,border:'none',borderRadius:12,padding:'12px',fontSize:13,fontWeight:700,cursor:apiKey?'pointer':'default',fontFamily:'Lato,sans-serif'}}>
+                style={{width:'100%',background:apiKey?DS.primary:DS.border,color:apiKey?DS.surface:DS.textSec,border:'none',borderRadius:DS.radiusBtn,padding:'12px',fontSize:13,fontWeight:700,cursor:apiKey?'pointer':'default',fontFamily:'Lato,sans-serif'}}>
                 Salvar chave
               </button>
             </div>
 
             {/* Disclaimer */}
-            <div style={{marginTop:20,background:C.amberLight,border:`1px solid ${C.amberBorder}`,borderRadius:12,padding:'12px 14px'}}>
-              <div style={{fontSize:11,color:C.textMuted,lineHeight:1.7}}>
-                <strong style={{color:C.amber}}>Importante</strong> — O aplicativo não deverá ser usado por pessoas que não tenham conhecimento do Método de Ovulação Billings. Para isso, procure uma instrutora oficial ou a CENPLAFAM – WOOMB BRASIL.
+            <div style={{marginTop:20,background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:12,padding:'12px 14px'}}>
+              <div style={{fontSize:11,color:DS.textSec,lineHeight:1.7}}>
+                <strong style={{color:DS.warning}}>Importante</strong> — O aplicativo não deverá ser usado por pessoas que não tenham conhecimento do Método de Ovulação Billings. Para isso, procure uma instrutora oficial ou a CENPLAFAM – WOOMB BRASIL.
               </div>
             </div>
           </div>
