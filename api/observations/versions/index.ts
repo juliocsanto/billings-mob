@@ -134,7 +134,7 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
   }
 
   const observationId = conflictVersion.observation_id as string;
-  const obs = conflictVersion.observations as Record<string, unknown>;
+  const obs = conflictVersion.observations as unknown as Record<string, unknown>;
 
   if (body.keep === 'student') {
     // Validate student_version_id is provided (enforced by Zod refine above)

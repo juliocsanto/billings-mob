@@ -18,27 +18,6 @@ import { useAuth } from '../hooks/useAuth';
 import { DS } from '../constants.js';
 import type { User, Session } from '@supabase/supabase-js';
 
-// Legacy palette kept for non-redesigned bits; DS used for all new/redesigned elements
-const C = {
-  bg:          '#DDD3C4',
-  surface:     '#D4C9B8',
-  card:        '#E4D8C8',
-  border:      '#B8A898',
-  text:        '#241408',
-  textSec:     '#6A5040',
-  textMuted:   '#9A8070',
-  terra:       '#8C3C28',
-  terraLight:  '#E8C8BC',
-  terraBorder: '#C49080',
-  sage:        '#3E5E48',
-  sageLight:   '#C8D8CC',
-  sageBorder:  '#7EA48A',
-  amber:       '#846010',
-  amberLight:  '#E4D4A0',
-  amberBorder: '#B89848',
-  white:       '#F0E8DC',
-};
-
 interface AuthGateProps {
   children: (props: { user: User; session: Session }) => ReactNode;
 }
