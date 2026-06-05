@@ -6,6 +6,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.4] - 2026-06-05
+
+### Changed
+- README reescrito em Português-BR correto: acentos e cedilhas restaurados em todo o documento, badge de versão atualizado para v1.4.3 (#28)
+
+### Added
+- `docs/sprint6.7-review-report.md`: relatório consolidado de 4 code reviews da Sprint 6.7 — Clean Code, DDD, Clean Architecture e Anti-Hacking — com achados categorizados por severidade e planos de ação (#28)
+
+---
+
 ## [1.4.3] - 2026-06-04
 
 ### Changed
