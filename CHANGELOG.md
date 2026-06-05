@@ -6,6 +6,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.6.0] - 2026-06-05
+
+### Added
+- Internacionalização completa (i18n PT-BR/EN): todos os ~80 strings hardcoded em App.jsx substituídos por `t()` via react-i18next em todas as 7 abas (Hoje, Gráfico, Análise, Guia, Notificações, Vínculo, Perfil)
+- Novos namespaces de tradução: `app` (70+ chaves), `pdf` (18 chaves), `stampsub`, `mucus`, `bleeding`, `sensacao`, `tipoObservacao`
+- ChartPDF.jsx internacionalizado com `useTranslation` — título, labels de linhas, legendas, disclaimer e data de geração
+- en.json: espelho completo em inglês para todos os novos namespaces
+- DS tokens: `DS.warningText` (#92400E) e `DS.bleedingColor` (#A03030) — elimina últimos hex hardcoded do App.jsx
+- Acessibilidade: `aria-label` em inputs do guia/perfil, `label htmlFor` no form de instrutora, `role=button`/`tabIndex`/`onKeyDown` nos círculos do gráfico
+- `phaseMap` expandido para incluir `muco`
+
+---
+
 ## [1.5.2] - 2026-06-05
 
 ### Added
