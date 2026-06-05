@@ -4,6 +4,7 @@ import {
   Document, Page, View, Text, Svg, Circle, Line,
   StyleSheet,
 } from '@react-pdf/renderer';
+import { useTranslation } from 'react-i18next';
 
 // ── Stamp colors aligned with CENPLAFAM legend ──
 const STAMP_COLORS = {
@@ -50,11 +51,8 @@ function StampCircle({ stamp }) {
   );
 }
 
-function DayColumn({ day, obs }) {
+function DayColumn({ day, obs, stampLabels, mucusMap, bleedMap }) {
   const stamp = obs?.stamp || null;
-  const mucusMap = { opaco:'Op', cremoso:'Cr', transparente:'Tr', elastico:'El' };
-  const sensMap  = { sangramento:'Sang', seco:'Seco', muco:'Muco', apice:'Ápice' };
-  const bleedMap = { intenso:'●●●', moderado:'●●', leve:'●', manchas:'·' };
 
   return (
     <View style={styles.dayCol}>
@@ -71,7 +69,7 @@ function DayColumn({ day, obs }) {
       </View>
       {/* Sensation */}
       <Text style={[styles.cellText, { borderTopWidth: 0.5, borderColor: '#DDD', fontSize: 5.5 }]}>
-        {stamp ? sensMap[stamp] || '' : ''}
+        {stamp ? stampLabels[stamp] || '' : ''}
       </Text>
       {/* Mucus type */}
       <Text style={[styles.cellText, { borderTopWidth: 0.5, borderColor: '#DDD', color: '#886000' }]}>
@@ -89,14 +87,14 @@ function DayColumn({ day, obs }) {
   );
 }
 
-function ChartRow({ days, label }) {
+function ChartRow({ days, label, stampLabels, mucusMap, bleedMap, rowLabels }) {
   return (
     <View>
       <Text style={styles.sectionLabel}>{label}</Text>
       <View style={{ flexDirection: 'row', marginBottom: 4 }}>
         {/* Row legend */}
         <View style={{ width: 40, marginRight: 4 }}>
-          {['Data','Dia','Obs.','Sens.','Muco','Sang.','Rel.'].map((l, i) => (
+          {rowLabels.map((l, i) => (
             <View key={i} style={{ height: i === 2 ? 26 : 13, justifyContent: 'center' }}>
               <Text style={{ fontSize: 5.5, color: '#888', textAlign: 'right' }}>{l}</Text>
             </View>
@@ -104,7 +102,7 @@ function ChartRow({ days, label }) {
         </View>
         {/* Day columns */}
         {days.map(d => (
-          <DayColumn key={d.n} day={d} obs={d.obs} />
+          <DayColumn key={d.n} day={d} obs={d.obs} stampLabels={stampLabels} mucusMap={mucusMap} bleedMap={bleedMap} />
         ))}
       </View>
     </View>
@@ -112,9 +110,29 @@ function ChartRow({ days, label }) {
 }
 
 export function ChartDocument({ cycle, history = [], instructor = null }) {
+  const { t } = useTranslation();
   const { start, obs = {} } = cycle;
   const allCycles = [...history, cycle];
   const cycleNum  = allCycles.length;
+
+  // Localised label maps
+  const stampLabels = {
+    sangramento: t('pdf.stampSangramento'),
+    seco:        t('pdf.stampSeco'),
+    muco:        t('pdf.stampMuco'),
+    apice:       t('pdf.stampApice'),
+  };
+  const mucusMap = { opaco:'Op', cremoso:'Cr', transparente:'Tr', elastico:'El' };
+  const bleedMap = { intenso:'●●●', moderado:'●●', leve:'●', manchas:'·' };
+  const rowLabels = [
+    t('pdf.rowData'),
+    t('pdf.rowDay'),
+    t('pdf.rowObs'),
+    t('pdf.rowSens'),
+    t('pdf.rowMucus'),
+    t('pdf.rowBleeding'),
+    t('pdf.rowRelations'),
+  ];
 
   // Build 35-day array
   const allDays = [];
@@ -131,37 +149,39 @@ export function ChartDocument({ cycle, history = [], instructor = null }) {
   const fmtDate = ds =>
     new Date(ds + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
 
+  const legendItems = [
+    { fill:'#CC3333', label: t('pdf.legendBleeding') },
+    { fill:'#336633', label: t('pdf.legendDry') },
+    { fill:'#F5F0DC', label: t('pdf.legendMucus') },
+    { fill:'#F5F0DC', label: t('pdf.legendApice') },
+    { fill:'transparent', label: t('pdf.legendRelations') },
+  ];
+
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Gráfico do Ciclo — Método de Ovulação Billings (MOB)</Text>
-            <Text style={styles.headerSub}>Ciclo Nº {cycleNum}  ·  Início: {fmtDate(start)}</Text>
+            <Text style={styles.headerTitle}>{t('pdf.chartTitle')}</Text>
+            <Text style={styles.headerSub}>{t('pdf.cycleNumber', {num: cycleNum})}  ·  {t('pdf.cycleStart', {date: fmtDate(start)})}</Text>
             {instructor && (
-              <Text style={styles.headerSub}>Instrutora: {instructor.name}  ·  {instructor.email}</Text>
+              <Text style={styles.headerSub}>{t('pdf.instructor', {name: instructor.name, email: instructor.email})}</Text>
             )}
           </View>
           <View style={{ alignItems:'flex-end' }}>
-            <Text style={{ fontSize: 7, color: '#888' }}>Gerado em {fmtDate(new Date().toISOString().split('T')[0])}</Text>
+            <Text style={{ fontSize: 7, color: '#888' }}>{t('pdf.generatedOn', {date: fmtDate(new Date().toISOString().split('T')[0])})}</Text>
           </View>
         </View>
 
         {/* Chart rows */}
-        <ChartRow days={topRow}    label="Dias 1 – 16" />
-        <ChartRow days={bottomRow} label="Dias 17 – 35" />
+        <ChartRow days={topRow}    label={t('pdf.rowDays1_16')} stampLabels={stampLabels} mucusMap={mucusMap} bleedMap={bleedMap} rowLabels={rowLabels} />
+        <ChartRow days={bottomRow} label={t('pdf.rowDays17_35')} stampLabels={stampLabels} mucusMap={mucusMap} bleedMap={bleedMap} rowLabels={rowLabels} />
 
         {/* Legend */}
         <View style={styles.legend}>
-          <Text style={{ fontSize: 7, color: '#555', fontFamily: 'Helvetica-Bold' }}>Legenda:  </Text>
-          {[
-            { fill:'#CC3333', label:'Sangramento / Menstruação' },
-            { fill:'#336633', label:'Seco / PBI' },
-            { fill:'#F5F0DC', label:'Muco presente / Ponto de mudança' },
-            { fill:'#F5F0DC', label:'Ápice (✕) — último dia lubrificante' },
-            { fill:'transparent', label:'♥ Relações íntimas' },
-          ].map((item, i) => (
+          <Text style={{ fontSize: 7, color: '#555', fontFamily: 'Helvetica-Bold' }}>{t('pdf.legendLabel')}</Text>
+          {legendItems.map((item, i) => (
             <View key={i} style={styles.legendItem}>
               <Svg width={10} height={10} viewBox="0 0 10 10">
                 <Circle cx={5} cy={5} r={4} fill={item.fill} stroke="#888" strokeWidth={0.5} />
@@ -173,7 +193,7 @@ export function ChartDocument({ cycle, history = [], instructor = null }) {
 
         {/* Notes */}
         <View style={{ marginTop: 8, borderTopWidth: 0.5, borderColor: '#CCC', paddingTop: 4 }}>
-          <Text style={{ fontSize: 7, color: '#888', fontFamily: 'Helvetica-Bold' }}>Notas do ciclo:</Text>
+          <Text style={{ fontSize: 7, color: '#888', fontFamily: 'Helvetica-Bold' }}>{t('pdf.cycleNotes')}</Text>
           {Object.entries(obs).filter(([,o]) => o?.notes).slice(0, 6).map(([date, o]) => (
             <Text key={date} style={{ fontSize: 7, color: '#555', marginTop: 2 }}>
               {fmtDate(date)}: {o.notes}
@@ -183,7 +203,7 @@ export function ChartDocument({ cycle, history = [], instructor = null }) {
 
         {/* Disclaimer */}
         <Text style={styles.disclaimer}>
-          Este gráfico é uma ferramenta de registro. A interpretação do ciclo é exclusiva da instrutora credenciada CENPLAFAM/WOOMB.
+          {t('pdf.disclaimer')}
         </Text>
       </Page>
     </Document>
