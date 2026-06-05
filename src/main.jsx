@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import './i18n/index.js'; // initialise i18next before React mounts (ADR-014)
 import App from './App.jsx';
 import { AuthGate } from './components/AuthGate.tsx';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage.jsx';
 import './index.css';
 
 /**
@@ -115,10 +116,17 @@ registerSW({
   },
 });
 
+// Public routes rendered without authentication guard
+const isPrivacyPage = window.location.pathname === '/privacy';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthGate>
-      {({ user, session }) => <App user={user} session={session} />}
-    </AuthGate>
+    {isPrivacyPage ? (
+      <PrivacyPolicyPage />
+    ) : (
+      <AuthGate>
+        {({ user, session }) => <App user={user} session={session} />}
+      </AuthGate>
+    )}
   </React.StrictMode>
 );
