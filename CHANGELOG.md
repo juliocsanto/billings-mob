@@ -6,6 +6,27 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.1] - 2026-06-05
+
+### Changed
+- Extracted `saveVersionSnapshot` and `writeObservationAuditLog` as dedicated functions from the PATCH observations handler, enforcing Single Responsibility Principle (CC-001)
+- Extracted `OBSERVATION_SELECT_COLUMNS` as a shared constant in `schema.ts`, eliminating three duplicated SELECT column blocks across handlers (CC-002/003)
+- Extracted `RATE_LIMIT_KEYS` as a named constant in `rateLimit.ts` (CC-004)
+- Extracted `restoreStudentVersion` with a `RestoreResult` discriminated union for explicit success/error typing (CC-005)
+- Removed redundant `const now` declaration — single declaration in `instructor-student-links/[id].ts` (CC-006)
+- Renamed `obs` → `parentObservation` and `studentData` → `studentVersionData` for clarity (CC-007/008)
+- Replaced 8-line inline comment with a single ADR reference line (CC-009)
+- Moved `import hono/vercel` to the top of each handler file, enforcing consistent import order (CC-012)
+- Extracted `canAccept` and `canRevoke` as pure domain functions in `instructor-student-links/[id].ts` (DDD-007)
+- Separated `authenticateRequest` and `resolveUserRole` into distinct functions in `auth.ts` (CA-005)
+
+### Fixed
+- Added `instanceof TypeError` guard in `useObservationSync.ts` to prevent unhandled non-Error throws from crashing the sync loop (CC-010)
+- Added `ObservationSnapshotSchema` with `safeParse` validation when reading `observation_versions.data`, preventing silent data corruption on malformed snapshots (DDD-003)
+- Added 400 guard response for link revocation attempts on already-revoked links (DDD-008)
+
+---
+
 ## [1.5.0] - 2026-06-05
 
 ### Added
