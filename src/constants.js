@@ -48,6 +48,8 @@ export const DS = {
   warningBorder:  '#FCD34D',
   errorLight:     '#FEE2E2',
   errorBorder:    '#FCA5A5',
+  warningText:    '#92400E',
+  bleedingColor:  '#A03030',
   // Shape & shadow tokens
   radiusCard:   8,
   radiusBtn:    24,

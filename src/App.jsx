@@ -202,7 +202,7 @@ export default function App({ user, session } = {}) {
     setInput(''); setMsgs(p=>[...p,{role:'user',content:msg}]); setAiLoading(true);
     const key = apiKey || loadApiKey();
     if (!key) {
-      setMsgs(p=>[...p,{role:'assistant',content:'Para usar o Guia IA, adicione sua chave da API Anthropic na aba Perfil.'}]);
+      setMsgs(p=>[...p,{role:'assistant',content:t('app.guideNeedApiKeyMsg')}]);
       setAiLoading(false); return;
     }
     try {
@@ -216,8 +216,8 @@ export default function App({ user, session } = {}) {
         }),
       });
       const data = await res.json();
-      setMsgs(p=>[...p,{role:'assistant',content:data.content?.find(b=>b.type==='text')?.text||'Erro na resposta.'}]);
-    } catch { setMsgs(p=>[...p,{role:'assistant',content:'Erro de conexão.'}]); }
+      setMsgs(p=>[...p,{role:'assistant',content:data.content?.find(b=>b.type==='text')?.text||t('app.guideErrorResponse')}]);
+    } catch { setMsgs(p=>[...p,{role:'assistant',content:t('app.guideErrorConnection')}]); }
     setAiLoading(false);
   };
 
@@ -226,7 +226,12 @@ export default function App({ user, session } = {}) {
   const aStamp   = STAMPS.find(s=>s.id===form.stamp);
   const sStamp   = STAMPS.find(s=>s.id===obs[today()]?.stamp);
   const disp     = aStamp || sStamp;
-  const phaseMap = {sangramento:'Menstruação',seco:'PBI',apice:'Ápice'};
+  const phaseMap = {
+    sangramento: t('app.phaseSangramento'),
+    seco: t('app.phaseSeco'),
+    muco: t('stamps.muco'),
+    apice: t('app.phaseApice'),
+  };
   const stats    = computeMultiCycleStats({start:cycleStart,obs}, history);
 
   if (!loaded) return (
@@ -241,8 +246,8 @@ export default function App({ user, session } = {}) {
       {/* Daily reminder banner */}
       {showBanner && (
         <div style={{background:DS.primary,color:DS.surface,padding:'10px 16px',display:'flex',justifyContent:'space-between',alignItems:'center',animation:'fadeIn 0.3s ease',position:'sticky',top:0,zIndex:30}}>
-          <span style={{fontSize:12}}>Não esqueça de anotar suas observações de hoje</span>
-          <button onClick={()=>setShowBanner(false)} style={{background:'none',border:'none',color:DS.surface,cursor:'pointer',fontSize:16,padding:0}}>✕</button>
+          <span style={{fontSize:12}}>{t('app.banner')}</span>
+          <button onClick={()=>setShowBanner(false)} aria-label={t('common.close')} style={{background:'none',border:'none',color:DS.surface,cursor:'pointer',fontSize:16,padding:0}}>✕</button>
         </div>
       )}
 
@@ -250,12 +255,12 @@ export default function App({ user, session } = {}) {
       <div style={{padding:'20px 22px 0',background:DS.surface,borderBottom:`1px solid ${DS.border}`,boxShadow:DS.shadowCard,position:'sticky',top:showBanner?42:0,zIndex:20}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:14}}>
           <div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:DS.textMain,fontWeight:700}}>Billings Gráfico</div>
-            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Dia {todayN} do ciclo · {new Date(today()+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:DS.textMain,fontWeight:700}}>{t('auth.appName')}</div>
+            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>{t('app.headerSubtitle', {day: todayN, date: new Date(today()+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})})}</div>
           </div>
-          {disp && <Tag label={phaseMap[disp.id]||disp.label} color={disp.c} bg={disp.bg} border={disp.border}/>}
+          {disp && <Tag label={phaseMap[disp.id]||t('stamps.'+disp.id)} color={disp.c} bg={disp.bg} border={disp.border}/>}
         </div>
-        <nav role="navigation" aria-label="Abas do aplicativo">
+        <nav role="navigation" aria-label={t('nav.hoje')}>
           <div role="tablist" style={{display:'flex',gap:0}}>
             {[{id:'hoje',l:t('nav.hoje')},{id:'grafico',l:t('nav.grafico')},{id:'analise',l:t('nav.analise')},{id:'guia',l:t('nav.guia')},{id:'vinculo',l:t('nav.vinculo')},{id:'notificacoes',l:t('nav.notificacoes')},{id:'perfil',l:t('nav.perfil')}].map(navItem=>(
               <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{
@@ -276,26 +281,28 @@ export default function App({ user, session } = {}) {
           {saved && (
             <div style={{background:DS.successLight,border:`1px solid ${DS.successBorder}`,borderRadius:12,padding:'10px 16px',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
               <span style={{color:DS.success,fontSize:14}}>✓</span>
-              <span style={{fontSize:13,color:DS.success}}>Observação de hoje salva</span>
+              <span style={{fontSize:13,color:DS.success}}>{t('app.savedToday')}</span>
             </div>
           )}
 
           {/* Stamps */}
           <div style={{marginBottom:24}}>
-            <Lbl>Observação de hoje</Lbl>
+            <Lbl>{t('app.observacaoHoje')}</Lbl>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {STAMPS.map(s=>{
                 const active = form.stamp===s.id;
                 return (
                   <button key={s.id} onClick={()=>setForm(p=>({...p,stamp:s.id,mucus:null,bleeding:null}))}
+                    aria-pressed={active}
+                    data-testid={`stamp-${s.id}`}
                     style={{background:active?DS.primary:DS.surface,border:`1.5px solid ${active?DS.primary:DS.border}`,borderRadius:14,
                       padding:'16px 14px',textAlign:'left',cursor:'pointer',fontFamily:'inherit',transition:'all 0.2s',
                       boxShadow:active?DS.shadowCard:'none'}}>
                     <div style={{width:34,height:34,borderRadius:'50%',background:active?DS.surface:s.bg,
                       border:`1.5px solid ${s.c}`,display:'flex',alignItems:'center',justifyContent:'center',
                       fontSize:18,color:active?DS.primary:s.c,marginBottom:10,fontFamily:'Georgia,serif',fontWeight:700}}>{s.sym}</div>
-                    <div style={{fontSize:14,fontWeight:700,color:active?DS.surface:DS.textMain}}>{s.label}</div>
-                    <div style={{fontSize:11,color:active?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{s.sub}</div>
+                    <div style={{fontSize:14,fontWeight:700,color:active?DS.surface:DS.textMain}}>{t('stamps.'+s.id)}</div>
+                    <div style={{fontSize:11,color:active?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{t('stampsub.'+s.id)}</div>
                   </button>
                 );
               })}
@@ -305,10 +312,10 @@ export default function App({ user, session } = {}) {
           {/* Bleeding detail */}
           {form.stamp==='sangramento' && (
             <div style={{marginBottom:22}}>
-              <Lbl>Intensidade</Lbl>
+              <Lbl>{t('dayDetail.intensity')}</Lbl>
               <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                 {BLEEDING.map(b=>(
-                  <Pill key={b.id} label={b.label} active={form.bleeding===b.id} color='#A03030'
+                  <Pill key={b.id} label={t('bleeding.'+b.id)} active={form.bleeding===b.id} color={DS.bleedingColor}
                     onClick={()=>setForm(p=>({...p,bleeding:b.id}))}/>
                 ))}
               </div>
@@ -318,14 +325,14 @@ export default function App({ user, session } = {}) {
           {/* Mucus detail */}
           {form.stamp==='muco' && (
             <div style={{marginBottom:22}}>
-              <Lbl>Tipo de muco</Lbl>
+              <Lbl>{t('dayDetail.mucusType')}</Lbl>
               {MUCUS.map(m=>(
                 <button key={m.id} onClick={()=>setForm(p=>({...p,mucus:m.id}))}
                   style={{display:'block',width:'100%',background:form.mucus===m.id?DS.primary:DS.bg,
                     border:`1px solid ${form.mucus===m.id?DS.primary:DS.border}`,borderRadius:12,
                     padding:'11px 14px',textAlign:'left',cursor:'pointer',fontFamily:'inherit',marginBottom:8,transition:'all 0.15s'}}>
-                  <div style={{fontSize:13,fontWeight:700,color:form.mucus===m.id?DS.surface:DS.textMain}}>{m.label}</div>
-                  <div style={{fontSize:11,color:form.mucus===m.id?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{m.desc}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:form.mucus===m.id?DS.surface:DS.textMain}}>{t('mucus.'+m.id)}</div>
+                  <div style={{fontSize:11,color:form.mucus===m.id?'rgba(255,255,255,0.8)':DS.textSec,marginTop:2}}>{t('mucus.'+m.id+'_desc')}</div>
                 </button>
               ))}
             </div>
@@ -334,19 +341,21 @@ export default function App({ user, session } = {}) {
           {/* Apex info */}
           {form.stamp==='apice' && (
             <div style={{background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:22}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:DS.warning,marginBottom:6,fontStyle:'italic'}}>Ápice marcado</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:DS.warning,marginBottom:6,fontStyle:'italic'}}>{t('dayDetail.apiceMarked')}</div>
               <div style={{fontSize:12,color:DS.textSec,lineHeight:1.8}}>
-                Último dia de sensação lubrificante ou escorregadia.<br/>
-                A partir do <strong>4º dia após o Ápice</strong> inicia a Fase Lútea.<br/>
-                <span style={{color:DS.textSec}}>Informe sua instrutora certificada.</span>
+                {t('app.apiceDescLine1')}<br/>
+                {t('app.apiceDescLine2')}<br/>
+                <span style={{color:DS.textSec}}>{t('app.apiceDescLine3')}</span>
               </div>
             </div>
           )}
 
           {/* Relations */}
           <div style={{marginBottom:22}}>
-            <Lbl>Relações íntimas</Lbl>
+            <Lbl>{t('dayDetail.intimateRelations')}</Lbl>
             <button onClick={()=>setForm(p=>({...p,relations:!p.relations}))}
+              aria-pressed={form.relations}
+              data-testid="toggle-relations"
               style={{display:'flex',alignItems:'center',gap:12,background:form.relations?DS.errorLight:DS.bg,
                 border:`1.5px solid ${form.relations?DS.error:DS.border}`,borderRadius:12,padding:'12px 16px',
                 cursor:'pointer',fontFamily:'inherit',width:'100%',textAlign:'left',transition:'all 0.2s'}}>
@@ -357,18 +366,19 @@ export default function App({ user, session } = {}) {
               </div>
               <div>
                 <div style={{fontSize:13,fontWeight:600,color:form.relations?DS.error:DS.textMain}}>
-                  {form.relations?'Sim — houve relações hoje':'Não houve relações hoje'}
+                  {form.relations?t('app.relationsYesToday'):t('app.relationsNoToday')}
                 </div>
-                <div style={{fontSize:11,color:DS.textSec,marginTop:2}}>Visível apenas para a instrutora</div>
+                <div style={{fontSize:11,color:DS.textSec,marginTop:2}}>{t('app.relationsVisibility')}</div>
               </div>
             </button>
           </div>
 
           {/* Notes */}
           <div style={{marginBottom:22}}>
-            <Lbl>Notas para a instrutora</Lbl>
+            <Lbl>{t('dayDetail.notesLabel')}</Lbl>
             <textarea value={form.notes} onChange={e=>setForm(p=>({...p,notes:e.target.value}))}
-              placeholder="Observações adicionais..."
+              placeholder={t('app.notesPlaceholder')}
+              aria-label={t('dayDetail.notesLabel')}
               style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:12,
                 padding:'12px 16px',fontSize:13,color:DS.textMain,minHeight:72,
                 boxSizing:'border-box',outline:'none',lineHeight:1.6}}
@@ -377,27 +387,30 @@ export default function App({ user, session } = {}) {
 
           {/* Save */}
           <button onClick={()=>form.stamp&&persist(form)}
+            data-testid="save-observation"
             style={{width:'100%',background:form.stamp?DS.primary:DS.border,color:form.stamp?DS.surface:DS.textSec,
               border:'none',borderRadius:DS.radiusBtn,padding:'15px',fontSize:14,fontWeight:700,letterSpacing:'0.06em',
               textTransform:'uppercase',cursor:form.stamp?'pointer':'default',fontFamily:'Lato,sans-serif',
               transition:'all 0.2s',boxShadow:form.stamp?DS.shadowFAB:'none',marginBottom:10}}>
-            Salvar observação
+            {t('app.saveObservation')}
           </button>
 
           {!confirmNew ? (
             <button onClick={()=>setConfirmNew(true)}
+              data-testid="start-new-cycle"
               style={{width:'100%',background:'transparent',color:DS.textSec,border:`1px solid ${DS.border}`,
                 borderRadius:DS.radiusBtn,padding:'12px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-              + Iniciar novo ciclo
+              {t('app.startNewCycle')}
             </button>
           ) : (
             <div style={{background:DS.errorLight,border:`1px solid ${DS.errorBorder}`,borderRadius:14,padding:16}}>
-              <div style={{fontSize:13,color:DS.error,marginBottom:12}}>Reinicia o gráfico a partir de hoje. Confirma?</div>
+              <div style={{fontSize:13,color:DS.error,marginBottom:12}}>{t('app.confirmNewCycle')}</div>
               <div style={{display:'flex',gap:8}}>
                 <button onClick={()=>{const f={...EMPTY_FORM,stamp:'sangramento',bleeding:'moderado'};archiveAndReset(f,today());setConfirmNew(false);}}
-                  style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
+                  data-testid="confirm-new-cycle"
+                  style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>{t('common.confirm')}</button>
                 <button onClick={()=>setConfirmNew(false)}
-                  style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                  style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('common.cancel')}</button>
               </div>
             </div>
           )}
@@ -416,11 +429,12 @@ export default function App({ user, session } = {}) {
         return (
           <div style={{paddingBottom:100}}>
             <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Histórico de Ciclos</div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>{selCycle?selCycle.label:'Ciclo atual'}</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>{t('app.cycleHistory')}</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>{selCycle?selCycle.label:t('app.currentCycle')}</div>
               <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>
-                {selCycle?`Início: ${fmtShort(selCycle.start)} · ${selCycle.duration||Object.keys(selCycle.obs||{}).length} dias`
-                  :`Início: ${fmtShort(cycleStart)} · Dia ${todayN} · ${Object.keys(obs).length} registros`}
+                {selCycle
+                  ? `${t('app.cycleStart')}${fmtShort(selCycle.start)} · ${t('app.days', {count: selCycle.duration||Object.keys(selCycle.obs||{}).length})}`
+                  : `${t('app.cycleStart')}${fmtShort(cycleStart)} · ${t('app.dayN', {n: todayN})} · ${t('app.records', {count: Object.keys(obs).length})}`}
               </div>
             </div>
 
@@ -428,13 +442,13 @@ export default function App({ user, session } = {}) {
             <div style={{overflowX:'auto',borderBottom:`1px solid ${DS.border}`,background:DS.surface}}>
               <div style={{display:'flex',minWidth:'max-content',padding:'0 16px'}}>
                 <button onClick={()=>setSelCycle(null)} style={{background:'none',border:'none',borderBottom:`2px solid ${!selCycle?DS.primary:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
-                  <div style={{fontSize:12,fontWeight:600,color:!selCycle?DS.primary:DS.textSec}}>Atual</div>
-                  <div style={{fontSize:10,color:DS.textSec}}>Dia {todayN}</div>
+                  <div style={{fontSize:12,fontWeight:600,color:!selCycle?DS.primary:DS.textSec}}>{t('app.current')}</div>
+                  <div style={{fontSize:10,color:DS.textSec}}>{t('app.dayN', {n: todayN})}</div>
                 </button>
                 {history.map((c,i)=>(
                   <button key={i} onClick={()=>setSelCycle(c)} style={{background:'none',border:'none',borderBottom:`2px solid ${selCycle===c?DS.primary:'transparent'}`,padding:'12px 12px',cursor:'pointer',fontFamily:'inherit'}}>
                     <div style={{fontSize:12,fontWeight:600,color:selCycle===c?DS.primary:DS.textSec}}>{c.label}</div>
-                    <div style={{fontSize:10,color:DS.textSec}}>{c.duration||Object.keys(c.obs||{}).length} dias</div>
+                    <div style={{fontSize:10,color:DS.textSec}}>{t('app.days', {count: c.duration||Object.keys(c.obs||{}).length})}</div>
                   </button>
                 ))}
               </div>
@@ -443,9 +457,9 @@ export default function App({ user, session } = {}) {
             {/* Stats */}
             <div style={{display:'flex',gap:8,padding:'14px 22px',borderBottom:`1px solid ${DS.border}`}}>
               {[
-                {l:'Registros', v:Object.keys(vObs).length},
-                {l:'Ápice',     v:apiceN?`Dia ${apiceN}`:'—'},
-                {l:'Fase Lútea',v:apiceN?`Dia ${apiceN+4}+`:'—'},
+                {l:t('app.statsRecords'), v:Object.keys(vObs).length},
+                {l:t('app.statsApice'),   v:apiceN?t('app.dayN', {n: apiceN}):'—'},
+                {l:t('app.statsLuteal'), v:apiceN?`${t('app.dayN', {n: apiceN+4})}+`:'—'},
               ].map(s=>(
                 <div key={s.l} style={{flex:1,background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:DS.radiusCard,padding:'10px',textAlign:'center',boxShadow:DS.shadowCard}}>
                   <div style={{fontSize:16,fontWeight:700,color:DS.textMain,fontFamily:'Cormorant Garamond,serif'}}>{s.v}</div>
@@ -459,7 +473,7 @@ export default function App({ user, session } = {}) {
               {STAMPS.map(s=>(
                 <div key={s.id} style={{display:'flex',alignItems:'center',gap:6}}>
                   <div style={{width:16,height:16,borderRadius:'50%',background:s.bg,border:`1.5px solid ${s.c}`,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Georgia,serif',fontSize:9,color:s.c,fontWeight:700}}>{s.sym}</div>
-                  <span style={{fontSize:11,color:DS.textSec}}>{s.label}</span>
+                  <span style={{fontSize:11,color:DS.textSec}}>{t('stamps.'+s.id)}</span>
                 </div>
               ))}
             </div>
@@ -469,7 +483,7 @@ export default function App({ user, session } = {}) {
               <div style={{overflowX:'auto'}}>
                 <div style={{minWidth:vDays.length*34+80,padding:'0 22px'}}>
                   {[
-                    {key:'n', label:'Dia',   render:d=><div style={{fontSize:10,color:d.date===today()&&!selCycle?DS.secondary:DS.textSec,fontWeight:d.date===today()&&!selCycle?700:400,textAlign:'center'}}>{d.n}</div>},
+                    {key:'n', label:t('app.dayN', {n:'#'}).replace('#','').trim()||'Dia',   render:d=><div style={{fontSize:10,color:d.date===today()&&!selCycle?DS.secondary:DS.textSec,fontWeight:d.date===today()&&!selCycle?700:400,textAlign:'center'}}>{d.n}</div>},
                     {key:'date', label:'Data', render:d=><div style={{fontSize:9,color:DS.textSec,textAlign:'center'}}>{getDay(d.date)}</div>},
                   ].map(row=>(
                     <div key={row.key} style={{display:'flex',alignItems:'center',marginBottom:2}}>
@@ -479,7 +493,7 @@ export default function App({ user, session } = {}) {
                   ))}
                   {/* Stamps row — each day circle is clickable (opens DayDetailModal) */}
                   <div style={{display:'flex',alignItems:'center',marginBottom:6,paddingBottom:6,borderBottom:`1px solid ${DS.border}`}}>
-                    <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec,fontWeight:600}}>Obs.</div>
+                    <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec,fontWeight:600}}>{t('app.rowObs')}</div>
                     {vDays.map(d=>{
                       const s=STAMPS.find(x=>x.id===d.obs?.stamp);
                       const isToday=d.date===today()&&!selCycle, isFut=d.date>today()&&!selCycle;
@@ -493,6 +507,10 @@ export default function App({ user, session } = {}) {
                         <div key={d.n} style={{width:32,flexShrink:0,display:'flex',justifyContent:'center'}}>
                           <div
                             onClick={clickable ? () => setSelectedDay(d) : undefined}
+                            aria-label={clickable ? t('dayDetail.cycleDayLabel', {n: d.n}) : undefined}
+                            role={clickable ? 'button' : undefined}
+                            tabIndex={clickable ? 0 : undefined}
+                            onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedDay(d); } : undefined}
                             style={{width:24,height:24,borderRadius:'50%',background:chipBg,
                               border:`1.5px solid ${chipBorder}`,
                               display:'flex',alignItems:'center',justifyContent:'center',
@@ -509,14 +527,14 @@ export default function App({ user, session } = {}) {
                   </div>
                   {/* Muco, Sang, Rel rows */}
                   {[
-                    {label:'Muco', render:d=>ml[d.obs?.mucus]||'', color:DS.warning},
-                    {label:'Sang.', render:d=>d.obs?.bleeding?bm[d.obs.bleeding]||'●':'', color:DS.error},
-                    {label:'Rel.',  render:d=>d.obs?.relations?'♥':'', color:DS.error},
+                    {label:t('app.rowMuco'), render:d=>ml[d.obs?.mucus]||'', color:DS.warning},
+                    {label:t('app.rowSang'), render:d=>d.obs?.bleeding?bm[d.obs.bleeding]||'●':'', color:DS.error},
+                    {label:t('app.rowRel'),  render:d=>d.obs?.relations?'♥':'', color:DS.error},
                   ].map(row=>(
                     <div key={row.label} style={{display:'flex',alignItems:'center',marginBottom:4}}>
                       <div style={{width:60,flexShrink:0,fontSize:9,color:DS.textSec}}>{row.label}</div>
                       {vDays.map(d=>(
-                        <div key={d.n} style={{width:32,flexShrink:0,textAlign:'center',fontSize:row.label==='Rel.'?11:9,color:row.color}}>{row.render(d)}</div>
+                        <div key={d.n} style={{width:32,flexShrink:0,textAlign:'center',fontSize:row.label===t('app.rowRel')?11:9,color:row.color}}>{row.render(d)}</div>
                       ))}
                     </div>
                   ))}
@@ -526,11 +544,11 @@ export default function App({ user, session } = {}) {
 
             {/* Apex card */}
             {apiceN && (
-              <div style={{margin:'12px 22px 0',background:'#FEF3C7',border:`1px solid ${DS.warning}`,borderRadius:DS.radiusCard,padding:'12px 16px',display:'flex',gap:12,alignItems:'center'}}>
+              <div style={{margin:'12px 22px 0',background:DS.warningLight,border:`1px solid ${DS.warning}`,borderRadius:DS.radiusCard,padding:'12px 16px',display:'flex',gap:12,alignItems:'center'}}>
                 <div style={{width:32,height:32,borderRadius:'50%',background:DS.warning,display:'flex',alignItems:'center',justifyContent:'center',color:DS.surface,fontFamily:'Georgia,serif',fontSize:14,fontWeight:700,flexShrink:0}}>✕</div>
                 <div>
-                  <div style={{fontSize:13,fontWeight:600,color:'#92400E'}}>Ápice no dia {apiceN}</div>
-                  <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Fase Lútea a partir do dia {apiceN+4}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:DS.warningText}}>{t('app.apiceOnDay', {day: apiceN})}</div>
+                  <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>{t('app.lutealFrom', {day: apiceN+4})}</div>
                 </div>
               </div>
             )}
@@ -538,16 +556,19 @@ export default function App({ user, session } = {}) {
             {/* PDF button */}
             <div style={{padding:'16px 22px 0'}}>
               <button onClick={handlePDFDownload} disabled={pdfLoading}
+                data-testid="export-pdf"
                 style={{width:'100%',background:pdfLoading?DS.border:DS.primary,color:pdfLoading?DS.textSec:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,letterSpacing:'0.04em',cursor:pdfLoading?'default':'pointer',fontFamily:'Lato,sans-serif',marginBottom:8}}>
-                {pdfLoading?'Gerando PDF...':'↓ Exportar gráfico PDF (CENPLAFAM)'}
+                {pdfLoading?t('app.generatingPDF'):t('app.exportPDF')}
               </button>
             </div>
 
             {/* Recent list */}
             <div style={{padding:'20px 22px 0',background:DS.bg}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14,fontStyle:'italic'}}>Registros recentes</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14,fontStyle:'italic'}}>{t('app.recentRecords')}</div>
               {!Object.keys(vObs).length ? (
-                <div style={{textAlign:'center',padding:'28px 0',color:DS.textSec,fontSize:13,fontStyle:'italic'}}>Nenhum registro.</div>
+                <div style={{textAlign:'center',padding:'28px 0',color:DS.textSec,fontSize:13,fontStyle:'italic'}}>
+                  <span style={{marginRight:6}}>○</span>{t('app.noRecords')}
+                </div>
               ) : Object.entries(vObs).sort(([a],[b])=>b.localeCompare(a)).slice(0,10).map(([date,o])=>{
                 const s=STAMPS.find(x=>x.id===o.stamp);
                 return (
@@ -557,11 +578,11 @@ export default function App({ user, session } = {}) {
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:2}}>
                         <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,fontWeight:500,color:DS.textMain}}>{fmtShort(date)}</span>
                         <div style={{display:'flex',gap:6}}>
-                          {o.stamp==='apice'&&<Tag label="Ápice" color='#92400E' bg='#FEF3C7' border={DS.warning}/>}
+                          {o.stamp==='apice'&&<Tag label={t('stamps.apice')} color={DS.warningText} bg={DS.warningLight} border={DS.warning}/>}
                           {o.relations&&<span style={{color:DS.error,fontSize:14}}>♥</span>}
                         </div>
                       </div>
-                      <div style={{fontSize:12,color:DS.textSec}}>{s?.label}{o.mucus&&` · ${MUCUS.find(m=>m.id===o.mucus)?.label}`}{o.bleeding&&` · ${o.bleeding}`}</div>
+                      <div style={{fontSize:12,color:DS.textSec}}>{s&&t('stamps.'+s.id)}{o.mucus&&` · ${t('mucus.'+o.mucus)}`}{o.bleeding&&` · ${t('bleeding.'+o.bleeding)}`}</div>
                       {o.notes&&<div style={{fontSize:11,color:DS.textSec,marginTop:3,fontStyle:'italic'}}>{o.notes}</div>}
                     </div>
                   </div>
@@ -576,33 +597,33 @@ export default function App({ user, session } = {}) {
       {tab==='analise' && (
         <div style={{paddingBottom:100}}>
           <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Padrões</div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>Análise de ciclos</div>
-            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>Baseada nos últimos {stats?.cycleCount||0} ciclos registrados</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>{t('app.patternsLabel')}</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>{t('app.cycleAnalysis')}</div>
+            <div style={{fontSize:12,color:DS.textSec,marginTop:2}}>{t('app.analysisBasedOn', {count: stats?.cycleCount||0})}</div>
           </div>
 
           {!stats ? (
             <div style={{padding:'40px 22px',textAlign:'center',color:DS.textSec,fontStyle:'italic',fontSize:13}}>
-              Registre pelo menos 2 ciclos completos para ver a análise.
+              {t('app.analysisMinCycles')}
             </div>
           ) : (
             <div style={{padding:'22px'}}>
               {/* Metrics grid */}
               {[
-                { title:'Duração dos ciclos', items:[
-                    {l:'Média',v:stats.avgLength?`${stats.avgLength} dias`:'—'},
-                    {l:'Mínimo',v:stats.minLength?`${stats.minLength} dias`:'—'},
-                    {l:'Máximo',v:stats.maxLength?`${stats.maxLength} dias`:'—'},
+                { title:t('app.sectionCycleDuration'), items:[
+                    {l:t('app.labelMean'),v:stats.avgLength?`${stats.avgLength} ${t('app.days', {count: stats.avgLength}).replace(stats.avgLength+' ','')}`:'—'},
+                    {l:t('app.labelMin'),v:stats.minLength?`${stats.minLength} ${t('app.days', {count: stats.minLength}).replace(stats.minLength+' ','')}`:'—'},
+                    {l:t('app.labelMax'),v:stats.maxLength?`${stats.maxLength} ${t('app.days', {count: stats.maxLength}).replace(stats.maxLength+' ','')}`:'—'},
                 ]},
-                { title:'Fase Lútea (pós-Ápice)', items:[
-                    {l:'Média',v:stats.avgLuteal?`${stats.avgLuteal} dias`:'—'},
-                    {l:'Mínimo',v:stats.minLuteal?`${stats.minLuteal} dias`:'—'},
-                    {l:'Máximo',v:stats.maxLuteal?`${stats.maxLuteal} dias`:'—'},
+                { title:t('app.sectionLutealPhase'), items:[
+                    {l:t('app.labelMean'),v:stats.avgLuteal?`${stats.avgLuteal} ${t('app.days', {count: stats.avgLuteal}).replace(stats.avgLuteal+' ','')}`:'—'},
+                    {l:t('app.labelMin'),v:stats.minLuteal?`${stats.minLuteal} ${t('app.days', {count: stats.minLuteal}).replace(stats.minLuteal+' ','')}`:'—'},
+                    {l:t('app.labelMax'),v:stats.maxLuteal?`${stats.maxLuteal} ${t('app.days', {count: stats.maxLuteal}).replace(stats.maxLuteal+' ','')}`:'—'},
                 ]},
-                { title:'Dia do Ápice no ciclo', items:[
-                    {l:'Médio',v:stats.avgApice?`Dia ${stats.avgApice}`:'—'},
-                    {l:'Mais cedo',v:stats.minApice?`Dia ${stats.minApice}`:'—'},
-                    {l:'Mais tarde',v:stats.maxApice?`Dia ${stats.maxApice}`:'—'},
+                { title:t('app.sectionApiceDay'), items:[
+                    {l:t('app.labelAvg'),v:stats.avgApice?t('app.dayN', {n: stats.avgApice}):'—'},
+                    {l:t('app.labelEarliest'),v:stats.minApice?t('app.dayN', {n: stats.minApice}):'—'},
+                    {l:t('app.labelLatest'),v:stats.maxApice?t('app.dayN', {n: stats.maxApice}):'—'},
                 ]},
               ].map(section=>(
                 <div key={section.title} style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',marginBottom:14,boxShadow:DS.shadowCard}}>
@@ -622,18 +643,16 @@ export default function App({ user, session } = {}) {
               <div style={{background:stats.bipConfirmed?DS.successLight:DS.warningLight,border:`1px solid ${stats.bipConfirmed?DS.successBorder:DS.warningBorder}`,borderRadius:14,padding:'14px 16px',marginBottom:14}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
                   <span style={{fontSize:16,color:stats.bipConfirmed?DS.success:DS.warning}}>{stats.bipConfirmed?'✓':'○'}</span>
-                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:stats.bipConfirmed?DS.success:DS.warning}}>Padrão Básico de Infertilidade (PBI)</div>
+                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:stats.bipConfirmed?DS.success:DS.warning}}>{t('app.pbiTitle')}</div>
                 </div>
                 <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6}}>
-                  {stats.bipConfirmed
-                    ? 'PBI confirmado em 3 ciclos consecutivos de menos de 35 dias com padrão inalterado.'
-                    : 'PBI ainda em confirmação. São necessários 3 ciclos seguidos com padrão inalterado para confirmar.'}
+                  {stats.bipConfirmed ? t('app.pbiConfirmed') : t('app.pbiNotConfirmed')}
                 </div>
               </div>
 
               {/* Flags */}
               <div style={{marginBottom:14}}>
-                <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textMain,marginBottom:12}}>Observações clínicas</div>
+                <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textMain,marginBottom:12}}>{t('app.clinicalObservations')}</div>
                 {stats.flags.map((flag,i)=>{
                   const flagColors = {
                     ok:        {bg:DS.successLight, border:DS.successBorder, text:DS.success,  icon:'✓'},
@@ -653,7 +672,7 @@ export default function App({ user, session } = {}) {
               {/* Disclaimer */}
               <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:12,padding:'12px 14px',boxShadow:DS.shadowCard}}>
                 <div style={{fontSize:11,color:DS.textSec,lineHeight:1.6,textAlign:'center',fontStyle:'italic'}}>
-                  Esta análise é uma ferramenta de apoio ao registro. A interpretação clínica do ciclo é responsabilidade exclusiva da instrutora credenciada CENPLAFAM/WOOMB.
+                  {t('app.analysisDisclaimer')}
                 </div>
               </div>
             </div>
@@ -665,10 +684,10 @@ export default function App({ user, session } = {}) {
       {tab==='guia' && (
         <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 72px)'}}>
           <div style={{padding:'20px 22px 0'}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,marginBottom:8,color:DS.textMain}}>Guia de anotações</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,marginBottom:8,color:DS.textMain}}>{t('app.guideTitle')}</div>
             <div style={{background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:12,padding:'10px 14px',marginBottom:10}}>
               <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6}}>
-                Ajuda com o uso do app. <strong style={{color:DS.warning}}>Interpretação do ciclo</strong> é exclusiva da sua instrutora. {!apiKey&&<span style={{color:DS.error}}> Adicione sua chave API na aba Perfil para ativar.</span>}
+                {t('app.guideWarning')} <strong style={{color:DS.warning}}>{t('app.guideWarningCycleInterpretation')}</strong> {t('app.guideWarningCycleInterpretationSuffix')}{!apiKey&&<span style={{color:DS.error}}>{t('app.guideNeedApiKey')}</span>}
               </div>
             </div>
           </div>
@@ -676,8 +695,8 @@ export default function App({ user, session } = {}) {
           <div style={{flex:1,overflowY:'auto',padding:'0 22px 12px'}}>
             {!msgs.length && (
               <div>
-                <div style={{fontSize:11,color:DS.textSec,marginBottom:10,fontFamily:'Cormorant Garamond,serif',fontStyle:'italic'}}>Perguntas frequentes</div>
-                {['Como registro o Ápice (✕)?','O que é o PBI — Padrão Básico de Infertilidade?','Diferença entre os tipos de muco','Esqueci de registrar ontem','Como compartilhar com a instrutora?'].map(q=>(
+                <div style={{fontSize:11,color:DS.textSec,marginBottom:10,fontFamily:'Cormorant Garamond,serif',fontStyle:'italic'}}>{t('app.guideFAQTitle')}</div>
+                {[t('app.guideFAQ1'),t('app.guideFAQ2'),t('app.guideFAQ3'),t('app.guideFAQ4'),t('app.guideFAQ5')].map(q=>(
                   <button key={q} onClick={()=>sendAI(q)} style={{display:'block',width:'100%',background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',textAlign:'left',fontSize:13,color:DS.textSec,cursor:'pointer',marginBottom:8,fontFamily:'inherit',boxShadow:DS.shadowCard}}>
                     {q}
                   </button>
@@ -704,10 +723,12 @@ export default function App({ user, session } = {}) {
 
           <div style={{padding:'10px 22px 24px',borderTop:`1px solid ${DS.border}`,background:DS.surface,display:'flex',gap:8}}>
             <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendAI()}
-              placeholder="Dúvida sobre anotações..."
+              placeholder={t('app.guideInputPlaceholder')}
+              aria-label={t('app.guideInputPlaceholder')}
               style={{flex:1,background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:12,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none'}}
             />
             <button onClick={()=>sendAI()} disabled={aiLoading||!input.trim()}
+              aria-label={t('common.save')}
               style={{background:input.trim()?DS.primary:DS.border,color:input.trim()?DS.surface:DS.textSec,border:'none',borderRadius:12,padding:'11px 18px',cursor:input.trim()?'pointer':'default',fontSize:15}}>↑</button>
           </div>
         </div>
@@ -724,7 +745,7 @@ export default function App({ user, session } = {}) {
       )}
       {tab==='notificacoes' && !user && (
         <div style={{padding:'40px 22px',textAlign:'center',color:DS.textSec,fontStyle:'italic',fontSize:13}}>
-          Faça login para gerenciar suas notificações.
+          {t('app.loginRequired')}
         </div>
       )}
 
@@ -732,32 +753,36 @@ export default function App({ user, session } = {}) {
       {tab==='perfil' && (
         <div style={{paddingBottom:100}}>
           <div style={{padding:'24px 22px 16px',background:DS.surface,borderBottom:`1px solid ${DS.border}`}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>Conta</div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>Perfil</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:13,letterSpacing:'0.14em',textTransform:'uppercase',color:DS.textSec,marginBottom:4}}>{t('app.profileLabel')}</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:DS.textMain,fontStyle:'italic'}}>{t('app.profileTitle')}</div>
           </div>
 
           <div style={{padding:'22px'}}>
             {/* Instructor */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14}}>Minha Instrutora</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:14}}>{t('app.myInstructor')}</div>
             {!instructor ? (
               <div>
                 <div style={{textAlign:'center',padding:'16px 0 20px',color:DS.textSec}}>
                   <div style={{fontSize:32,marginBottom:8}}>○</div>
-                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textSec,marginBottom:4}}>Nenhuma instrutora associada</div>
+                  <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,color:DS.textSec,marginBottom:4}}>{t('app.noInstructor')}</div>
                 </div>
                 <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'18px',marginBottom:16,boxShadow:DS.shadowCard}}>
-                  {[{key:'name',label:'Nome',ph:'Nome da instrutora',type:'text'},{key:'email',label:'E-mail',ph:'email@instrutora.com.br',type:'email'}].map(f=>(
+                  {[
+                    {key:'name',label:t('app.nameLabel'),ph:t('app.instructorNamePh'),type:'text'},
+                    {key:'email',label:t('app.emailLabel'),ph:t('app.instructorEmailPh'),type:'email'},
+                  ].map(f=>(
                     <div key={f.key} style={{marginBottom:14}}>
-                      <div style={{fontSize:10,fontWeight:700,color:DS.textSec,letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>{f.label}</div>
-                      <input value={instrForm[f.key]} type={f.type} onChange={e=>setInstrForm(p=>({...p,[f.key]:e.target.value}))}
+                      <label htmlFor={`instructor-${f.key}`} style={{display:'block',fontSize:10,fontWeight:700,color:DS.textSec,letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:8}}>{f.label}</label>
+                      <input id={`instructor-${f.key}`} value={instrForm[f.key]} type={f.type} onChange={e=>setInstrForm(p=>({...p,[f.key]:e.target.value}))}
                         placeholder={f.ph}
                         style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none',boxSizing:'border-box'}}
                       />
                     </div>
                   ))}
                   <button onClick={()=>{if(instrForm.name.trim()&&instrForm.email.trim())saveInstructor({name:instrForm.name.trim(),email:instrForm.email.trim()});}}
+                    data-testid="associate-instructor"
                     style={{width:'100%',background:instrForm.name.trim()&&instrForm.email.trim()?DS.primary:DS.border,color:instrForm.name.trim()&&instrForm.email.trim()?DS.surface:DS.textSec,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
-                    Associar instrutora
+                    {t('app.associateInstructor')}
                   </button>
                 </div>
               </div>
@@ -773,24 +798,26 @@ export default function App({ user, session } = {}) {
                   </div>
                   <div style={{display:'flex',alignItems:'center',gap:6,background:DS.successLight,border:`1px solid ${DS.successBorder}`,borderRadius:8,padding:'7px 12px'}}>
                     <span style={{color:DS.success,fontSize:12}}>✓</span>
-                    <span style={{fontSize:12,color:DS.success,fontWeight:600}}>Associação ativa — instrutora temporária</span>
+                    <span style={{fontSize:12,color:DS.success,fontWeight:600}}>{t('app.activeAssociation')}</span>
                   </div>
                 </div>
-                <button onClick={()=>window.open(`https://wa.me/?text=${encodeURIComponent(`Olá ${instructor.name}! Segue meu gráfico do Método Billings para nossa consulta. Ciclo atual: dia ${todayN}, início em ${fmtShort(cycleStart)}.`)}`, '_blank')}
+                <button onClick={()=>window.open(`https://wa.me/?text=${encodeURIComponent(t('app.whatsappMessage', {name: instructor.name, day: todayN, date: fmtShort(cycleStart)}))}`, '_blank')}
+                  data-testid="share-whatsapp"
                   style={{width:'100%',background:DS.secondary,color:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                  <span>↗</span> Compartilhar via WhatsApp
+                  <span>↗</span> {t('app.shareWhatsApp')}
                 </button>
                 {!instrConfirm ? (
                   <button onClick={()=>setInstrConfirm(true)}
+                    data-testid="dissociate-instructor"
                     style={{width:'100%',background:'transparent',color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:DS.radiusBtn,padding:'11px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-                    Desassociar instrutora
+                    {t('app.dissociateInstructor')}
                   </button>
                 ) : (
                   <div style={{background:DS.errorLight,border:`1px solid ${DS.errorBorder}`,borderRadius:14,padding:14}}>
-                    <div style={{fontSize:13,color:DS.error,marginBottom:12}}>Remover associação com <strong>{instructor.name}</strong>?</div>
+                    <div style={{fontSize:13,color:DS.error,marginBottom:12}}>{t('app.confirmDissociate', {name: instructor.name})}</div>
                     <div style={{display:'flex',gap:8}}>
-                      <button onClick={removeInstructor} style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>Confirmar</button>
-                      <button onClick={()=>setInstrConfirm(false)} style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>Cancelar</button>
+                      <button onClick={removeInstructor} data-testid="confirm-dissociate" style={{flex:1,background:DS.error,color:DS.surface,border:'none',borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>{t('common.confirm')}</button>
+                      <button onClick={()=>setInstrConfirm(false)} style={{flex:1,background:DS.bg,color:DS.textSec,border:`1px solid ${DS.border}`,borderRadius:10,padding:'10px',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('common.cancel')}</button>
                     </div>
                   </div>
                 )}
@@ -798,37 +825,40 @@ export default function App({ user, session } = {}) {
             )}
 
             {/* Reminders */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:16}}>Lembretes</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:16}}>{t('app.remindersSection')}</div>
             <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',marginBottom:16,boxShadow:DS.shadowCard}}>
               <div style={{fontSize:13,color:DS.textSec,lineHeight:1.6,marginBottom:14}}>
-                Baixe o lembrete diário para seu calendário (iOS, Google, Outlook). O alarme disparará às 21h todos os dias.
+                {t('app.remindersDesc')}
               </div>
               <button onClick={()=>downloadICS(generateDailyReminder({hour:21}))}
+                data-testid="download-reminder"
                 style={{width:'100%',background:DS.primary,color:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
-                ↓ Baixar lembrete diário (.ics)
+                {t('app.downloadReminder')}
               </button>
             </div>
 
             {/* API Key */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:4}}>Guia IA</div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:4}}>{t('app.aiGuideSection')}</div>
             <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',boxShadow:DS.shadowCard}}>
               <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6,marginBottom:12}}>
-                Para usar o Guia IA, insira sua chave da API Anthropic. Ela fica salva apenas neste dispositivo.
+                {t('app.apiKeyDesc')}
               </div>
               <input value={apiKey} onChange={e=>setApiKey(e.target.value)} type="password"
                 placeholder="sk-ant-..."
+                aria-label={t('app.aiGuideSection')}
                 style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none',boxSizing:'border-box',marginBottom:10}}
               />
               <button onClick={()=>saveApiKey(apiKey)}
+                data-testid="save-api-key"
                 style={{width:'100%',background:apiKey?DS.primary:DS.border,color:apiKey?DS.surface:DS.textSec,border:'none',borderRadius:DS.radiusBtn,padding:'12px',fontSize:13,fontWeight:700,cursor:apiKey?'pointer':'default',fontFamily:'Lato,sans-serif'}}>
-                Salvar chave
+                {t('app.saveKey')}
               </button>
             </div>
 
             {/* Disclaimer */}
             <div style={{marginTop:20,background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:12,padding:'12px 14px'}}>
               <div style={{fontSize:11,color:DS.textSec,lineHeight:1.7}}>
-                <strong style={{color:DS.warning}}>Importante</strong> — O aplicativo não deverá ser usado por pessoas que não tenham conhecimento do Método de Ovulação Billings. Para isso, procure uma instrutora oficial ou a CENPLAFAM – WOOMB BRASIL.
+                <strong style={{color:DS.warning}}>{t('app.importantLabel')}</strong> — {t('app.profileDisclaimer')}
               </div>
             </div>
           </div>
@@ -836,7 +866,7 @@ export default function App({ user, session } = {}) {
       )}
 
       {/* ══ NAV ══════════════════════════════════════ */}
-      <nav role="navigation" aria-label="Navegação principal" style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
+      <nav role="navigation" aria-label={t('nav.hoje')} style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
         <div role="tablist" style={{display:'flex',gap:4}}>
           {[{id:'hoje',l:t('nav.hoje'),i:'◎'},{id:'grafico',l:t('nav.grafico'),i:'⊞'},{id:'analise',l:t('nav.analise'),i:'◈'},{id:'guia',l:t('nav.guia'),i:'✦'},{id:'vinculo',l:t('nav.vinculo'),i:'⊕'},{id:'notificacoes',l:t('nav.notificacoes'),i:'◉'},{id:'perfil',l:t('nav.perfil'),i:'○'}].map(navItem=>(
             <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{flex:1,background:tab===navItem.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===navItem.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
