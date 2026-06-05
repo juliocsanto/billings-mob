@@ -11,11 +11,14 @@
  * detectSessionInUrl: true in supabaseClient.ts.
  *
  * ADR-005: Magic link only — no password form, no OAuth social buttons.
+ * ADR-014: All user-visible strings sourced from i18n (useTranslation).
  */
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { DS } from '../constants.js';
+import { LanguageSelector } from './LanguageSelector.jsx';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthGateProps {
@@ -23,6 +26,7 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
+  const { t } = useTranslation();
   const { user, session, loading, signInWithMagicLink, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -44,7 +48,7 @@ export function AuthGate({ children }: AuthGateProps) {
       }}>
         <div
           role="status"
-          aria-label="Carregando"
+          aria-label={t('auth.loading')}
           style={{
             width: 40,
             height: 40,
@@ -55,7 +59,7 @@ export function AuthGate({ children }: AuthGateProps) {
           }}
         />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
-        <div style={{ fontSize: 13, color: DS.textSec }}>Carregando...</div>
+        <div style={{ fontSize: 13, color: DS.textSec }}>{t('auth.loading')}</div>
       </div>
     );
   }
@@ -64,16 +68,20 @@ export function AuthGate({ children }: AuthGateProps) {
   if (user && session) {
     return (
       <>
-        {/* Minimal sign-out affordance — small button fixed to header area */}
+        {/* Sign-out affordance + language selector — fixed to header area */}
         <div style={{
           position: 'fixed',
           top: 8,
           right: 12,
           zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
         }}>
+          <LanguageSelector />
           <button
             onClick={signOut}
-            title="Sair da conta"
+            title={t('auth.signOut')}
             style={{
               background: 'transparent',
               border: `1px solid ${DS.border}`,
@@ -85,7 +93,7 @@ export function AuthGate({ children }: AuthGateProps) {
               fontFamily: 'Lato, sans-serif',
             }}
           >
-            Sair
+            {t('auth.signOut')}
           </button>
         </div>
         {children({ user, session })}
@@ -102,7 +110,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
     const { error: authError } = await signInWithMagicLink(email.trim());
     if (authError) {
-      setError('Erro ao enviar o link. Verifique o e-mail e tente novamente.');
+      setError(t('auth.errorGeneric'));
     } else {
       setSent(true);
     }
@@ -129,10 +137,14 @@ export function AuthGate({ children }: AuthGateProps) {
             color: DS.primary,
             marginBottom: 6,
           }}>
-            Billings Gráfico
+            {t('auth.appName')}
           </div>
           <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
-            Registro do Método de Ovulação Billings
+            {t('auth.appSubtitle')}
+          </div>
+          {/* Language selector on login screen */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+            <LanguageSelector />
           </div>
         </div>
 
@@ -154,13 +166,10 @@ export function AuthGate({ children }: AuthGateProps) {
               color: DS.success,
               marginBottom: 8,
             }}>
-              Link enviado
+              {t('auth.checkEmail')}
             </div>
             <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.7 }}>
-              Verifique seu e-mail —{' '}
-              <strong style={{ color: DS.textMain }}>{email}</strong>
-              <br />
-              O link de acesso chega em instantes.
+              {t('auth.checkEmailBody', { email })}
             </div>
             <button
               onClick={() => { setSent(false); setEmail(''); }}
@@ -176,7 +185,7 @@ export function AuthGate({ children }: AuthGateProps) {
                 fontFamily: 'Lato, sans-serif',
               }}
             >
-              Usar outro e-mail
+              {t('auth.useOtherEmail')}
             </button>
           </div>
         ) : (
@@ -195,10 +204,10 @@ export function AuthGate({ children }: AuthGateProps) {
               color: DS.textMain,
               marginBottom: 6,
             }}>
-              Acesse sua conta
+              {t('auth.loginTitle')}
             </div>
             <div style={{ fontSize: 12, color: DS.textSec, marginBottom: 22, lineHeight: 1.6 }}>
-              Vamos enviar um link de acesso para o seu e-mail. Nenhuma senha necessária.
+              {t('auth.loginSubtitle')}
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -215,14 +224,14 @@ export function AuthGate({ children }: AuthGateProps) {
                     marginBottom: 8,
                   }}
                 >
-                  E-mail
+                  {t('auth.emailLabel')}
                 </label>
                 <input
                   id="email-login"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="seu@email.com.br"
+                  placeholder={t('auth.emailPlaceholder')}
                   required
                   autoFocus
                   onFocus={e => { (e.target as HTMLInputElement).style.outline = `2px solid ${DS.primary}`; (e.target as HTMLInputElement).style.outlineOffset = '2px'; }}
@@ -276,7 +285,7 @@ export function AuthGate({ children }: AuthGateProps) {
                   transition: 'all 0.2s',
                 }}
               >
-                {submitting ? 'Enviando...' : 'Enviar link de acesso'}
+                {submitting ? t('auth.sending') : t('auth.sendMagicLink')}
               </button>
             </form>
 
@@ -288,7 +297,7 @@ export function AuthGate({ children }: AuthGateProps) {
               textAlign: 'center',
               fontStyle: 'italic',
             }}>
-              Apenas para quem já fez consultoria com instrutora credenciada CENPLAFAM/WOOMB.
+              {t('auth.disclaimer')}
             </div>
           </div>
         )}

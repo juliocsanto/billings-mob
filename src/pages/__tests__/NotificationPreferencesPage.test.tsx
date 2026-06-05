@@ -24,6 +24,41 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, cleanup, waitFor } from '@testing-library/react';
 
+// ── Mock react-i18next so components render with pt-BR values ─────────────────
+vi.mock('react-i18next', () => {
+  const ptBR: Record<string, string> = {
+    'notifications.sectionLabel': 'Configurações',
+    'notifications.pageTitle': 'Notificações',
+    'notifications.pushTitle': 'Notificações push',
+    'notifications.remindersTitle': 'Lembretes',
+    'notifications.alertsTitle': 'Alertas',
+    'notifications.unsupported': 'Seu navegador não suporta notificações push. Considere usar o app em um navegador compatível (Chrome, Firefox, Edge ou Safari no iOS 16.4+).',
+    'notifications.blocked': 'Notificações bloqueadas',
+    'notifications.blockedDescription': 'Para receber notificações, acesse as configurações do seu navegador e permita notificações para este site.',
+    'notifications.granted': 'Notificações push ativadas neste dispositivo',
+    'notifications.enableDescription': 'Ative as notificações para receber lembretes de registro e avisos sobre comentários da instrutora.',
+    'notifications.enablePrivacyNote': 'As notificações nunca contêm dados clínicos do seu ciclo.',
+    'notifications.enableButton': 'Ativar notificações',
+    'notifications.enabling': 'Ativando...',
+    'notifications.dailyReminder': 'Lembrete diário',
+    'notifications.dailyReminderDesc': 'Receba um lembrete para anotar suas observações do dia.',
+    'notifications.reminderTime': 'Horário do lembrete',
+    'notifications.reminderTimeAriaLabel': 'Horário do lembrete diário',
+    'notifications.instructorComments': 'Novos comentários da instrutora',
+    'notifications.instructorCommentsDesc': 'Notificar quando sua instrutora adicionar um comentário ou revisão.',
+    'notifications.conflictResolution': 'Resolução de observações',
+    'notifications.conflictResolutionDesc': 'Notificar quando sua instrutora revisar e resolver uma observação.',
+    'notifications.privacyNotice': 'As notificações nunca contêm dados clínicos do seu ciclo. As mensagens indicam apenas que há novas informações aguardando a sua atenção no aplicativo.',
+    'notifications.loginRequired': 'Faça login para gerenciar suas notificações.',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string) => ptBR[key] ?? key,
+      i18n: { language: 'pt-BR', changeLanguage: vi.fn() },
+    }),
+  };
+});
+
 // ── Mock usePushNotifications ─────────────────────────────────────────────────
 const mockRequestPermission = vi.fn().mockResolvedValue(undefined);
 const mockUpdatePreferences = vi.fn().mockResolvedValue(undefined);

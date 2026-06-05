@@ -18,6 +18,7 @@
  * ADR-005: session-based auth — hook reads access_token from Supabase session.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { DS } from '../constants.js';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 
@@ -95,6 +96,8 @@ function PermissionBanner({
   onRequest: () => Promise<void>;
   loading: boolean;
 }) {
+  const { t } = useTranslation();
+
   if (permission === 'unsupported') {
     return (
       <div
@@ -107,8 +110,7 @@ function PermissionBanner({
         }}
       >
         <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.6 }}>
-          Seu navegador não suporta notificações push. Considere usar o app em um
-          navegador compatível (Chrome, Firefox, Edge ou Safari no iOS 16.4+).
+          {t('notifications.unsupported')}
         </div>
       </div>
     );
@@ -126,12 +128,10 @@ function PermissionBanner({
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 600, color: DS.error, marginBottom: 6 }}>
-          Notificações bloqueadas
+          {t('notifications.blocked')}
         </div>
         <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
-          Para receber notificações, acesse as configurações do seu navegador e
-          permita notificações para este site. No Chrome: clique no cadeado na barra
-          de endereços &rarr; Notificações &rarr; Permitir.
+          {t('notifications.blockedDescription')}
         </div>
       </div>
     );
@@ -153,7 +153,7 @@ function PermissionBanner({
       >
         <span style={{ color: DS.success, fontSize: 16 }}>✓</span>
         <div style={{ fontSize: 13, color: DS.success, fontWeight: 500 }}>
-          Notificações push ativadas neste dispositivo
+          {t('notifications.granted')}
         </div>
       </div>
     );
@@ -172,8 +172,7 @@ function PermissionBanner({
         }}
       >
         <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.6, marginBottom: 12 }}>
-          Ative as notificações para receber lembretes de registro e avisos sobre
-          comentários da instrutora.
+          {t('notifications.enableDescription')}
         </div>
         <div
           style={{
@@ -184,7 +183,7 @@ function PermissionBanner({
             marginBottom: 12,
           }}
         >
-          As notificações nunca contêm dados clínicos do seu ciclo.
+          {t('notifications.enablePrivacyNote')}
         </div>
         <button
           onClick={onRequest}
@@ -203,7 +202,7 @@ function PermissionBanner({
             letterSpacing: '0.04em',
           }}
         >
-          {loading ? 'Ativando...' : 'Ativar notificações'}
+          {loading ? t('notifications.enabling') : t('notifications.enableButton')}
         </button>
       </div>
     </div>
@@ -213,6 +212,7 @@ function PermissionBanner({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function NotificationPreferencesPage() {
+  const { t } = useTranslation();
   const {
     permission,
     preferences,
@@ -258,7 +258,7 @@ export function NotificationPreferencesPage() {
             marginBottom: 4,
           }}
         >
-          Configurações
+          {t('notifications.sectionLabel')}
         </div>
         <div
           style={{
@@ -268,7 +268,7 @@ export function NotificationPreferencesPage() {
             fontStyle: 'italic',
           }}
         >
-          Notificações
+          {t('notifications.pageTitle')}
         </div>
       </div>
 
@@ -301,7 +301,7 @@ export function NotificationPreferencesPage() {
             marginBottom: 14,
           }}
         >
-          Notificações push
+          {t('notifications.pushTitle')}
         </div>
 
         <PermissionBanner
@@ -320,7 +320,7 @@ export function NotificationPreferencesPage() {
             marginTop: 8,
           }}
         >
-          Lembretes
+          {t('notifications.remindersTitle')}
         </div>
 
         <div
@@ -334,8 +334,8 @@ export function NotificationPreferencesPage() {
         >
           <Toggle
             id="daily-reminder"
-            label="Lembrete diário"
-            description="Receba um lembrete para anotar suas observações do dia."
+            label={t('notifications.dailyReminder')}
+            description={t('notifications.dailyReminderDesc')}
             checked={preferences?.daily_reminder_enabled ?? false}
             onChange={(v) => void handleToggle('daily_reminder_enabled', v)}
             disabled={loading || permission === 'unsupported' || permission === 'denied'}
@@ -359,11 +359,11 @@ export function NotificationPreferencesPage() {
                   marginBottom: 8,
                 }}
               >
-                Horário do lembrete
+                {t('notifications.reminderTime')}
               </div>
               <input
                 type="time"
-                aria-label="Horário do lembrete diário"
+                aria-label={t('notifications.reminderTimeAriaLabel')}
                 value={preferences.daily_reminder_time}
                 onChange={(e) => void handleTimeChange(e.target.value)}
                 onFocus={e => { e.target.style.outline = `2px solid ${DS.primary}`; e.target.style.outlineOffset = '2px'; }}
@@ -391,7 +391,7 @@ export function NotificationPreferencesPage() {
             marginBottom: 14,
           }}
         >
-          Alertas
+          {t('notifications.alertsTitle')}
         </div>
 
         <div
@@ -405,16 +405,16 @@ export function NotificationPreferencesPage() {
         >
           <Toggle
             id="apex-alert"
-            label="Novos comentários da instrutora"
-            description="Notificar quando sua instrutora adicionar um comentário ou revisão."
+            label={t('notifications.instructorComments')}
+            description={t('notifications.instructorCommentsDesc')}
             checked={preferences?.apex_alert_enabled ?? true}
             onChange={(v) => void handleToggle('apex_alert_enabled', v)}
             disabled={loading || permission === 'unsupported' || permission === 'denied'}
           />
           <Toggle
             id="conflict-alert"
-            label="Resolução de observações"
-            description="Notificar quando sua instrutora revisar e resolver uma observação."
+            label={t('notifications.conflictResolution')}
+            description={t('notifications.conflictResolutionDesc')}
             checked={preferences?.conflict_alert_enabled ?? true}
             onChange={(v) => void handleToggle('conflict_alert_enabled', v)}
             disabled={loading || permission === 'unsupported' || permission === 'denied'}
@@ -439,9 +439,7 @@ export function NotificationPreferencesPage() {
               fontStyle: 'italic',
             }}
           >
-            As notificações nunca contêm dados clínicos do seu ciclo. As mensagens
-            indicam apenas que há novas informações aguardando a sua atenção no
-            aplicativo.
+            {t('notifications.privacyNotice')}
           </div>
         </div>
       </div>

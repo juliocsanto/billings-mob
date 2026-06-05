@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import * as Sentry from '@sentry/react';
+import './i18n/index.js'; // initialise i18next before React mounts (ADR-014)
 import App from './App.jsx';
 import { AuthGate } from './components/AuthGate.tsx';
 import './index.css';

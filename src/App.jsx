@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { pdf } from '@react-pdf/renderer';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { C, DS, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
@@ -101,6 +102,7 @@ function buildDemoData() {
 // ── Main App ──────────────────────────────────────────────
 
 export default function App({ user, session } = {}) {
+  const { t } = useTranslation();
   const userId = user?.id ?? null;
   const [tab,          setTab]          = useState('hoje');
   const [cycleStart,   setCycleStart]   = useState(today());
@@ -229,7 +231,7 @@ export default function App({ user, session } = {}) {
 
   if (!loaded) return (
     <div style={{background:DS.bg,height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Lato,sans-serif',color:DS.textSec}}>
-      Carregando...
+      {t('common.loading')}
     </div>
   );
 
@@ -255,14 +257,14 @@ export default function App({ user, session } = {}) {
         </div>
         <nav role="navigation" aria-label="Abas do aplicativo">
           <div role="tablist" style={{display:'flex',gap:0}}>
-            {[{id:'hoje',l:'Hoje'},{id:'grafico',l:'Gráfico'},{id:'analise',l:'Análise'},{id:'guia',l:'Guia'},{id:'vinculo',l:'Vínculo'},{id:'notificacoes',l:'Notific.'},{id:'perfil',l:'Perfil'}].map(t=>(
-              <button key={t.id} role="tab" aria-selected={tab===t.id} onClick={()=>setTab(t.id)} style={{
+            {[{id:'hoje',l:t('nav.hoje')},{id:'grafico',l:t('nav.grafico')},{id:'analise',l:t('nav.analise')},{id:'guia',l:t('nav.guia')},{id:'vinculo',l:t('nav.vinculo')},{id:'notificacoes',l:t('nav.notificacoes')},{id:'perfil',l:t('nav.perfil')}].map(navItem=>(
+              <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{
                 flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
-                fontSize:11,fontWeight:tab===t.id?700:400,
-                color:tab===t.id?DS.primary:DS.textSec,
-                borderBottom:`2px solid ${tab===t.id?DS.primary:'transparent'}`,
+                fontSize:11,fontWeight:tab===navItem.id?700:400,
+                color:tab===navItem.id?DS.primary:DS.textSec,
+                borderBottom:`2px solid ${tab===navItem.id?DS.primary:'transparent'}`,
                 transition:'all 0.2s',fontFamily:'inherit',
-              }}>{t.l}</button>
+              }}>{navItem.l}</button>
             ))}
           </div>
         </nav>
@@ -836,10 +838,10 @@ export default function App({ user, session } = {}) {
       {/* ══ NAV ══════════════════════════════════════ */}
       <nav role="navigation" aria-label="Navegação principal" style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
         <div role="tablist" style={{display:'flex',gap:4}}>
-          {[{id:'hoje',l:'Hoje',i:'◎'},{id:'grafico',l:'Gráfico',i:'⊞'},{id:'analise',l:'Análise',i:'◈'},{id:'guia',l:'Guia',i:'✦'},{id:'vinculo',l:'Vínculo',i:'⊕'},{id:'notificacoes',l:'Notific.',i:'◉'},{id:'perfil',l:'Perfil',i:'○'}].map(t=>(
-            <button key={t.id} role="tab" aria-selected={tab===t.id} onClick={()=>setTab(t.id)} style={{flex:1,background:tab===t.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===t.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
-              <span style={{fontSize:16,color:tab===t.id?DS.primary:DS.textSec}}>{t.i}</span>
-              <span style={{fontSize:9,color:tab===t.id?DS.primary:DS.textSec,fontWeight:tab===t.id?700:400}}>{t.l}</span>
+          {[{id:'hoje',l:t('nav.hoje'),i:'◎'},{id:'grafico',l:t('nav.grafico'),i:'⊞'},{id:'analise',l:t('nav.analise'),i:'◈'},{id:'guia',l:t('nav.guia'),i:'✦'},{id:'vinculo',l:t('nav.vinculo'),i:'⊕'},{id:'notificacoes',l:t('nav.notificacoes'),i:'◉'},{id:'perfil',l:t('nav.perfil'),i:'○'}].map(navItem=>(
+            <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{flex:1,background:tab===navItem.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===navItem.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
+              <span style={{fontSize:16,color:tab===navItem.id?DS.primary:DS.textSec}}>{navItem.i}</span>
+              <span style={{fontSize:9,color:tab===navItem.id?DS.primary:DS.textSec,fontWeight:tab===navItem.id?700:400}}>{navItem.l}</span>
             </button>
           ))}
         </div>
