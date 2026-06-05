@@ -12,6 +12,7 @@
  */
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { handle } from 'hono/vercel';
 import { requireAuth } from '../_lib/auth';
 import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
@@ -25,6 +26,7 @@ import {
 import {
   CreateObservationSchema,
   ListObservationsQuerySchema,
+  OBSERVATION_SELECT_COLUMNS,
 } from './schema';
 import { getNotificationService } from '../_lib/notifications/factory';
 
@@ -43,22 +45,7 @@ app.get('/', zValidator('query', ListObservationsQuerySchema), async (c) => {
 
   let dbQuery = supabase
     .from('observations')
-    .select(`
-      id,
-      date,
-      stamp,
-      mucus,
-      bleeding,
-      sensacao,
-      tipo_observacao,
-      relations,
-      notes,
-      vector_clock,
-      version,
-      cycle_id,
-      created_at,
-      updated_at
-    `)
+    .select(OBSERVATION_SELECT_COLUMNS)
     .order('date', { ascending: false })
     .range(query.offset, query.offset + query.limit - 1);
 
@@ -180,6 +167,5 @@ export default app;
 
 // Vercel Serverless Function handler (ADR-002: Vercel + Hono.js)
 // The `handle` adapter bridges Hono's fetch-based interface to Vercel's Node.js runtime.
-import { handle } from 'hono/vercel';
 export const GET = handle(app);
 export const POST = handle(app);

@@ -22,6 +22,9 @@
  */
 import type { Context, Next } from 'hono';
 
+// CC-004: Named constants for keyPrefix — avoids magic strings across call sites.
+const RATE_LIMIT_KEYS = { auth: 'auth', api: 'api' } as const;
+
 interface WindowEntry {
   count: number;
   windowStart: number;
@@ -99,5 +102,5 @@ export function createRateLimiter(limit: number, windowMs: number, keyPrefix: st
  *
  *  apiRateLimit  — applied to all general CRUD endpoints
  */
-export const authRateLimit = createRateLimiter(10, 60_000, 'auth');
-export const apiRateLimit = createRateLimiter(60, 60_000, 'api');
+export const authRateLimit = createRateLimiter(10, 60_000, RATE_LIMIT_KEYS.auth);
+export const apiRateLimit = createRateLimiter(60, 60_000, RATE_LIMIT_KEYS.api);

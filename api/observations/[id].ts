@@ -14,6 +14,7 @@
  */
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { handle } from 'hono/vercel';
 import { requireAuth } from '../_lib/auth';
 import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
@@ -27,7 +28,8 @@ import {
   internalError,
   notFound,
 } from '../_lib/errorHandler';
-import { PatchObservationSchema } from './schema';
+import { PatchObservationSchema, OBSERVATION_SELECT_COLUMNS } from './schema';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const app = new Hono();
 
@@ -35,6 +37,77 @@ const app = new Hono();
 app.use('*', apiRateLimit);
 // All routes require authentication
 app.use('*', requireAuth);
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+type AuthContext = { userId: string; role: string };
+
+/**
+ * CC-001: Saves a snapshot of the current observation state to observation_versions
+ * before applying any edit (ADR-004 — pre-edit snapshot).
+ */
+async function saveVersionSnapshot(
+  supabase: SupabaseClient,
+  observationId: string,
+  current: Record<string, unknown>,
+  auth: AuthContext,
+): Promise<{ error: unknown }> {
+  return supabase.from('observation_versions').insert({
+    observation_id: observationId,
+    vector_clock: current.vector_clock,
+    data: sanitizeForAuditLog({
+      stamp: current.stamp,
+      mucus: current.mucus,
+      bleeding: current.bleeding,
+      sensacao: current.sensacao,
+      tipo_observacao: current.tipo_observacao,
+      cycle_id: current.cycle_id,
+      version: current.version,
+    }),
+    author_id: auth.userId,
+    author_role: auth.role,
+    conflict_resolved: false,
+  });
+}
+
+/**
+ * CC-001: Writes an observation update to the audit log (LGPD-safe).
+ */
+async function writeObservationAuditLog(
+  serviceClient: SupabaseClient,
+  params: {
+    observationId: string;
+    isConflict: boolean;
+    auth: AuthContext;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+  },
+): Promise<void> {
+  const action = params.isConflict ? 'CONFLICT_DETECTED' : 'UPDATE';
+  await serviceClient.from('audit_log').insert({
+    entity_type: 'observations',
+    entity_id: params.observationId,
+    action,
+    actor_id: params.auth.userId,
+    actor_role: params.auth.role,
+    before_data: sanitizeForAuditLog({
+      stamp: params.before.stamp,
+      mucus: params.before.mucus,
+      bleeding: params.before.bleeding,
+      sensacao: params.before.sensacao,
+      tipo_observacao: params.before.tipo_observacao,
+      version: params.before.version,
+    }),
+    after_data: sanitizeForAuditLog({
+      stamp: params.after.stamp,
+      mucus: params.after.mucus,
+      bleeding: params.after.bleeding,
+      sensacao: params.after.sensacao,
+      tipo_observacao: params.after.tipo_observacao,
+      version: params.after.version,
+    }),
+  });
+}
 
 // ─── GET /api/observations/:id ─────────────────────────────────────────────
 app.get('/:id', async (c) => {
@@ -44,22 +117,7 @@ app.get('/:id', async (c) => {
 
   const { data: observation, error: obsError } = await supabase
     .from('observations')
-    .select(`
-      id,
-      date,
-      stamp,
-      mucus,
-      bleeding,
-      sensacao,
-      tipo_observacao,
-      relations,
-      notes,
-      vector_clock,
-      version,
-      cycle_id,
-      created_at,
-      updated_at
-    `)
+    .select(OBSERVATION_SELECT_COLUMNS)
     .eq('id', id)
     .single();
 
@@ -108,22 +166,7 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
   // payload may include them, and the version snapshot must preserve them.
   const { data: current, error: fetchError } = await supabase
     .from('observations')
-    .select(`
-      id,
-      date,
-      stamp,
-      mucus,
-      bleeding,
-      sensacao,
-      tipo_observacao,
-      relations,
-      notes,
-      vector_clock,
-      version,
-      cycle_id,
-      created_at,
-      updated_at
-    `)
+    .select(OBSERVATION_SELECT_COLUMNS)
     .eq('id', id)
     .single();
 
@@ -133,39 +176,22 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
   const currentClock = (current.vector_clock ?? {}) as VectorClock;
   const newClock = incrementVectorClock(currentClock, auth.userId);
 
-  // Detect conflict (ARCH-001 + CODE-001 fix):
-  // Compare the client's last-known clock (sent in body as client_vector_clock)
-  // against the current clock in the DB.
-  // If the DB clock has advanced beyond what the client knew, another actor
-  // has edited this record concurrently — that is a real conflict.
-  // If client_vector_clock is not provided, skip conflict detection (backward-compatible).
+  // ADR-004: compare client clock vs DB clock — see vectorClock.detectConflict
   const clientClock = body.client_vector_clock as VectorClock | undefined;
   const isConflict = clientClock !== undefined
     ? detectConflict(clientClock, currentClock)
     : false;
 
   // Save snapshot of current version BEFORE applying the edit (ADR-004)
-  const { error: versionError } = await supabase
-    .from('observation_versions')
-    .insert({
-      observation_id: id,
-      vector_clock: currentClock,
-      data: sanitizeForAuditLog({
-        stamp: current.stamp,
-        mucus: current.mucus,
-        bleeding: current.bleeding,
-        sensacao: current.sensacao,
-        tipo_observacao: current.tipo_observacao,
-        cycle_id: current.cycle_id,
-        version: current.version,
-      }),
-      author_id: auth.userId,
-      author_role: auth.role,
-      conflict_resolved: false,
-    });
+  const { error: versionError } = await saveVersionSnapshot(
+    supabase,
+    id,
+    current as unknown as Record<string, unknown>,
+    auth,
+  );
 
   if (versionError) {
-    return internalError(c, versionError);
+    return internalError(c, versionError as Error);
   }
 
   // Apply the update with the new vector clock.
@@ -189,29 +215,12 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
   }
 
   // Audit log (service role — LGPD: sanitize before logging)
-  const auditAction = isConflict ? 'CONFLICT_DETECTED' : 'UPDATE';
-  await serviceClient.from('audit_log').insert({
-    entity_type: 'observations',
-    entity_id: id,
-    action: auditAction,
-    actor_id: auth.userId,
-    actor_role: auth.role,
-    before_data: sanitizeForAuditLog({
-      stamp: current.stamp,
-      mucus: current.mucus,
-      bleeding: current.bleeding,
-      sensacao: current.sensacao,
-      tipo_observacao: current.tipo_observacao,
-      version: current.version,
-    }),
-    after_data: sanitizeForAuditLog({
-      stamp: updated.stamp,
-      mucus: updated.mucus,
-      bleeding: updated.bleeding,
-      sensacao: updated.sensacao,
-      tipo_observacao: updated.tipo_observacao,
-      version: updated.version,
-    }),
+  await writeObservationAuditLog(serviceClient, {
+    observationId: id,
+    isConflict,
+    auth,
+    before: current as unknown as Record<string, unknown>,
+    after: updated as unknown as Record<string, unknown>,
   });
 
   return c.json({
@@ -228,6 +237,5 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
 export default app;
 
 // Vercel Serverless Function handler
-import { handle } from 'hono/vercel';
 export const GET = handle(app);
 export const PATCH = handle(app);

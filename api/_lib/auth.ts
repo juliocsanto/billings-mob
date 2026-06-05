@@ -19,8 +19,12 @@
  * Promotion to instructor/admin must be performed by an operator — never via client input.
  * Backward-compat: if user_profiles row is missing (pre-trigger accounts), falls back to
  * user_metadata.role ?? 'student'.
+ *
+ * CA-005: authentication (JWT verification) and role resolution (user_profiles query)
+ * are separated into pure helper functions for clarity and testability.
  */
 import type { Context, Next } from 'hono';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { createAuthenticatedClient } from './supabaseClient';
 
 export type AuthContext = {
@@ -35,6 +39,47 @@ declare module 'hono' {
   }
 }
 
+// ─── CA-005: extracted helpers ─────────────────────────────────────────────
+
+/**
+ * Verifies the JWT via Supabase Auth and returns the authenticated user.
+ * Responsibility: Infrastructure — token validation only.
+ * The supabase client is already initialized with the JWT — no extra parameter needed.
+ */
+async function authenticateRequest(
+  supabase: SupabaseClient,
+): Promise<{ user: User | null; error: unknown }> {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return { user, error };
+}
+
+/**
+ * Resolves the user's application role from user_profiles (server-side, RLS-protected).
+ * Responsibility: Application — role / authorization context.
+ *
+ * Falls back to user_metadata.role ?? 'student' for pre-trigger accounts.
+ */
+async function resolveUserRole(
+  userId: string,
+  supabase: SupabaseClient,
+  userMetadata: Record<string, unknown>,
+): Promise<AuthContext['role']> {
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (profile?.role) {
+    return profile.role as AuthContext['role'];
+  }
+
+  // Backward-compat fallback for pre-trigger accounts
+  return (userMetadata?.role ?? 'student') as AuthContext['role'];
+}
+
+// ─── Middleware ────────────────────────────────────────────────────────────
+
 /**
  * Hono middleware that validates the JWT and stores auth context.
  * Mount this on every protected route group.
@@ -42,6 +87,8 @@ declare module 'hono' {
  * Role resolution order (SEC-003):
  *   1. user_profiles.role (server-side, RLS-protected) — authoritative
  *   2. user_metadata.role ?? 'student' — fallback for pre-trigger accounts only
+ *
+ * Public interface: c.get('auth') returns AuthContext (unchanged — CA-005 is internal only).
  */
 export async function requireAuth(c: Context, next: Next): Promise<Response | void> {
   const authHeader = c.req.header('Authorization');
@@ -56,7 +103,7 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
   const jwt = authHeader.slice(7); // Remove "Bearer "
 
   const supabase = createAuthenticatedClient(jwt);
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { user, error } = await authenticateRequest(supabase);
 
   if (error || !user) {
     return c.json(
@@ -65,31 +112,7 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
     );
   }
 
-  // SEC-003 FIX: read role from user_profiles (server-side, RLS-protected) instead of
-  // user_metadata (client-controllable JWT claim). This eliminates the privilege escalation
-  // vector where any user could set role:'instructor' during sign-up.
-  //
-  // RLS policy "user_profiles_own_read" (auth.uid() = id) ensures each user can only
-  // read their own profile row, so the authenticated client is correct here.
-  //
-  // Backward-compat: if user_profiles row is absent (accounts created before the
-  // on_auth_user_created trigger was deployed — migration 20260531000010), fall back to
-  // user_metadata.role ?? 'student'. This is safe: without a profile row the user has
-  // no legitimate instructor privileges regardless.
-  let role: AuthContext['role'] = 'student';
-
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role) {
-    role = profile.role as AuthContext['role'];
-  } else {
-    // Backward-compat fallback for pre-trigger accounts
-    role = (user.user_metadata?.role ?? 'student') as AuthContext['role'];
-  }
+  const role = await resolveUserRole(user.id, supabase, user.user_metadata ?? {});
 
   // Store auth context for downstream handlers
   c.set('auth', {
