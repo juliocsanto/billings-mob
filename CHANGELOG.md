@@ -6,6 +6,16 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.2] - 2026-06-05
+
+### Added
+- Google OAuth sign-in button in AuthGate via `supabase.auth.signInWithOAuth` (provider: google), with `redirectTo: window.location.origin`, bilingual label (PT-BR/EN), Google SVG icon, and `aria-label` for screen readers (#31)
+- Public `/privacy` route in the PWA: accessible without authentication via `window.location.pathname` guard in `main.jsx` — consistent with PWA architecture (no React Router) (#31)
+- `PrivacyPolicyPage`: LGPD-compliant bilingual privacy policy (PT-BR default, EN on language switch); `PtBrPolicy` and `EnPolicy` sub-components; DS.* design tokens; back link to `/` (#31)
+- 9 new automated tests: 5 Google OAuth tests in `AuthGate.test.jsx` and 4 privacy page tests in `PrivacyPolicyPage.test.jsx` — total 549/549 passing (#31)
+
+---
+
 ## [1.5.1] - 2026-06-05
 
 ### Changed
