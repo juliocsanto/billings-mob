@@ -158,6 +158,12 @@ export function useObservationSync(session: Session | null) {
           setSyncStatus('offline');
           return { status: 'offline' };
         }
+        // CC-010: TypeError typically indicates a network failure (e.g. "Failed to fetch").
+        // Return a user-facing message instead of exposing the raw browser error string.
+        if (err instanceof TypeError) {
+          setSyncStatus('error');
+          return { status: 'error', error: 'Erro de conexão. Verifique sua internet.' };
+        }
         setSyncStatus('error');
         return { status: 'error', error: String(err) };
       }

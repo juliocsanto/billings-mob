@@ -2,7 +2,7 @@
  * Zod schemas for observation endpoints.
  *
  * Clinical constraint (ADR § 3.3, inviolable):
- *   stamp must ONLY be: sangramento | seco | muco | apice
+ *   stamp must ONLY be: sangramento | seco | muco | apice | semMuco
  *   NEVER: 'fertil', 'infertil', 'seguro', 'inseguro'
  *
  * Immutability rule (ADR-004):
@@ -16,7 +16,35 @@ const DateString = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, 'Date must be YYYY-MM-DD format');
 
-export const StampValues = ['sangramento', 'seco', 'muco', 'apice'] as const;
+export const StampValues = ['sangramento', 'seco', 'muco', 'apice', 'semMuco'] as const;
+
+/**
+ * CC-002/CC-003: Canonical column list for SELECT on the observations table.
+ * Use this constant everywhere to avoid DRY violations and RLS drift.
+ * LGPD: relations and notes are included because callers that need to forward
+ * them to the client or preserve them in version snapshots must request them
+ * explicitly — never via SELECT *.
+ */
+export const OBSERVATION_SELECT_COLUMNS =
+  'id, date, stamp, mucus, bleeding, sensacao, tipo_observacao, relations, notes, vector_clock, version, cycle_id, created_at, updated_at' as const;
+
+/**
+ * DDD-003: Value Object for the `data` field stored in observation_versions.
+ * Excludes LGPD-sensitive fields (notes, relations) — those are stripped at write time
+ * via sanitizeForAuditLog before the snapshot is persisted.
+ */
+export const ObservationSnapshotSchema = z.object({
+  stamp: z.enum(StampValues),
+  mucus: z.enum(['opaco', 'cremoso', 'transparente', 'elastico']).nullable().optional(),
+  bleeding: z.enum(['intenso', 'moderado', 'leve', 'manchas']).nullable().optional(),
+  sensacao: z.enum(['seca', 'molhada', 'lubrificante']).nullable().optional(),
+  tipo_observacao: z.enum(['sangue', 'manchas', 'outro']).nullable().optional(),
+  cycle_id: z.string().uuid().nullable().optional(),
+  version: z.number().int().min(1).optional(),
+  observacao_descricao: z.string().max(500).nullable().optional(),
+});
+
+export type ObservationSnapshot = z.infer<typeof ObservationSnapshotSchema>;
 export const MucusValues = ['opaco', 'cremoso', 'transparente', 'elastico'] as const;
 export const BleedingValues = ['intenso', 'moderado', 'leve', 'manchas'] as const;
 export const SensacaoValues = ['seca', 'molhada', 'lubrificante'] as const;

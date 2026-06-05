@@ -21,12 +21,15 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
+import { handle } from 'hono/vercel';
 import { requireAuth } from '../../_lib/auth';
 import { apiRateLimit } from '../../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../../_lib/supabaseClient';
 import { sanitizeForAuditLog } from '../../_lib/sanitizeAuditData';
 import { mergeVectorClocks, type VectorClock } from '../../_lib/vectorClock';
 import { badRequest, forbidden, internalError, notFound } from '../../_lib/errorHandler';
+import { ObservationSnapshotSchema } from '../schema';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const app = new Hono();
 
@@ -57,6 +60,63 @@ const ResolveConflictSchema = z.object({
 );
 
 type ResolveConflictInput = z.infer<typeof ResolveConflictSchema>;
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+type RestoreResult =
+  | null
+  | { kind: 'not_found'; message: string }
+  | { kind: 'invalid_snapshot'; message: string }
+  | { kind: 'internal'; error: unknown };
+
+/**
+ * CC-005: Encapsulates the "student wins" restore path.
+ * Fetches the student version, validates its snapshot, and writes the
+ * restored state back to the observations table with a merged vector clock.
+ */
+async function restoreStudentVersion(
+  supabase: SupabaseClient,
+  observationId: string,
+  studentVersionId: string,
+  parentObservation: Record<string, unknown>,
+): Promise<RestoreResult> {
+  const { data: studentVersion, error: svErr } = await supabase
+    .from('observation_versions')
+    .select('id, observation_id, vector_clock, data, author_id, author_role, conflict_resolved, resolved_by, resolved_at, created_at')
+    .eq('id', studentVersionId)
+    .eq('observation_id', observationId)
+    .single();
+
+  if (svErr || !studentVersion) {
+    return { kind: 'not_found', message: 'Student version not found for this observation' };
+  }
+
+  // DDD-003: parse the snapshot as a typed Value Object — reject unknown shapes
+  const snapshotResult = ObservationSnapshotSchema.safeParse(studentVersion.data);
+  if (!snapshotResult.success) {
+    return { kind: 'invalid_snapshot', message: `Invalid snapshot data: ${snapshotResult.error.message}` };
+  }
+  const studentVersionData = snapshotResult.data;
+
+  const currentClock = parentObservation.vector_clock as VectorClock;
+  const studentClock = studentVersion.vector_clock as VectorClock;
+  const mergedClock = mergeVectorClocks(currentClock, studentClock);
+
+  // Restore observation to student's version data, with merged clock.
+  // ADR-004: instructor is the authority — restore is still an instructor action.
+  const { error: restoreErr } = await supabase
+    .from('observations')
+    .update({
+      stamp: studentVersionData.stamp,
+      mucus: studentVersionData.mucus ?? null,
+      bleeding: studentVersionData.bleeding ?? null,
+      vector_clock: mergedClock,
+      version: ((parentObservation.version as number) ?? 1) + 1,
+    })
+    .eq('id', observationId);
+
+  return restoreErr ? { kind: 'internal', error: restoreErr } : null;
+}
 
 // ─── GET /api/observations/versions/pending ─────────────────────────────────
 // Lists all observation_versions where conflict_resolved = false,
@@ -134,7 +194,7 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
   }
 
   const observationId = conflictVersion.observation_id as string;
-  const obs = conflictVersion.observations as unknown as Record<string, unknown>;
+  const parentObservation = conflictVersion.observations as unknown as Record<string, unknown>;
 
   if (body.keep === 'student') {
     // Validate student_version_id is provided (enforced by Zod refine above)
@@ -142,39 +202,21 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
       return badRequest(c, 'student_version_id is required when keep is "student"');
     }
 
-    // Fetch the student's version to restore.
-    // `data` column contains the snapshotted observation fields (no relations/notes — sanitized at write time).
-    const { data: studentVersion, error: svErr } = await supabase
-      .from('observation_versions')
-      .select('id, observation_id, vector_clock, data, author_id, author_role, conflict_resolved, resolved_by, resolved_at, created_at')
-      .eq('id', body.student_version_id)
-      .eq('observation_id', observationId)
-      .single();
+    const restoreResult = await restoreStudentVersion(
+      supabase,
+      observationId,
+      body.student_version_id,
+      parentObservation,
+    );
 
-    if (svErr || !studentVersion) {
-      return notFound(c, 'Student version not found for this observation');
-    }
-
-    const studentData = studentVersion.data as Record<string, unknown>;
-    const currentClock = obs.vector_clock as VectorClock;
-    const studentClock = studentVersion.vector_clock as VectorClock;
-    const mergedClock = mergeVectorClocks(currentClock, studentClock);
-
-    // Restore observation to student's version data, with merged clock
-    // ADR-004: instructor is the authority — restore is still an instructor action
-    const { error: restoreErr } = await supabase
-      .from('observations')
-      .update({
-        stamp: studentData.stamp,
-        mucus: studentData.mucus ?? null,
-        bleeding: studentData.bleeding ?? null,
-        vector_clock: mergedClock,
-        version: ((obs.version as number) ?? 1) + 1,
-      })
-      .eq('id', observationId);
-
-    if (restoreErr) {
-      return internalError(c, restoreErr);
+    if (restoreResult !== null) {
+      if (restoreResult.kind === 'not_found') {
+        return notFound(c, restoreResult.message);
+      }
+      if (restoreResult.kind === 'invalid_snapshot') {
+        return c.json({ error: 'Unprocessable Entity', message: restoreResult.message }, 422);
+      }
+      return internalError(c, restoreResult.error as Error);
     }
   }
   // If keep === 'instructor': the observation table already holds the instructor's version.
@@ -228,6 +270,5 @@ app.patch('/:versionId/resolve', zValidator('json', ResolveConflictSchema), asyn
 export default app;
 
 // Vercel Serverless Function handler
-import { handle } from 'hono/vercel';
 export const GET = handle(app);
 export const PATCH = handle(app);

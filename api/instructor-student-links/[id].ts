@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { handle } from 'hono/vercel';
 import { requireAuth } from '../_lib/auth';
 import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
@@ -13,6 +14,18 @@ const app = new Hono();
 app.use('*', apiRateLimit);
 app.use('*', requireAuth);
 
+// ─── Domain helpers (DDD-007) ──────────────────────────────────────────────
+
+/** Returns true when a link is in a state that can be accepted (pending → active). */
+function canAccept(link: { status: string }): boolean {
+  return link.status === 'pending';
+}
+
+/** Returns true when a link is in a state that can be revoked (any state except revoked). */
+function canRevoke(link: { status: string }): boolean {
+  return link.status !== 'revoked';
+}
+
 // ─── PATCH /api/instructor-student-links/:id ───────────────────────────────
 app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
   const auth = c.get('auth');
@@ -20,6 +33,9 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
   const { action } = c.req.valid('json');
   const supabase = createAuthenticatedClient(auth.jwt);
   const serviceClient = createServiceClient();
+
+  // CC-006: declare now once — used in both accept and revoke branches
+  const now = new Date().toISOString();
 
   const { data: link, error: fetchError } = await supabase
     .from('instructor_student_links')
@@ -40,13 +56,13 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
     if (link.instructor_id !== auth.userId) {
       return forbidden(c, 'Only the linked instructor can accept this invitation');
     }
-    if (link.status !== 'pending') {
+    if (!canAccept(link)) {
       return badRequest(c, 'Only pending links can be accepted');
     }
 
     const { data: updated, error: updateError } = await supabase
       .from('instructor_student_links')
-      .update({ status: 'active', accepted_at: new Date().toISOString() })
+      .update({ status: 'active', accepted_at: now })
       .eq('id', id)
       .select('id, instructor_id, student_id, status, invited_at, accepted_at, revoked_at, revoked_by')
       .single();
@@ -90,11 +106,16 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
     return forbidden(c, 'You do not have permission to revoke this link');
   }
 
+  // DDD-008: guard against no-op revocation of an already-revoked link
+  if (!canRevoke(link)) {
+    return badRequest(c, 'Link is already revoked');
+  }
+
   const { data: updated, error: updateError } = await supabase
     .from('instructor_student_links')
     .update({
       status: 'revoked',
-      revoked_at: new Date().toISOString(),
+      revoked_at: now,
       revoked_by: auth.userId,
     })
     .eq('id', id)
@@ -118,5 +139,5 @@ app.patch('/:id', zValidator('json', PatchLinkSchema), async (c) => {
 
 export default app;
 
-import { handle } from 'hono/vercel';
+// Vercel Serverless Function handler
 export const PATCH = handle(app);
