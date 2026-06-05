@@ -6,6 +6,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] - 2026-06-05
+
+### Added
+- Full internationalization (i18n) with react-i18next: PT-BR and EN locale files covering all user-visible strings across App, AuthGate, DayDetailModal, LinkInstructorPage, and NotificationPreferencesPage (#29)
+- `LanguageSelector` component: PT/EN toggle button with flag icons, persists selection to `localStorage` (#29)
+- `src/i18n/index.js`: i18n setup with browser language detection (`i18next-browser-languagedetector`) and localStorage persistence (#29)
+- 21 new automated tests: 14 locale integrity tests (PT-BR/EN key parity, clinical constraint enforcement, LGPD field exclusion) + 7 LanguageSelector unit tests (#29)
+- ADR-014 in ARCHITECTURE.md: documents i18n library choice (react-i18next), locale file structure, LanguageSelector design, and persistence strategy (#29)
+
+### Changed
+- README.md translated to English (#29)
+
+---
+
 ## [1.4.4] - 2026-06-05
 
 ### Changed
