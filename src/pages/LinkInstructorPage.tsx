@@ -15,15 +15,16 @@
  * Cormorant Garamond headings, same color tokens).
  */
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Session } from '@supabase/supabase-js';
 import { DS } from '../constants.js';
 import { useInstructorLink } from '../hooks/useInstructorLink';
 
-// ── Status label config ───────────────────────────────────────────────────────
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending:  { label: 'Pendente',  color: DS.warning,  bg: DS.warningLight, border: DS.warningBorder },
-  active:   { label: 'Ativo',     color: DS.success,   bg: DS.successLight,  border: DS.successBorder },
-  revoked:  { label: 'Revogado',  color: DS.error,   bg: DS.errorLight,  border: DS.errorBorder },
+// ── Status style config (colors only — labels resolved via i18n) ──────────────
+const STATUS_STYLES: Record<string, { color: string; bg: string; border: string }> = {
+  pending:  { color: DS.warning,  bg: DS.warningLight, border: DS.warningBorder },
+  active:   { color: DS.success,   bg: DS.successLight,  border: DS.successBorder },
+  revoked:  { color: DS.error,   bg: DS.errorLight,  border: DS.errorBorder },
 };
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ interface LinkInstructorPageProps {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps) {
+  const { t } = useTranslation();
   const { loading, error, instructor, links, searchInstructor, requestLink, getMyLinks } =
     useInstructorLink(session);
 
@@ -88,7 +90,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
           {onBack && (
             <button
               onClick={onBack}
-              aria-label="Voltar"
+              aria-label={t('linkInstructor.back')}
               style={{
                 background: 'none',
                 border: 'none',
@@ -113,7 +115,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 marginBottom: 2,
               }}
             >
-              Vínculo
+              {t('linkInstructor.sectionLabel')}
             </div>
             <div
               style={{
@@ -123,7 +125,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 fontStyle: 'italic',
               }}
             >
-              Minha instrutora
+              {t('linkInstructor.pageTitle')}
             </div>
           </div>
         </div>
@@ -151,17 +153,17 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               marginBottom: 8,
             }}
           >
-            Buscar instrutora por e-mail
+            {t('linkInstructor.searchLabel')}
           </div>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               type="email"
-              aria-label="E-mail da instrutora"
+              aria-label={t('linkInstructor.emailAriaLabel')}
               value={emailInput}
               onChange={e => setEmailInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="email da instrutora"
+              placeholder={t('linkInstructor.searchPlaceholder')}
               onFocus={e => { e.target.style.outline = `2px solid ${DS.primary}`; e.target.style.outlineOffset = '2px'; }}
               onBlur={e => { e.target.style.outline = 'none'; }}
               style={{
@@ -193,7 +195,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 flexShrink: 0,
               }}
             >
-              Buscar
+              {t('linkInstructor.searchButton')}
             </button>
           </div>
         </div>
@@ -202,7 +204,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
         {loading && (
           <div
             role="status"
-            aria-label="Carregando"
+            aria-label={t('common.loading')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -224,7 +226,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               }}
             />
             <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
-            Buscando...
+            {t('linkInstructor.searching')}
           </div>
         )}
 
@@ -262,7 +264,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
             }}
           >
             <span style={{ fontSize: 16 }}>✓</span>
-            Solicitação enviada com sucesso. Aguarde a aprovação da instrutora.
+            {t('linkInstructor.requestSuccess')}
           </div>
         )}
 
@@ -300,7 +302,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                   {instructor.full_name}
                 </div>
                 <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
-                  Instrutora certificada
+                  {t('linkInstructor.certifiedInstructor')}
                 </div>
               </div>
             </div>
@@ -323,7 +325,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 transition: 'all 0.2s',
               }}
             >
-              {requestSent ? 'Solicitação enviada' : 'Solicitar vínculo'}
+              {requestSent ? t('linkInstructor.requestSent') : t('linkInstructor.requestButton')}
             </button>
           </div>
         )}
@@ -340,11 +342,12 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 fontStyle: 'italic',
               }}
             >
-              Vínculos existentes
+              {t('linkInstructor.existingLinks')}
             </div>
 
             {links.map(link => {
-              const statusConfig = STATUS_LABELS[link.status] ?? STATUS_LABELS.revoked;
+              const statusStyle = STATUS_STYLES[link.status] ?? STATUS_STYLES.revoked;
+              const statusKey = link.status as keyof typeof STATUS_STYLES;
               return (
                 <div
                   key={link.id}
@@ -362,26 +365,26 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 >
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: DS.textMain }}>
-                      {link.instructor_name || 'Instrutora'}
+                      {link.instructor_name || t('linkInstructor.instructor')}
                     </div>
                     <div style={{ fontSize: 11, color: DS.textSec, marginTop: 2 }}>
-                      Instrutora
+                      {t('linkInstructor.instructor')}
                     </div>
                   </div>
                   <span
                     style={{
                       fontSize: 11,
                       fontWeight: 600,
-                      color: statusConfig.color,
-                      background: statusConfig.bg,
-                      border: `1px solid ${statusConfig.border}`,
+                      color: statusStyle.color,
+                      background: statusStyle.bg,
+                      border: `1px solid ${statusStyle.border}`,
                       borderRadius: 4,
                       padding: '3px 10px',
                       letterSpacing: '0.04em',
                       flexShrink: 0,
                     }}
                   >
-                    {statusConfig.label}
+                    {t(`linkStatus.${statusKey}`)}
                   </span>
                 </div>
               );
@@ -407,10 +410,10 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
                 marginBottom: 6,
               }}
             >
-              Nenhum vínculo ainda
+              {t('linkInstructor.emptyState')}
             </div>
             <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
-              Busque a instrutora pelo e-mail cadastrado e envie uma solicitação.
+              {t('linkInstructor.emptyStateBody')}
             </div>
           </div>
         )}
@@ -426,8 +429,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
           }}
         >
           <div style={{ fontSize: 11, color: DS.textSec, lineHeight: 1.7 }}>
-            <strong style={{ color: DS.warning }}>Aviso</strong> — A instrutora receberá uma
-            notificação e deverá aprovar o vínculo antes de ter acesso aos seus registros.
+            <strong style={{ color: DS.warning }}>{t('linkInstructor.disclaimerTitle')}</strong> — {t('linkInstructor.disclaimer')}
           </div>
         </div>
       </div>

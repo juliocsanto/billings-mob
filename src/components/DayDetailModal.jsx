@@ -22,6 +22,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { C, DS, STAMPS, MUCUS, BLEEDING, SENSACAO, TIPO_OBSERVACAO, EMPTY_FORM } from '../constants.js';
 import { useObservationVersions } from '../hooks/useObservationVersions';
 
@@ -82,12 +83,13 @@ function getStampLabel(stampId) {
  *   Stamp labels come from the STAMPS constant which never contains those terms.
  */
 function VersionHistorySection({ versions, loading }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
 
   if (loading) {
     return (
       <div style={{ marginTop: 20, padding: '10px 0', textAlign: 'center', color: DS.textSec, fontSize: 12 }}>
-        Carregando histórico...
+        {t('dayDetail.loadingHistory')}
       </div>
     );
   }
@@ -111,7 +113,7 @@ function VersionHistorySection({ versions, loading }) {
         }}
       >
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: DS.primary }}>
-          Histórico de versões
+          {t('dayDetail.versionHistory')}
         </div>
         <span style={{ fontSize: 12, color: DS.textSec }}>
           {expanded ? '▲' : '▼'}
@@ -181,6 +183,7 @@ function VersionHistorySection({ versions, loading }) {
 }
 
 export function DayDetailModal({ day, onClose, onSave, today: todayDate, observationId }) {
+  const { t } = useTranslation();
   const isToday = day.date === todayDate;
   const isPast = day.date < todayDate;
   const isFuture = day.date > todayDate;
@@ -313,15 +316,15 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
               {dateLabel}
             </div>
             <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
-              Dia {day.n} do ciclo
-              {isToday && <span style={{ color: DS.primary, fontWeight: 700 }}> · Hoje</span>}
-              {isPast && <span style={{ color: DS.textSec }}> · Edição de registro passado</span>}
-              {isFuture && <span style={{ color: DS.textSec }}> · Dia futuro</span>}
+              {t('dayDetail.cycleDayLabel', { n: day.n })}
+              {isToday && <span style={{ color: DS.primary, fontWeight: 700 }}> · {t('dayDetail.today')}</span>}
+              {isPast && <span style={{ color: DS.textSec }}> · {t('dayDetail.pastEdit')}</span>}
+              {isFuture && <span style={{ color: DS.textSec }}> · {t('dayDetail.futureDay')}</span>}
             </div>
           </div>
           <button
             onClick={onClose}
-            aria-label="Fechar modal"
+            aria-label={t('dayDetail.closeModal')}
             style={{
               background: 'none', border: 'none', fontSize: 20,
               color: DS.textSec, cursor: 'pointer', padding: '0 0 0 12px',
@@ -335,7 +338,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         {/* Future day: read-only message */}
         {isFuture ? (
           <div style={{ padding: '32px 22px', textAlign: 'center', color: DS.textSec, fontStyle: 'italic', fontSize: 13 }}>
-            Este dia ainda não chegou. Registre suas observações quando chegar.
+            {t('dayDetail.futureMessage')}
           </div>
         ) : (
           <div style={{ padding: '20px 22px' }}>
@@ -347,7 +350,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <span style={{ color: DS.success }}>✓</span>
-                <span style={{ fontSize: 13, color: DS.success }}>Observação salva</span>
+                <span style={{ fontSize: 13, color: DS.success }}>{t('dayDetail.savedSuccess')}</span>
               </div>
             )}
 
@@ -358,13 +361,13 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 borderRadius: DS.radiusCard, padding: '10px 14px', marginBottom: 16,
                 fontSize: 12, color: DS.textMain, lineHeight: 1.6,
               }}>
-                Você está editando um registro passado. As alterações substituem o registro original.
+                {t('dayDetail.pastWarning')}
               </div>
             )}
 
             {/* Stamps */}
             <div style={{ marginBottom: 20 }}>
-              <Lbl>Observação</Lbl>
+              <Lbl>{t('dayDetail.observation')}</Lbl>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {STAMPS.map(s => {
                   const active = form.stamp === s.id;
@@ -402,7 +405,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Sensação — disponível para todos os stamps */}
             {form.stamp && (
               <div style={{ marginBottom: 18 }}>
-                <Lbl>Sensação</Lbl>
+                <Lbl>{t('dayDetail.sensation')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {SENSACAO.map(s => (
                     <Pill key={s.id} label={s.label} active={form.sensacao === s.id} color={DS.secondary}
@@ -415,7 +418,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Bleeding detail */}
             {form.stamp === 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
-                <Lbl>Intensidade</Lbl>
+                <Lbl>{t('dayDetail.intensity')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {BLEEDING.map(b => (
                     <Pill key={b.id} label={b.label} active={form.bleeding === b.id} color='#A03030'
@@ -428,7 +431,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* O que você observa — apenas sangramento */}
             {form.stamp === 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
-                <Lbl>O que você observa</Lbl>
+                <Lbl>{t('dayDetail.whatYouObserve')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {TIPO_OBSERVACAO.map(t => (
                     <Pill key={t.id} label={t.label} active={form.tipo_observacao === t.id} color='#A03030'
@@ -441,12 +444,12 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Descreva o que você vê — campo livre, apenas sangramento, NÃO é LGPD-sensível */}
             {form.stamp === 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
-                <Lbl>Descreva o que você vê</Lbl>
+                <Lbl>{t('dayDetail.describeWhatYouSee')}</Lbl>
                 <textarea
                   data-testid="observacao-descricao"
                   value={form.observacao_descricao ?? ''}
                   onChange={e => setForm(p => ({ ...p, observacao_descricao: e.target.value || null }))}
-                  placeholder="Ex: fluxo com muco elástico, coloração rosada..."
+                  placeholder={t('dayDetail.describeWhatYouSeePlaceholder')}
                   maxLength={500}
                   style={{
                     width: '100%', background: DS.bg,
@@ -461,10 +464,10 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             {/* Mucus detail — todos os stamps exceto sangramento */}
             {form.stamp && form.stamp !== 'sangramento' && (
               <div style={{ marginBottom: 18 }}>
-                <Lbl>Tipo de muco</Lbl>
+                <Lbl>{t('dayDetail.mucusType')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                   <Pill
-                    label="Sem muco"
+                    label={t('dayDetail.noMucus')}
                     active={form.mucus === null}
                     color={DS.primary}
                     onClick={() => setForm(p => ({ ...p, mucus: null }))}
@@ -497,18 +500,18 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 borderRadius: DS.radiusCard, padding: '12px 14px', marginBottom: 18,
               }}>
                 <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 16, color: DS.warning, marginBottom: 4, fontStyle: 'italic' }}>
-                  Ápice marcado
+                  {t('dayDetail.apiceMarked')}
                 </div>
                 <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.7 }}>
-                  Último dia de sensação lubrificante ou escorregadia.<br />
-                  <span style={{ color: DS.textSec }}>Informe sua instrutora certificada.</span>
+                  {t('dayDetail.apiceDescription')}<br />
+                  <span style={{ color: DS.textSec }}>{t('dayDetail.apiceInformInstructor')}</span>
                 </div>
               </div>
             )}
 
             {/* Relations */}
             <div style={{ marginBottom: 18 }}>
-              <Lbl>Relações íntimas</Lbl>
+              <Lbl>{t('dayDetail.intimateRelations')}</Lbl>
               <button
                 onClick={() => setForm(p => ({ ...p, relations: !p.relations }))}
                 style={{
@@ -530,18 +533,18 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   {form.relations ? '♥' : ''}
                 </div>
                 <span style={{ fontSize: 13, color: form.relations ? DS.error : DS.textMain }}>
-                  {form.relations ? 'Sim — houve relações' : 'Não houve relações'}
+                  {form.relations ? t('dayDetail.relationsYes') : t('dayDetail.relationsNo')}
                 </span>
               </button>
             </div>
 
             {/* Notes */}
             <div style={{ marginBottom: 20 }}>
-              <Lbl>Notas para a instrutora</Lbl>
+              <Lbl>{t('dayDetail.notesLabel')}</Lbl>
               <textarea
                 value={form.notes}
                 onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                placeholder="O que você observa / observações para a instrutora..."
+                placeholder={t('dayDetail.notesPlaceholder')}
                 style={{
                   width: '100%', background: DS.bg,
                   border: `1.5px solid ${DS.border}`, borderRadius: DS.radiusInput,
@@ -566,7 +569,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 marginBottom: 10,
               }}
             >
-              {saved ? 'Salvo ✓' : isPast ? 'Salvar edição' : 'Salvar observação'}
+              {saved ? t('dayDetail.savedButton') : isPast ? t('dayDetail.saveEditButton') : t('dayDetail.saveButton')}
             </button>
             {/* Cancel button */}
             {!saved && (
@@ -582,7 +585,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   cursor: 'pointer', fontFamily: 'Lato, sans-serif', transition: 'all 0.2s',
                 }}
               >
-                Cancelar
+                {t('dayDetail.cancelButton')}
               </button>
             )}
 

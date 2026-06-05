@@ -17,6 +17,40 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 
+// ── Mock react-i18next so components render with pt-BR values ─────────────────
+vi.mock('react-i18next', () => {
+  const ptBR: Record<string, string> = {
+    'linkInstructor.back': 'Voltar',
+    'linkInstructor.sectionLabel': 'Vínculo',
+    'linkInstructor.pageTitle': 'Minha instrutora',
+    'linkInstructor.searchLabel': 'Buscar instrutora por e-mail',
+    'linkInstructor.searchPlaceholder': 'email da instrutora',
+    'linkInstructor.emailAriaLabel': 'E-mail da instrutora',
+    'linkInstructor.searchButton': 'Buscar',
+    'linkInstructor.searching': 'Buscando...',
+    'linkInstructor.requestButton': 'Solicitar vínculo',
+    'linkInstructor.requestSent': 'Solicitação enviada',
+    'linkInstructor.requestSuccess': 'Solicitação enviada com sucesso. Aguarde a aprovação da instrutora.',
+    'linkInstructor.existingLinks': 'Vínculos existentes',
+    'linkInstructor.emptyState': 'Nenhum vínculo ainda',
+    'linkInstructor.emptyStateBody': 'Busque a instrutora pelo e-mail cadastrado e envie uma solicitação.',
+    'linkInstructor.disclaimer': 'A instrutora receberá uma notificação e deverá aprovar o vínculo antes de ter acesso aos seus registros.',
+    'linkInstructor.disclaimerTitle': 'Aviso',
+    'linkInstructor.certifiedInstructor': 'Instrutora certificada',
+    'linkInstructor.instructor': 'Instrutora',
+    'linkStatus.pending': 'Pendente',
+    'linkStatus.active': 'Ativo',
+    'linkStatus.revoked': 'Revogado',
+    'common.loading': 'Carregando...',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string) => ptBR[key] ?? key,
+      i18n: { language: 'pt-BR', changeLanguage: vi.fn() },
+    }),
+  };
+});
+
 // ── Mock useInstructorLink so we can control all async state ──────────────────
 vi.mock('../../hooks/useInstructorLink', () => ({
   useInstructorLink: vi.fn(),

@@ -2338,6 +2338,298 @@ AVISO: Nenhuma dessas variaveis deve aparecer no codigo-fonte. Usar `.env.local`
 
 ---
 
-*Documento gerado em 2026-05-24. Versao 1.1 — atualizado em 2026-05-26.*  
-*Proximo review: 2026-06-24 (apos Sprint 3).*  
+*Documento gerado em 2026-05-24. Versao 1.3 — atualizado em 2026-06-05.*  
+*Proximo review: 2026-07-05 (apos Sprint 7).*  
 *Mantenedor: Julio C. Santo (juliocsanto3@gmail.com)*
+
+---
+
+## ADR-011 — Integracao WhatsApp (Hexagonal)
+
+**Status:** ACEITO  
+**Data:** 2026-05-29  
+**Decisao:** WhatsApp Cloud API (Meta oficial) + padrao Hexagonal (Port/Adapter)
+
+Documentado em sprint anterior. Conteudo completo na seccao de Sprint 4 do TODO.md.
+
+---
+
+## ADR-012 — NotificationService
+
+**Status:** ACEITO  
+**Data:** 2026-05-29  
+**Decisao:** NotificationService centralizado com factory pattern
+
+Documentado em sprint anterior. Conteudo completo na seccao de Sprint 4 do TODO.md.
+
+---
+
+## ADR-013 — Schema de Banco Sprint 4
+
+**Status:** ACEITO  
+**Data:** 2026-05-29  
+**Decisao:** Tabelas push_preferences e whatsapp_webhook_config
+
+Documentado em sprint anterior. Conteudo completo em docs/sprint4-api-contracts.md.
+
+---
+
+## ADR-014 — Internacionalizacao (i18n)
+
+**Status:** ACEITO  
+**Data:** 2026-06-05  
+**Contexto:** Billings Grafico atingiu maturidade de produto (Sprint 6 concluida, 5 instrutoras beta ativas). A totalidade das strings de interface esta hardcoded em Portugues-BR. Para atingir alunas e instrutoras fora do Brasil — incluindo comunidades da diaspora brasileira nos EUA, Portugal e outros paises — e para facilitar futuras parcerias com WOOMB International, e necessario adicionar suporte a selecao de idioma pelo usuario (PT-BR e EN como primeiro par de locales).
+
+Ambos os repositorios sao afetados:
+
+- **billings-mob** (`/home/juliocsanto/billings/billings-mob`) — React 18 + Vite 5 + JSX (sem TypeScript em src/) — PWA da aluna
+- **billings-web** (`/home/juliocsanto/billings/billings-web`) — React 18 + Vite 5 + TypeScript — Dashboard da instrutora
+
+**Decisao:** `react-i18next` + `i18next` para ambos os repositorios
+
+### 1. Escolha da biblioteca
+
+Tres opcoes foram avaliadas:
+
+**react-i18next + i18next (ESCOLHIDA)**
+
+Justificativa:
+- Padrao da industria para React i18n desde 2016; mais de 11 milhoes de downloads/semana
+- Compativel com JSX e TSX sem configuracao especial — trabalha identicamente em billings-mob (JSX) e billings-web (TSX)
+- Hook `useTranslation()` retorna funcao `t()` de tipagem inferida — minimo boilerplate
+- Suporte nativo a: pluralizacao, interpolacao, formatacao de datas/numeros via i18next-icu, lazy-loading de namespaces
+- Deteccao automatica de idioma via `i18next-browser-languagedetector`
+- Cache de preferencia de idioma em localStorage sem codigo adicional
+- Alternativas consideradas:
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| `@formatjs/intl` + `react-intl` | API mais verbosa (componente `<FormattedMessage>` vs `t()`); TypeScript gerado por CLI externo; complexidade injustificada para o porte do app |
+| Solucao custom (Context + JSON) | Re-implementa funcionalidades ja resolvidas (pluralizacao, fallback, lazy-load); custo de manutencao alto; nao recomendado para producao |
+
+**Versoes exatas a instalar:**
+- `i18next@^23.0.0`
+- `react-i18next@^14.0.0`
+- `i18next-browser-languagedetector@^8.0.0`
+
+### 2. Estrutura de arquivos
+
+Identica em ambos os repositorios, respeitando a extensao de cada um:
+
+```
+billings-mob/
+  src/
+    i18n/
+      index.js         — configuracao i18next (JSX project)
+      locales/
+        pt-BR.json     — todas as strings PT-BR
+        en.json        — todas as strings EN
+
+billings-web/
+  src/
+    i18n/
+      index.ts         — configuracao i18next (TSX project)
+      locales/
+        pt-BR.json
+        en.json
+```
+
+Justificativa de pasta unica `locales/`:
+- Um unico namespace `translation` (ver item 5) dispensa subpastas por namespace
+- Todos os arquivos de locale em local previsivel
+- Facil de auditar: `wc -l src/i18n/locales/*.json` mostra cobertura imediata
+
+### 3. Persistencia de preferencia de idioma
+
+| Decisao | Valor |
+|---|---|
+| Chave localStorage | `billings_locale` |
+| Idioma padrao | `pt-BR` |
+| Fallback | `pt-BR` (se `billings_locale` contem valor invalido) |
+| Deteccao automatica | `i18next-browser-languagedetector` com ordem: `localStorage > navigator` |
+
+O `i18next-browser-languagedetector` detecta e persiste automaticamente usando a chave configurada. Nao e necessario codigo adicional para ler/escrever `billings_locale`.
+
+Locales suportados no lancamento: `pt-BR`, `en`. Adicionais requerem novo ADR (traducao clinica deve ser revisada por instrutora nativa).
+
+### 4. Componente LanguageSelector
+
+**Localizacao:**
+- billings-mob: `src/components/LanguageSelector.jsx`
+- billings-web: `src/components/LanguageSelector.tsx`
+
+**Posicionamento:**
+- billings-mob: na barra de navegacao superior (App.jsx — row de tabs superiores), ao lado do botao "Sair"
+- billings-web: no header do DashboardPage (barra top), ao lado do botao de logout
+
+**API do componente (identica entre repos, extensao diferente):**
+
+```typescript
+// billings-web: LanguageSelector.tsx
+interface LanguageSelectorProps {
+  // sem props externas — usa useTranslation() + i18n.changeLanguage() internamente
+}
+
+// billings-mob: LanguageSelector.jsx (sem tipagem de props)
+```
+
+**Visual:**
+- Dois botoes/pills: "PT" e "EN"
+- Botao ativo: cor primaria (`DS.primary` / `#37517E`) com fundo contrastante
+- Botao inativo: cor secundaria (`DS.textSec` / `#6B7280`) com fundo neutro
+- Sem bandeiras: evita ambiguidade (PT-BR vs PT-PT; EN-US vs EN-GB)
+
+**Acessibilidade (obrigatoria):**
+- `role="group"` no container
+- `aria-label="Selecionar idioma"` / `"Select language"` no container
+- `aria-pressed={true|false}` em cada botao
+- Navegavel por teclado (Tab entre os dois botoes)
+
+### 5. Estrategia de namespace
+
+Namespace unico: `translation` (default do i18next).
+
+Justificativa: O app atual possui menos de 200 strings por locale. Namespaces multiplos (ex.: `auth`, `dashboard`, `clinical`) so valem a pena acima de 500 strings ou quando equipes diferentes traduzem partes distintas. Para o porte atual, um arquivo unico por locale e mais simples de auditar e manter.
+
+Revisitar se o numero de strings ultrapassar 300 ou se for adicionado um terceiro idioma com tradutor externo.
+
+### 6. Convencao de nomenclatura de chaves
+
+Notacao de ponto correspondendo ao componente/pagina pai:
+
+```
+<componente|pagina>.<identificador-semantico>
+```
+
+Exemplos obrigatorios:
+
+```json
+{
+  "auth": {
+    "emailLabel": "E-mail",
+    "sendMagicLink": "Enviar link de acesso",
+    "sending": "Enviando...",
+    "checkEmail": "Link enviado",
+    "checkEmailBody": "Verifique seu e-mail — o link de acesso chega em instantes.",
+    "useOtherEmail": "Usar outro e-mail",
+    "loginTitle": "Acesse sua conta",
+    "loginSubtitle": "Nenhuma senha necessária.",
+    "errorGeneric": "Erro ao enviar o link. Verifique o e-mail e tente novamente.",
+    "loading": "Carregando...",
+    "signOut": "Sair"
+  },
+  "nav": {
+    "grafico": "Gráfico",
+    "registrar": "Registrar",
+    "perfil": "Perfil",
+    "vincular": "Vincular"
+  },
+  "dayDetail": {
+    "title": "Detalhes do dia",
+    "editButton": "Editar",
+    "saveButton": "Salvar",
+    "cancelButton": "Cancelar",
+    "versionHistory": "Histórico de versões",
+    "conflictBanner": "Aguardando resolução da instrutora"
+  },
+  "linkInstructor": {
+    "pageTitle": "Minha instrutora",
+    "searchLabel": "Buscar instrutora por e-mail",
+    "searchButton": "Buscar",
+    "requestButton": "Solicitar vínculo",
+    "requestSent": "Solicitação enviada",
+    "existingLinks": "Vínculos existentes",
+    "emptyState": "Nenhum vínculo ainda",
+    "disclaimer": "A instrutora receberá uma notificação e deverá aprovar o vínculo."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "students": "Alunas",
+    "conflicts": "Conflitos",
+    "links": "Vínculos",
+    "noStudents": "Nenhuma aluna vinculada ainda.",
+    "lastRecord": "Último registro"
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Erro ao carregar",
+    "retry": "Tentar novamente",
+    "back": "Voltar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "close": "Fechar"
+  }
+}
+```
+
+Regra de nomenclatura:
+- Chaves em `camelCase`
+- Segmento raiz = nome do componente ou pagina (minusculo, sem espaco)
+- Maximo 3 niveis de profundidade (`auth.errorMessages.rateLimit`)
+- Sem abreviacao: `emailLabel` nao `emlLbl`
+
+### 7. Restricao clinica aplicada a i18n
+
+Esta restricao e inviolavel e complementa ADR-002/ADR-003:
+
+**Valores de enum (stamps) NUNCA sao traduzidos como display label de classificacao clinica.**
+
+O campo `stamp` da entidade `Observation` possui os valores de codigo:
+`sangramento | seco | muco | apice`
+
+Esses valores sao constantes de dominio, nao strings de UI. A traducao aplicada e apenas do **label de exibicao** para o usuario — nunca do valor de dominio:
+
+```json
+// pt-BR.json — CORRETO
+{
+  "stamps": {
+    "sangramento": "Sangramento",
+    "seco": "Seco",
+    "muco": "Muco",
+    "apice": "Ápice"
+  }
+}
+
+// en.json — CORRETO
+{
+  "stamps": {
+    "sangramento": "Bleeding",
+    "seco": "Dry",
+    "muco": "Mucus",
+    "apice": "Peak"
+  }
+}
+```
+
+Os seguintes termos sao PROIBIDOS em qualquer valor de chave de traducao:
+- `fertile` / `fertil`
+- `infertile` / `infertil`
+- `safe` / `seguro`
+- `unsafe` / `inseguro`
+
+Esta proibicao e reforcada em code review: qualquer PR que adicione esses termos em arquivos de locale deve ser bloqueado como violacao CRITICA (mesma categoria que SQL injection — ADR-004 Estagio 4).
+
+### Consequencias positivas
+
+- Expansao geografica habilitada sem nova decisao arquitetural
+- Parceria com WOOMB International facilitada (plataforma ja internacionalizada)
+- Bundle overhead minimo: `i18next` + `react-i18next` adicionam ~15KB gzipped ao bundle (dentro do budget de 200KB)
+- Sem mudanca de comportamento para usuarios brasileiros existentes (default PT-BR)
+- Lazy-loading de locales suportado nativamente se bundle crescer acima de 200KB
+
+### Consequencias negativas
+
+- Todas as strings existentes em ambos os repos precisam ser extraidas para os arquivos de locale (trabalho manual estimado: 4-6h por repo)
+- Todo componente que exibe texto precisa importar `useTranslation()`
+- Strings dinamicas (ex.: nome da aluna interpolado em mensagem) requerem sintaxe `t('key', { name })` e interpolacao no JSON
+- Testes de componentes precisam de wrapper `I18nextProvider` ou mock de `useTranslation`
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| `@formatjs/intl` + `react-intl` | API de componente (`<FormattedMessage id="...">`) mais verbosa que hook `t()`. Tipos gerados por CLI adicional. Sem vantagem real para o porte do projeto. |
+| Custom Context + JSON | Re-implementar pluralizacao, fallback, deteccao de locale e persistencia. Estimativa: 40h+ de manutencao futura. Antipattern para producao. |
+| Sem i18n (monolingual) | Bloqueia expansao para WOOMB International e diaspora brasileira. Decisao adiada custaria mais esforco no futuro. |
+
+---

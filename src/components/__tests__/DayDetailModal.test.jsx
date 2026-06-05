@@ -18,6 +18,56 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DayDetailModal } from '../DayDetailModal.jsx';
 
+// ── Mock react-i18next so components render with pt-BR values ─────────────────
+// This allows existing test assertions (which check for Portuguese text) to pass.
+vi.mock('react-i18next', () => {
+  const ptBR = {
+    'dayDetail.loadingHistory': 'Carregando histórico...',
+    'dayDetail.versionHistory': 'Histórico de versões',
+    'dayDetail.cycleDayLabel': 'Dia {{n}} do ciclo',
+    'dayDetail.today': 'Hoje',
+    'dayDetail.pastEdit': 'Edição de registro passado',
+    'dayDetail.futureDay': 'Dia futuro',
+    'dayDetail.futureMessage': 'Este dia ainda não chegou. Registre suas observações quando chegar.',
+    'dayDetail.pastWarning': 'Você está editando um registro passado. As alterações substituem o registro original.',
+    'dayDetail.savedSuccess': 'Observação salva',
+    'dayDetail.closeModal': 'Fechar modal',
+    'dayDetail.observation': 'Observação',
+    'dayDetail.sensation': 'Sensação',
+    'dayDetail.intensity': 'Intensidade',
+    'dayDetail.whatYouObserve': 'O que você observa',
+    'dayDetail.describeWhatYouSee': 'Descreva o que você vê',
+    'dayDetail.describeWhatYouSeePlaceholder': 'Ex: fluxo com muco elástico, coloração rosada...',
+    'dayDetail.mucusType': 'Tipo de muco',
+    'dayDetail.noMucus': 'Sem muco',
+    'dayDetail.apiceMarked': 'Ápice marcado',
+    'dayDetail.apiceDescription': 'Último dia de sensação lubrificante ou escorregadia.',
+    'dayDetail.apiceInformInstructor': 'Informe sua instrutora certificada.',
+    'dayDetail.intimateRelations': 'Relações íntimas',
+    'dayDetail.relationsYes': 'Sim — houve relações',
+    'dayDetail.relationsNo': 'Não houve relações',
+    'dayDetail.notesLabel': 'Notas para a instrutora',
+    'dayDetail.notesPlaceholder': 'O que você observa / observações para a instrutora...',
+    'dayDetail.saveButton': 'Salvar observação',
+    'dayDetail.saveEditButton': 'Salvar edição',
+    'dayDetail.savedButton': 'Salvo ✓',
+    'dayDetail.cancelButton': 'Cancelar',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key, opts) => {
+        const val = ptBR[key] ?? key;
+        // Handle simple interpolation for {{n}}
+        if (opts && typeof opts === 'object') {
+          return val.replace(/\{\{(\w+)\}\}/g, (_, k) => opts[k] ?? `{{${k}}}`);
+        }
+        return val;
+      },
+      i18n: { language: 'pt-BR', changeLanguage: vi.fn() },
+    }),
+  };
+});
+
 // ── Mock useObservationVersions so DayDetailModal tests are isolated ───────────
 vi.mock('../../hooks/useObservationVersions', () => ({
   useObservationVersions: vi.fn(() => ({ versions: [], loading: false, error: null })),
