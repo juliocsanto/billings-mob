@@ -120,10 +120,10 @@ describe('POST /billing/subscribe — edge cases', () => {
       }),
     }));
 
-    const mod = await import('../billing/subscribe?edge=502-' + Date.now());
+    const mod = await import('../billing/index?edge=502-' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: instructorHeaders,
       body: JSON.stringify({ plan: 'instructor_monthly' }),
@@ -138,10 +138,10 @@ describe('POST /billing/subscribe — edge cases', () => {
   });
 
   it('returns 400 when body is not valid JSON', async () => {
-    const mod = await import('../billing/subscribe?edge=bad-json-' + Date.now());
+    const mod = await import('../billing/index?edge=bad-json-' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: instructorHeaders,
       body: 'not-json',
@@ -153,10 +153,10 @@ describe('POST /billing/subscribe — edge cases', () => {
   });
 
   it('returns 400 when plan field is missing from body', async () => {
-    const mod = await import('../billing/subscribe?edge=no-plan-' + Date.now());
+    const mod = await import('../billing/index?edge=no-plan-' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: instructorHeaders,
       body: JSON.stringify({}),
@@ -189,7 +189,7 @@ describe('POST /billing/webhook — edge cases', () => {
   });
 
   it('returns 200 received:true for an unknown/unrecognized event (idempotent)', async () => {
-    const mod = await import('../billing/webhook?edge=unknown-event-' + Date.now());
+    const mod = await import('../billing/index?edge=unknown-event-' + Date.now());
     const app = mod.default;
 
     const body = JSON.stringify({
@@ -199,7 +199,7 @@ describe('POST /billing/webhook — edge cases', () => {
     });
     const sig = computeHmac(TEST_WEBHOOK_SECRET, body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -215,12 +215,12 @@ describe('POST /billing/webhook — edge cases', () => {
   });
 
   it('returns 403 when asaas-signature header is missing', async () => {
-    const mod = await import('../billing/webhook?edge=no-sig-' + Date.now());
+    const mod = await import('../billing/index?edge=no-sig-' + Date.now());
     const app = mod.default;
 
     const body = JSON.stringify({ event: 'PAYMENT_RECEIVED', customer: { email: 'x@x.com' } });
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
@@ -234,13 +234,13 @@ describe('POST /billing/webhook — edge cases', () => {
   it('returns 403 fail-closed when ASAAS_WEBHOOK_SECRET is not configured', async () => {
     delete process.env.ASAAS_WEBHOOK_SECRET;
 
-    const mod = await import('../billing/webhook?edge=no-secret-' + Date.now());
+    const mod = await import('../billing/index?edge=no-secret-' + Date.now());
     const app = mod.default;
 
     const body = JSON.stringify({ event: 'PAYMENT_RECEIVED', customer: { email: 'x@x.com' } });
     const sig = computeHmac('any-secret', body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -255,13 +255,8 @@ describe('POST /billing/webhook — edge cases', () => {
   });
 
   it('is idempotent for a user not found in the system (silently ignores)', async () => {
-    // getUserByEmail returns null user — email not found in the system
-    mockGetUserByEmail.mockResolvedValueOnce({
-      data: { user: null },
-      error: null,
-    });
-
-    const mod = await import('../billing/webhook?edge=user-not-found-' + Date.now());
+    // listUsers returns no matching user — email not found in the system
+    const mod = await import('../billing/index?edge=user-not-found-' + Date.now());
     const app = mod.default;
 
     const body = JSON.stringify({
@@ -270,7 +265,7 @@ describe('POST /billing/webhook — edge cases', () => {
     });
     const sig = computeHmac(TEST_WEBHOOK_SECRET, body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

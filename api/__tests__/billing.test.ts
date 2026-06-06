@@ -201,10 +201,10 @@ describe('POST /api/billing/subscribe', () => {
   });
 
   it('returns 201 with subscriptionId, status, nextDueDate, paymentUrl for instructor_monthly', async () => {
-    const mod = await import('../billing/subscribe?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: instructorHeaders,
       body: JSON.stringify({ plan: 'instructor_monthly' }),
@@ -224,10 +224,10 @@ describe('POST /api/billing/subscribe', () => {
   });
 
   it('returns 400 for invalid plan', async () => {
-    const mod = await import('../billing/subscribe?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: instructorHeaders,
       body: JSON.stringify({ plan: 'invalid_plan' }),
@@ -239,10 +239,10 @@ describe('POST /api/billing/subscribe', () => {
   });
 
   it('returns 401 without Authorization header', async () => {
-    const mod = await import('../billing/subscribe?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan: 'instructor_monthly' }),
@@ -252,10 +252,10 @@ describe('POST /api/billing/subscribe', () => {
   });
 
   it('returns 403 when user has student role', async () => {
-    const mod = await import('../billing/subscribe?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/subscribe', {
       method: 'POST',
       headers: studentHeaders,
       body: JSON.stringify({ plan: 'instructor_monthly' }),
@@ -287,10 +287,10 @@ describe('GET /api/billing/status', () => {
       asaas_subscription_id: null,
       subscription_expires_at: null,
     };
-    const mod = await import('../billing/status?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/status', {
       method: 'GET',
       headers: instructorHeaders,
     });
@@ -317,10 +317,10 @@ describe('GET /api/billing/status', () => {
       asaas_subscription_id: 'mock_sub_abc123',
       subscription_expires_at: '2026-07-06T00:00:00Z',
     };
-    const mod = await import('../billing/status?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/status', {
       method: 'GET',
       headers: instructorHeaders,
     });
@@ -338,10 +338,10 @@ describe('GET /api/billing/status', () => {
   });
 
   it('returns 401 without Authorization header', async () => {
-    const mod = await import('../billing/status?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/status', {
       method: 'GET',
       headers: {},
     });
@@ -381,7 +381,7 @@ describe('POST /api/billing/webhook', () => {
   });
 
   it('returns 200 and updates subscription_status to active on PAYMENT_RECEIVED', async () => {
-    const mod = await import('../billing/webhook?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
     const body = JSON.stringify({
       event: 'PAYMENT_RECEIVED',
@@ -390,7 +390,7 @@ describe('POST /api/billing/webhook', () => {
     });
     const sig = computeHmac(TEST_WEBHOOK_SECRET, body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -405,7 +405,7 @@ describe('POST /api/billing/webhook', () => {
   });
 
   it('returns 200 and updates subscription_status to expired on SUBSCRIPTION_CANCELED', async () => {
-    const mod = await import('../billing/webhook?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
     const body = JSON.stringify({
       event: 'SUBSCRIPTION_CANCELED',
@@ -414,7 +414,7 @@ describe('POST /api/billing/webhook', () => {
     });
     const sig = computeHmac(TEST_WEBHOOK_SECRET, body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -429,7 +429,7 @@ describe('POST /api/billing/webhook', () => {
   });
 
   it('returns 403 with invalid HMAC signature', async () => {
-    const mod = await import('../billing/webhook?t=' + Date.now());
+    const mod = await import('../billing/index?t=' + Date.now());
     const app = mod.default;
     const body = JSON.stringify({
       event: 'PAYMENT_RECEIVED',
@@ -437,7 +437,7 @@ describe('POST /api/billing/webhook', () => {
     });
     const badSig = computeHmac('wrong-secret', body);
 
-    const res = await app.request('/', {
+    const res = await app.request('/api/billing/webhook', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
