@@ -43,6 +43,11 @@ function makeContext(): Context {
 type BeforeSendFn = (event: Record<string, unknown>) => Record<string, unknown> | null;
 
 // ─── Module-level init behaviour ─────────────────────────────────────────────
+//
+// vi.resetModules() clears the module registry so the subsequent dynamic import()
+// re-evaluates the module from scratch with the current process.env state.
+// This replaces the query-string import pattern (?init-absent, ?init-with-dsn, etc.)
+// which TypeScript (tsc) does not understand.
 
 describe('errorHandler — Sentry init', () => {
   afterEach(() => {
@@ -50,17 +55,20 @@ describe('errorHandler — Sentry init', () => {
     mockInit.mockClear();
     mockCaptureException.mockClear();
     vi.restoreAllMocks();
+    vi.resetModules();
   });
 
   it('does NOT call Sentry.init when SENTRY_DSN is absent', async () => {
     delete process.env.SENTRY_DSN;
-    await import('../_lib/errorHandler?init-absent');
+    vi.resetModules();
+    await import('../_lib/errorHandler');
     expect(mockInit).not.toHaveBeenCalled();
   });
 
   it('calls Sentry.init with the DSN when SENTRY_DSN is set', async () => {
     process.env.SENTRY_DSN = 'https://abc123@sentry.io/1';
-    await import('../_lib/errorHandler?init-with-dsn');
+    vi.resetModules();
+    await import('../_lib/errorHandler');
     expect(mockInit).toHaveBeenCalledWith(
       expect.objectContaining({ dsn: 'https://abc123@sentry.io/1' }),
     );
@@ -68,7 +76,8 @@ describe('errorHandler — Sentry init', () => {
 
   it('Sentry.init receives a beforeSend callback', async () => {
     process.env.SENTRY_DSN = 'https://abc123@sentry.io/2';
-    await import('../_lib/errorHandler?init-beforesend');
+    vi.resetModules();
+    await import('../_lib/errorHandler');
     const initOpts = mockInit.mock.calls[mockInit.mock.calls.length - 1][0] as Record<string, unknown>;
     expect(typeof initOpts.beforeSend).toBe('function');
   });
@@ -85,8 +94,9 @@ describe('errorHandler — redactLgpdFieldsFromObject via apiLgpdBeforeSend', ()
   beforeAll(async () => {
     mockInit.mockClear();
     process.env.SENTRY_DSN = 'https://lgpd-test@sentry.io/99';
-    // Fresh module import — unique query param to avoid cache hits from other suites
-    await import('../_lib/errorHandler?lgpd-suite');
+    // Fresh module import — vi.resetModules() ensures SENTRY_DSN is read at module load time
+    vi.resetModules();
+    await import('../_lib/errorHandler');
     expect(mockInit).toHaveBeenCalled();
     const initOpts = mockInit.mock.calls[mockInit.mock.calls.length - 1][0] as {
       beforeSend: BeforeSendFn;
@@ -97,6 +107,7 @@ describe('errorHandler — redactLgpdFieldsFromObject via apiLgpdBeforeSend', ()
   afterAll(() => {
     delete process.env.SENTRY_DSN;
     mockInit.mockClear();
+    vi.resetModules();
   });
 
   // ── Primitive / null pass-through ─────────────────────────────────────────
@@ -319,22 +330,31 @@ describe('errorHandler — redactLgpdFieldsFromObject via apiLgpdBeforeSend', ()
 });
 
 // ─── Exported error helpers ────────────────────────────────────────────────
+//
+// The error helpers (notFound, unauthorized, etc.) are pure functions that do not
+// depend on SENTRY_DSN at import time. We import the module once via a fresh
+// vi.resetModules() call so we get a clean instance without stale Sentry state.
+
+let errorHandlerMod: typeof import('../_lib/errorHandler');
+
+beforeAll(async () => {
+  vi.resetModules();
+  errorHandlerMod = await import('../_lib/errorHandler');
+});
 
 describe('errorHandler — notFound', () => {
-  it('returns 404 with error=NotFound', async () => {
-    const mod = await import('../_lib/errorHandler?notfound');
+  it('returns 404 with error=NotFound', () => {
     const ctx = makeContext();
-    mod.notFound(ctx);
+    errorHandlerMod.notFound(ctx);
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'NotFound' }),
       404,
     );
   });
 
-  it('uses custom message when provided', async () => {
-    const mod = await import('../_lib/errorHandler?notfound-custom');
+  it('uses custom message when provided', () => {
     const ctx = makeContext();
-    mod.notFound(ctx, 'Cycle not found');
+    errorHandlerMod.notFound(ctx, 'Cycle not found');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Cycle not found' }),
       404,
@@ -343,10 +363,9 @@ describe('errorHandler — notFound', () => {
 });
 
 describe('errorHandler — unauthorized', () => {
-  it('returns 401 with error=Unauthorized', async () => {
-    const mod = await import('../_lib/errorHandler?unauth');
+  it('returns 401 with error=Unauthorized', () => {
     const ctx = makeContext();
-    mod.unauthorized(ctx);
+    errorHandlerMod.unauthorized(ctx);
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Unauthorized' }),
       401,
@@ -355,10 +374,9 @@ describe('errorHandler — unauthorized', () => {
 });
 
 describe('errorHandler — forbidden', () => {
-  it('returns 403 with error=Forbidden', async () => {
-    const mod = await import('../_lib/errorHandler?forbidden');
+  it('returns 403 with error=Forbidden', () => {
     const ctx = makeContext();
-    mod.forbidden(ctx);
+    errorHandlerMod.forbidden(ctx);
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Forbidden' }),
       403,
@@ -367,30 +385,27 @@ describe('errorHandler — forbidden', () => {
 });
 
 describe('errorHandler — badRequest', () => {
-  it('returns 400 with error=BadRequest', async () => {
-    const mod = await import('../_lib/errorHandler?badrequest');
+  it('returns 400 with error=BadRequest', () => {
     const ctx = makeContext();
-    mod.badRequest(ctx, 'Missing field');
+    errorHandlerMod.badRequest(ctx, 'Missing field');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'BadRequest', message: 'Missing field' }),
       400,
     );
   });
 
-  it('sanitizes LGPD-sensitive message containing "relations"', async () => {
-    const mod = await import('../_lib/errorHandler?badrequest-relations');
+  it('sanitizes LGPD-sensitive message containing "relations"', () => {
     const ctx = makeContext();
-    mod.badRequest(ctx, 'Validation failed for relations field');
+    errorHandlerMod.badRequest(ctx, 'Validation failed for relations field');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Internal processing error' }),
       400,
     );
   });
 
-  it('sanitizes LGPD-sensitive message containing "notes"', async () => {
-    const mod = await import('../_lib/errorHandler?badrequest-notes');
+  it('sanitizes LGPD-sensitive message containing "notes"', () => {
     const ctx = makeContext();
-    mod.badRequest(ctx, 'Invalid value in notes');
+    errorHandlerMod.badRequest(ctx, 'Invalid value in notes');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Internal processing error' }),
       400,
@@ -399,10 +414,9 @@ describe('errorHandler — badRequest', () => {
 });
 
 describe('errorHandler — conflict', () => {
-  it('returns 409 with error=Conflict', async () => {
-    const mod = await import('../_lib/errorHandler?conflict');
+  it('returns 409 with error=Conflict', () => {
     const ctx = makeContext();
-    mod.conflict(ctx, 'Vector clock conflict detected');
+    errorHandlerMod.conflict(ctx, 'Vector clock conflict detected');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'Conflict', message: 'Vector clock conflict detected' }),
       409,
@@ -418,73 +432,66 @@ describe('errorHandler — internalError', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns 500 with error=InternalServerError', async () => {
-    const mod = await import('../_lib/errorHandler?internal-500');
+  it('returns 500 with error=InternalServerError', () => {
     const ctx = makeContext();
-    mod.internalError(ctx);
+    errorHandlerMod.internalError(ctx);
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ error: 'InternalServerError' }),
       500,
     );
   });
 
-  it('returns 500 when called without an error argument', async () => {
-    const mod = await import('../_lib/errorHandler?internal-undef');
+  it('returns 500 when called without an error argument', () => {
     const ctx = makeContext();
-    mod.internalError(ctx, undefined);
+    errorHandlerMod.internalError(ctx, undefined);
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'An unexpected error occurred' }),
       500,
     );
   });
 
-  it('logs sanitized error message via console.error when err is an Error instance', async () => {
+  it('logs sanitized error message via console.error when err is an Error instance', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const mod = await import('../_lib/errorHandler?internal-log-error');
     const ctx = makeContext();
-    mod.internalError(ctx, new Error('something broke'));
+    errorHandlerMod.internalError(ctx, new Error('something broke'));
     expect(consoleSpy).toHaveBeenCalledWith('[API Error]', 'something broke');
   });
 
-  it('logs sanitized error message via console.error when err is a string', async () => {
+  it('logs sanitized error message via console.error when err is a string', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const mod = await import('../_lib/errorHandler?internal-log-string');
     const ctx = makeContext();
-    mod.internalError(ctx, 'string error');
+    errorHandlerMod.internalError(ctx, 'string error');
     expect(consoleSpy).toHaveBeenCalledWith('[API Error]', 'string error');
   });
 
-  it('sanitizes LGPD-sensitive error before logging (relations in Error message)', async () => {
+  it('sanitizes LGPD-sensitive error before logging (relations in Error message)', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const mod = await import('../_lib/errorHandler?internal-sanitize');
     const ctx = makeContext();
-    mod.internalError(ctx, new Error('lookup failed on relations column'));
+    errorHandlerMod.internalError(ctx, new Error('lookup failed on relations column'));
     expect(consoleSpy).toHaveBeenCalledWith('[API Error]', 'Internal processing error');
   });
 
-  it('calls Sentry.captureException when SENTRY_DSN is configured', async () => {
+  it('calls Sentry.captureException when SENTRY_DSN is configured', () => {
+    // captureException is checked at call time via process.env.SENTRY_DSN — no re-import needed
     process.env.SENTRY_DSN = 'https://abc@sentry.io/capture';
     mockCaptureException.mockClear();
-    const mod = await import('../_lib/errorHandler?internal-sentry-capture');
     const ctx = makeContext();
     const err = new Error('unhandled error');
-    mod.internalError(ctx, err);
+    errorHandlerMod.internalError(ctx, err);
     expect(mockCaptureException).toHaveBeenCalledWith(err);
   });
 
-  it('does NOT call Sentry.captureException when SENTRY_DSN is absent', async () => {
+  it('does NOT call Sentry.captureException when SENTRY_DSN is absent', () => {
     delete process.env.SENTRY_DSN;
     mockCaptureException.mockClear();
-    const mod = await import('../_lib/errorHandler?internal-no-sentry');
     const ctx = makeContext();
-    mod.internalError(ctx, new Error('some error'));
+    errorHandlerMod.internalError(ctx, new Error('some error'));
     expect(mockCaptureException).not.toHaveBeenCalled();
   });
 
-  it('does not expose the raw error message to the client', async () => {
-    const mod = await import('../_lib/errorHandler?internal-noleak');
+  it('does not expose the raw error message to the client', () => {
     const ctx = makeContext();
-    mod.internalError(ctx, new Error('database password=secret123 leaked'));
+    errorHandlerMod.internalError(ctx, new Error('database password=secret123 leaked'));
     const callArgs = (ctx.json as ReturnType<typeof vi.fn>).mock.calls[0];
     const responseBody = callArgs[0] as { message: string };
     expect(responseBody.message).toBe('An unexpected error occurred');
