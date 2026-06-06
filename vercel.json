@@ -56,6 +56,18 @@
       "destination": "/api/webhooks/whatsapp"
     },
     {
+      "source": "/api/billing/subscribe",
+      "destination": "/api/billing/subscribe"
+    },
+    {
+      "source": "/api/billing/status",
+      "destination": "/api/billing/status"
+    },
+    {
+      "source": "/api/billing/webhook",
+      "destination": "/api/billing/webhook"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
