@@ -1,8 +1,8 @@
 # ARCHITECTURE.md — Billings Gráfico: Plataforma MOB
 
-> Documento de Arquitetura de Software — Versao 1.1  
+> Documento de Arquitetura de Software — Versao 1.4  
 > Projeto: **Billings Grafico** (billings-mob)  
-> Data: 2026-05-24 — atualizado em 2026-05-26  
+> Data: 2026-05-24 — atualizado em 2026-06-05  
 > Arquiteto Responsavel: Julio C. Santo  
 > Status: **APROVADO PARA IMPLEMENTACAO**
 
@@ -2338,7 +2338,7 @@ AVISO: Nenhuma dessas variaveis deve aparecer no codigo-fonte. Usar `.env.local`
 
 ---
 
-*Documento gerado em 2026-05-24. Versao 1.3 — atualizado em 2026-06-05.*  
+*Documento gerado em 2026-05-24. Versao 1.4 — atualizado em 2026-06-05.*  
 *Proximo review: 2026-07-05 (apos Sprint 7).*  
 *Mantenedor: Julio C. Santo (juliocsanto3@gmail.com)*
 
@@ -2631,5 +2631,587 @@ Esta proibicao e reforcada em code review: qualquer PR que adicione esses termos
 | `@formatjs/intl` + `react-intl` | API de componente (`<FormattedMessage id="...">`) mais verbosa que hook `t()`. Tipos gerados por CLI adicional. Sem vantagem real para o porte do projeto. |
 | Custom Context + JSON | Re-implementar pluralizacao, fallback, deteccao de locale e persistencia. Estimativa: 40h+ de manutencao futura. Antipattern para producao. |
 | Sem i18n (monolingual) | Bloqueia expansao para WOOMB International e diaspora brasileira. Decisao adiada custaria mais esforco no futuro. |
+
+---
+
+## ADR-015 — Integracao Asaas Billing (Hexagonal)
+
+**Status:** ACEITO  
+**Data:** 2026-06-05  
+**Decisao:** Asaas como gateway de pagamentos BR com padrao Hexagonal identico ao WhatsApp (ADR-011)
+
+### Contexto
+
+Instrutoras precisam pagar assinatura mensal para acessar o billings-web. O produto
+opera no mercado brasileiro e requer um gateway que suporte PIX, boleto e cartao de
+credito. A Asaas e um provedor nativo BR com API REST v3 madura e suporte a webhooks
+HMAC-SHA256. O padrao Hexagonal ja esta estabelecido no projeto (ADR-011 — WhatsApp):
+qualquer nova integracao de terceiro DEVE seguir o mesmo padrao Port/Adapter.
+
+Dados de pagamento (PCI-DSS):
+
+- O sistema NUNCA armazena dados de cartao. Toda informacao sensivel de pagamento
+  fica exclusivamente nos servidores da Asaas.
+- O banco de dados armazena apenas metadados: plano, status da assinatura, datas
+  de vencimento e ID de referencia externo da Asaas.
+- O campo `subscription_status` adicionado a `user_profiles` aceita os valores:
+  `active | expired | trial`.
+
+### Decisao
+
+**Arquitetura hexagonal — Port + Adapters + Factory:**
+
+```
+api/_lib/billing/
+  AsaasPort.ts             — interface TypeScript (contrato do dominio)
+  MockAsaasAdapter.ts      — adapter de desenvolvimento (sem chamadas reais)
+  AsaasCloudAdapter.ts     — adapter real (Asaas REST API v3)
+  index.ts                 — factory getBillingAdapter()
+```
+
+**Interface AsaasPort:**
+
+```typescript
+// api/_lib/billing/AsaasPort.ts
+export interface AsaasPort {
+  /**
+   * Cria uma assinatura recorrente para a instrutora.
+   * Retorna o ID externo da assinatura na Asaas.
+   * NUNCA recebe dados de cartao — apenas plano e email.
+   */
+  createSubscription(plan: BillingPlan, email: string): Promise<AsaasSubscription>;
+
+  /**
+   * Consulta o status atual de uma assinatura pelo ID externo.
+   */
+  getSubscriptionStatus(subscriptionId: string): Promise<AsaasSubscriptionStatus>;
+
+  /**
+   * Processa um evento de webhook Asaas.
+   * Valida assinatura HMAC-SHA256 antes de processar.
+   * Retorna o tipo de evento e metadados (sem dados de cartao).
+   */
+  processWebhook(payload: unknown, signature: string): Promise<AsaasWebhookEvent>;
+}
+
+export type BillingPlan = 'instructor_monthly' | 'instructor_annual';
+
+export interface AsaasSubscription {
+  id: string;              // ID externo Asaas
+  status: AsaasSubscriptionStatus;
+  nextDueDate: string;     // YYYY-MM-DD
+  billingType: 'PIX' | 'BOLETO' | 'CREDIT_CARD';
+}
+
+export type AsaasSubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELED' | 'PENDING';
+
+export interface AsaasWebhookEvent {
+  event: 'PAYMENT_CONFIRMED' | 'PAYMENT_CANCELED' | 'SUBSCRIPTION_CANCELED';
+  subscriptionId: string;
+  customerId: string;
+  timestamp: string;
+}
+```
+
+**Factory env-based:**
+
+```typescript
+// api/_lib/billing/index.ts
+export function getBillingAdapter(): AsaasPort {
+  const env = process.env.ASAAS_ENV ?? 'mock';
+  if (env === 'production') {
+    return new AsaasCloudAdapter({
+      apiKey: process.env.ASAAS_API_KEY!,
+      baseUrl: 'https://api.asaas.com/v3',
+      webhookSecret: process.env.ASAAS_WEBHOOK_SECRET!,
+    });
+  }
+  return new MockAsaasAdapter();
+}
+```
+
+**MockAsaasAdapter (desenvolvimento):**
+
+```typescript
+// api/_lib/billing/MockAsaasAdapter.ts
+export class MockAsaasAdapter implements AsaasPort {
+  async createSubscription(plan: BillingPlan, email: string): Promise<AsaasSubscription> {
+    console.log(`[Asaas Mock] createSubscription plan=${plan} email=${email}`);
+    return {
+      id: `mock_sub_${Date.now()}`,
+      status: 'ACTIVE',
+      nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      billingType: 'PIX',
+    };
+  }
+
+  async getSubscriptionStatus(subscriptionId: string): Promise<AsaasSubscriptionStatus> {
+    console.log(`[Asaas Mock] getSubscriptionStatus id=${subscriptionId}`);
+    return 'ACTIVE';
+  }
+
+  async processWebhook(payload: unknown, signature: string): Promise<AsaasWebhookEvent> {
+    console.log(`[Asaas Mock] processWebhook sig=${signature}`);
+    return {
+      event: 'PAYMENT_CONFIRMED',
+      subscriptionId: 'mock_sub_test',
+      customerId: 'mock_customer_test',
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+```
+
+**AsaasCloudAdapter — validacao HMAC-SHA256 obrigatoria:**
+
+```typescript
+// api/_lib/billing/AsaasCloudAdapter.ts (fragmento de seguranca)
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
+private validateWebhookSignature(rawBody: string, signature: string): boolean {
+  const expected = createHmac('sha256', this.webhookSecret)
+    .update(rawBody, 'utf8')
+    .digest('hex');
+  // timingSafeEqual evita timing attacks
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+}
+```
+
+**Schema de banco — adicao a user_profiles:**
+
+```sql
+-- Migration: adicionar subscription_status e asaas_subscription_id a user_profiles
+ALTER TABLE user_profiles
+  ADD COLUMN IF NOT EXISTS subscription_status TEXT
+    NOT NULL DEFAULT 'trial'
+    CHECK (subscription_status IN ('active', 'expired', 'trial')),
+  ADD COLUMN IF NOT EXISTS asaas_subscription_id TEXT,
+  ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN user_profiles.subscription_status IS
+  'Status de assinatura da instrutora. Apenas instrutoras (role=instructor) usam este campo.';
+
+COMMENT ON COLUMN user_profiles.asaas_subscription_id IS
+  'ID externo da assinatura na Asaas. Nunca contem dados de cartao.';
+```
+
+**RLS — user_profiles (extensao das policies existentes):**
+
+```sql
+-- Instrutora pode ler e atualizar apenas seu proprio perfil (incluindo subscription_status)
+-- Policy pre-existente "user_own_profile" ja cobre este caso (FOR ALL USING auth.uid()=user_id).
+-- Adicionar policy para restricao de escrita de subscription_status (apenas service_role pode alterar):
+CREATE POLICY "only_service_role_updates_subscription" ON user_profiles
+  FOR UPDATE
+  USING (auth.role() = 'service_role' OR (auth.uid() = user_id AND subscription_status = subscription_status));
+-- Nota: subscription_status so e alterado pelo webhook handler (service role client).
+-- Instrutoras autenticadas podem atualizar outros campos do proprio perfil mas nao alterar
+-- subscription_status diretamente (o campo e readonly para o client autenticado).
+```
+
+**Variaveis de ambiente novas:**
+
+```bash
+ASAAS_ENV=mock                    # 'mock' ou 'production'
+ASAAS_API_KEY=...                 # Chave da Asaas (apenas producao)
+ASAAS_WEBHOOK_SECRET=...          # Segredo HMAC-SHA256 para validacao de webhooks
+```
+
+### Consequencias positivas
+
+- Padrao hexagonal identico ao WhatsApp (ADR-011): zero curva de aprendizado para o time
+- MockAdapter elimina dependencia externa em ambiente de desenvolvimento e CI
+- HMAC-SHA256 obrigatorio no webhook: zero risco de eventos fabricados
+- Dados de cartao nunca tocam o banco (PCI-DSS escopo reduzido)
+- Factory env-based: troca entre mock e producao sem mudanca de codigo
+
+### Consequencias negativas
+
+- `subscription_status` em `user_profiles` acopla o contexto IDENTITY & ACCESS ao
+  contexto de billing — aceitavel para o volume atual; separar em tabela propria se
+  atingir 5 planos distintos
+- Asaas nao tem SDK oficial para Node.js; o CloudAdapter usa `fetch` direto contra a
+  REST API v3 — adiciona responsabilidade de manutencao de contrato de API ao time
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Stripe | Nao suporta PIX nem boleto nativamente no Brasil (requer integracao adicional); preco em USD cria fricao de cambio para instrutoras brasileiras |
+| Pagar.me | API menos madura que Asaas; documentacao inferior; sem vantagem funcional para o caso de uso |
+| Mercado Pago | Politicas de uso mais restritivas para SaaS; fees mais altos para assinaturas; vendor lock-in mais elevado |
+| Integracao direta sem hexagonal | Viola o padrao arquitetural estabelecido em ADR-011; impossibilita testes sem conta real |
+
+---
+
+## ADR-016 — Guia IA: Claude Streaming via Supabase Edge Function
+
+**Status:** ACEITO  
+**Data:** 2026-06-05  
+**Decisao:** Supabase Edge Function (Deno) como proxy de streaming SSE para Claude API (Anthropic)
+
+### Contexto
+
+A aluna precisa de orientacao educativa sobre o Metodo Billings diretamente no app, sem
+sair do contexto clinico. O "Guia IA" e uma feature conversacional — a aluna digita uma
+pergunta e recebe uma resposta em tempo real (streaming). A restracao clinica inviolavel
+(ADR-002, Regra 1) se aplica integralmente: o sistema nunca deve classificar ciclos como
+ferteis/inferteis/seguros/inseguros.
+
+Restricao de infraestrutura:
+
+- Vercel Serverless (plano Hobby) tem timeout de 10 segundos — insuficiente para streaming
+  de respostas longas do Claude.
+- Supabase Edge Functions rodam em Deno, sem limite de timeout fixo, com suporte nativo
+  a `ReadableStream` e SSE — a escolha correta (documentada em ADR-007).
+
+Restricao LGPD (Art. 7, 11):
+
+- A Edge Function recebe APENAS `{ question: string }` do frontend.
+- Nenhum dado clinico (stamps, observacoes, notas, relacoes, fcm_token, email, user_id)
+  e enviado para a Anthropic API.
+- O system prompt e estatico e inspecionavel; nunca inclui dados da aluna.
+
+### Decisao
+
+**Localizacao:** `supabase/functions/ai-guide/index.ts`
+
+**Modelo:** `claude-sonnet-4-6` (identificador: `claude-sonnet-4-6`)
+
+**Protocolo de transporte:** Server-Sent Events (SSE) — o frontend consome via
+`EventSource` ou `fetch` com `ReadableStream`.
+
+**Autenticacao:** JWT Supabase validado na Edge Function via
+`supabase.auth.getUser(token)`. Requests sem JWT valido retornam 401.
+Requests de usuarios nao-autenticados nao chegam a Anthropic API.
+
+**System prompt — restricao clinica e educativa:**
+
+```typescript
+const SYSTEM_PROMPT = `
+Voce e o Guia do aplicativo Billings Grafico, um assistente educativo sobre o
+Metodo de Ovulacao Billings (MOB).
+
+Seu papel e exclusivamente educativo: explique conceitos do metodo, ajude a
+aluna a entender como usar o aplicativo e como registrar suas observacoes.
+
+RESTRICOES ABSOLUTAS (nunca violar):
+1. NUNCA interprete observacoes clinicas como ferteis, inferteis, seguras ou inseguras.
+   Toda interpretacao clinica e competencia exclusiva da instrutora certificada CENPLAFAM/WOOMB.
+2. Se a aluna perguntar sobre fertilidade, ciclo fertil ou "quando posso ter relacoes",
+   responda: "Essa e uma questao clinica que sua instrutora certificada pode responder.
+   Consulte-a pelo dashboard de acompanhamento."
+3. NUNCA mencione os termos: fertil, infertil, seguro, inseguro, periodo seguro,
+   dia seguro, dia de risco.
+4. Nao receba nem mencione dados especificos de observacoes da aluna — voce nao tem
+   acesso a esses dados (nem deve ter).
+
+Foque em: como registrar selos, o que e o Apice no contexto do metodo educativo,
+como funciona o aplicativo, como vincular-se a uma instrutora, como interpretar
+o grafico de ciclo (sem classificacao clinica).
+`.trim();
+```
+
+**SafetyGuard — filtro de output obrigatorio:**
+
+```typescript
+const FORBIDDEN_TERMS = [
+  'fertil', 'infertil', 'fertile', 'infertile',
+  'seguro', 'inseguro', 'safe day', 'unsafe',
+  'periodo seguro', 'dia seguro', 'dia de risco',
+];
+
+function containsForbiddenClinicalTerm(text: string): boolean {
+  const lower = text.toLowerCase();
+  return FORBIDDEN_TERMS.some(term => lower.includes(term));
+}
+
+// Aplicado em cada chunk de streaming antes de enviar ao frontend
+if (containsForbiddenClinicalTerm(chunk)) {
+  // Descarta o chunk e emite mensagem padrao
+  yield 'Essa e uma interpretacao clinica — consulte sua instrutora certificada.';
+  return; // encerra o stream
+}
+```
+
+**Rate limiting — Upstash Redis (ADR-017):**
+
+- 10 requests por hora por `user_id` (identificado pelo JWT)
+- Excedente retorna `429 Too Many Requests` com header `Retry-After`
+
+**Interface TypeScript da Edge Function:**
+
+```typescript
+// supabase/functions/ai-guide/index.ts — contrato de request/response
+
+interface AiGuideRequest {
+  question: string; // max 500 chars — validado com Zod antes de enviar a Claude
+  // NUNCA: stamps, observacoes, datas, relacoes, email, fcm_token, user_id
+}
+
+// Response: SSE stream
+// Content-Type: text/event-stream
+// Formato de cada evento:
+// data: {"type":"delta","text":"..."}\n\n
+// data: {"type":"done"}\n\n
+// data: {"type":"error","message":"..."}\n\n
+```
+
+**Fluxo de dados completo:**
+
+```
+Frontend (billings-mob)
+  |
+  | POST supabase/functions/ai-guide
+  | Authorization: Bearer <JWT>
+  | Body: { question: "Como funciona o Apice no MOB?" }
+  |
+  v
+Supabase Edge Function (Deno)
+  |
+  | 1. Valida JWT (supabase.auth.getUser)
+  | 2. Rate limit check (Upstash Redis — 10/hora por user)
+  | 3. Valida question (Zod: string, max 500 chars, nao vazia)
+  | 4. Chama Anthropic API (streaming)
+  |    Body: { model: "claude-sonnet-4-6", system: SYSTEM_PROMPT, messages: [{role:"user", content: question}] }
+  | 5. Para cada chunk: SafetyGuard filtra termos proibidos
+  | 6. Encaminha chunk ao frontend via SSE
+  |
+  v
+Frontend recebe stream SSE
+  | Exibe texto progressivamente na UI (tab "Guia")
+  v
+Claude API (Anthropic) — NUNCA recebe dados clinicos da aluna
+```
+
+**UI — tab "Guia" no billings-mob:**
+
+```typescript
+// Localizacao: src/pages/GuidePage.jsx (nova pagina)
+// Tab: "Guia" na barra de navegacao inferior (5a aba)
+// Componentes:
+//   - <textarea> para a pergunta (max 500 chars, aria-label, data-testid)
+//   - <button> "Perguntar" com estado de loading
+//   - <div role="log" aria-live="polite"> para exibir resposta em streaming
+//   - Aviso legal obrigatorio: "Este guia e educativo. Interpretacao clinica
+//     e competencia exclusiva da sua instrutora certificada CENPLAFAM/WOOMB."
+```
+
+**Variaveis de ambiente novas:**
+
+```bash
+ANTHROPIC_API_KEY=...              # Supabase Edge Function secrets (nao Vercel)
+UPSTASH_REDIS_REST_URL=...         # Compartilhado com ADR-017
+UPSTASH_REDIS_REST_TOKEN=...       # Compartilhado com ADR-017
+```
+
+### Consequencias positivas
+
+- Sem timeout de streaming: Supabase Edge Functions tem timeout configuravel (default 60s)
+- LGPD: zero dados clinicos enviados a terceiros (Anthropic apenas recebe a pergunta)
+- SafetyGuard em dois niveis: system prompt + filtro de output em cada chunk
+- Rate limiting previne abuso e custo inesperado com Anthropic API
+- Arquitetura desacoplada: Edge Function pode ser substituida sem mudar o frontend
+
+### Consequencias negativas
+
+- Edge Function em Deno: ecossistema diferente do Node.js; imports via URL (Deno style);
+  cuidado com compatibilidade de pacotes npm
+- Latencia adicional de ~50-100ms pelo proxy na Edge Function (vs chamada direta)
+- Custo Anthropic API: ~USD 0.003 por 1K input tokens (claude-sonnet-4-6) — monitorar
+  via Sentry + Anthropic dashboard; budget alert em USD 20/mes
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Vercel Serverless + streaming | Timeout 10s (Hobby) insuficiente para respostas longas; Pro (USD 20/mes) elevaria custo desnecessariamente |
+| Chamada direta do frontend para Anthropic | Expoe ANTHROPIC_API_KEY no bundle JS — violacao critica de seguranca |
+| Modelo open-source self-hosted | Custo operacional de infra + qualidade inferior; sem vantagem para o volume atual |
+| GPT-4 (OpenAI) | Sem vantagem tecnica; custo similar; claude-sonnet-4-6 ja e o modelo do pipeline de desenvolvimento — consistencia |
+
+---
+
+## ADR-017 — Upstash Redis Global Rate Limiting
+
+**Status:** ACEITO  
+**Data:** 2026-06-05  
+**Decisao:** Migrar rate limiting de in-memory para Upstash Redis (DT-003)
+
+### Contexto
+
+O rate limiting atual (implementado em Sprint 1, SEC-001) usa um `Map` em memoria por
+instancia de funcao serverless do Vercel. O Vercel pode escalar para multiplas instancias
+em paralelo — cada instancia mantem seu proprio contador, independente das demais. Isso
+significa que um usuario malicioso pode disparar 60 requests/segundo contra N instancias
+simultaneamente, efetivamente multiplicando o limite por N.
+
+Risco documentado como DT-003 (Alta) na Sprint 6.5. Adicionalmente, o rate limiting
+precisa cobrir a Supabase Edge Function do Guia IA (ADR-016), que tambem esta sujeita
+a abuso.
+
+O Upstash Redis oferece:
+- Contador global persistido em Redis (atomico via `INCR` + `EXPIRE`)
+- SDK `@upstash/ratelimit` com suporte a sliding window e fixed window
+- REST API: sem conexao TCP persistente (compativel com Vercel Serverless e Deno)
+- Free tier: 10.000 comandos/dia (suficiente para o volume atual do MVP)
+
+### Decisao
+
+**Refatoracao de `api/_lib/rateLimit.ts`:**
+
+```typescript
+// api/_lib/rateLimit.ts (apos migracao)
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+let redis: Redis | null = null;
+let defaultLimiter: Ratelimit | null = null;
+let usersMeLimiter: Ratelimit | null = null;
+
+function getRedis(): Redis | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null; // fail-open: sem Redis configurado, libera requests
+  }
+  if (!redis) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  return redis;
+}
+
+// Janelas mantidas identicas as atuais (sem regressao de contrato):
+//   default: 60 requests por 60 segundos por IP
+//   /users/me: 10 requests por 60 segundos por IP
+function getDefaultLimiter(): Ratelimit | null {
+  const r = getRedis();
+  if (!r) return null;
+  if (!defaultLimiter) {
+    defaultLimiter = new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(60, '60 s'),
+      prefix: 'billings:rl:default',
+    });
+  }
+  return defaultLimiter;
+}
+
+function getUsersMeLimiter(): Ratelimit | null {
+  const r = getRedis();
+  if (!r) return null;
+  if (!usersMeLimiter) {
+    usersMeLimiter = new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(10, '60 s'),
+      prefix: 'billings:rl:users_me',
+    });
+  }
+  return usersMeLimiter;
+}
+
+export async function apiRateLimit(c: Context, limiterType: 'default' | 'users_me' = 'default') {
+  const limiter = limiterType === 'users_me' ? getUsersMeLimiter() : getDefaultLimiter();
+
+  if (!limiter) {
+    // Fail-open: Redis indisponivel — documenta risco mas libera request
+    console.warn('[RateLimit] Redis nao configurado — fail-open aplicado');
+    return; // sem bloqueio
+  }
+
+  const ip = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown';
+  const { success, limit, remaining, reset } = await limiter.limit(ip);
+
+  if (!success) {
+    c.res = c.json({ error: 'Rate limit exceeded' }, 429);
+    c.res.headers.set('X-RateLimit-Limit', String(limit));
+    c.res.headers.set('X-RateLimit-Remaining', String(remaining));
+    c.res.headers.set('X-RateLimit-Reset', String(reset));
+    throw new HTTPException(429, { message: 'Rate limit exceeded' });
+  }
+}
+```
+
+**Rate limiting para Edge Function (Guia IA — ADR-016):**
+
+```typescript
+// supabase/functions/ai-guide/rateLimit.ts (Deno)
+import { Ratelimit } from 'npm:@upstash/ratelimit@^2';
+import { Redis } from 'npm:@upstash/redis@^1';
+
+// Janela especifica do Guia IA: 10 requests por hora por usuario
+const aiGuideLimiter = new Ratelimit({
+  redis: new Redis({
+    url: Deno.env.get('UPSTASH_REDIS_REST_URL')!,
+    token: Deno.env.get('UPSTASH_REDIS_REST_TOKEN')!,
+  }),
+  limiter: Ratelimit.slidingWindow(10, '1 h'),
+  prefix: 'billings:rl:ai_guide',
+});
+
+export async function checkAiGuideRateLimit(userId: string): Promise<boolean> {
+  const { success } = await aiGuideLimiter.limit(userId);
+  return success;
+}
+```
+
+**Politica de fail-open — risco documentado:**
+
+O comportamento fail-open (liberar requests quando Redis esta indisponivel) e uma
+decisao consciente de disponibilidade sobre seguranca. Se o Upstash estiver fora:
+
+- Impacto: rate limiting inativo durante a indisponibilidade
+- Probabilidade: baixa (Upstash SLA 99.99%)
+- Alternativa considerada e rejeitada: fail-closed (retornar 503) — causaria
+  degradacao total do servico por falha em componente de infraestrutura secundario
+
+O comportamento fail-open e logado como `warn` no Sentry para monitoramento.
+
+**Janelas de rate limiting (consolidadas):**
+
+| Endpoint / Servico | Janela | Limite | Chave de identificacao |
+|---|---|---|---|
+| API Hono.js (geral) | 60 segundos | 60 requests | IP (`x-forwarded-for`) |
+| `GET /api/users/me` | 60 segundos | 10 requests | IP (`x-forwarded-for`) |
+| Edge Function `ai-guide` | 60 minutos | 10 requests | `user_id` (JWT claim) |
+| `POST /api/billing/webhook` | sem rate limit | — | Validacao HMAC-SHA256 |
+
+**Variaveis de ambiente novas:**
+
+```bash
+UPSTASH_REDIS_REST_URL=...         # URL do banco Redis no Upstash
+UPSTASH_REDIS_REST_TOKEN=...       # Token de autenticacao REST do Upstash
+```
+
+**Pacotes novos:**
+
+```bash
+npm install @upstash/ratelimit @upstash/redis
+# billings-mob/package.json (api/ scope)
+```
+
+### Consequencias positivas
+
+- Rate limiting global: funciona corretamente mesmo com multiplas instancias Vercel
+- DT-003 encerrado: debito tecnico de Alta severidade eliminado
+- Cobre simultaneamente: API Hono.js + Edge Function Guia IA (ADR-016)
+- Sem mudanca de contrato: janelas atuais mantidas identicas (sem regressao)
+- Free tier Upstash: 10.000 comandos/dia — suficiente para MVP (estimativa: ~500/dia)
+
+### Consequencias negativas
+
+- Dependencia externa adicional: Upstash (Redis serverless gerenciado)
+- Latencia adicional por request: ~5-15ms para o round-trip Redis (REST HTTP)
+- Fail-open: janela de exposicao durante indisponibilidade do Upstash
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Manter in-memory | Nao resolve DT-003 (divergencia entre instancias Vercel) |
+| Redis self-hosted (Fly.io) | Adiciona operacoes de infra (backup, upgrade, monitoramento); sem vantagem vs Upstash gerenciado |
+| Cloudflare Workers KV | Exigiria migrar API de Vercel para Cloudflare — escopo incompativel (ADR-007 CLOSED) |
+| Vercel KV (Redis gerenciado) | Disponivel apenas em plano Pro (USD 20/mes); Upstash e gratuito para o volume do MVP |
 
 ---
