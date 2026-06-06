@@ -22,8 +22,8 @@ export default defineConfig({
       ['src/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
       ['src/**/__tests__/**/*.{test,spec}.{ts,tsx,js,jsx}', 'jsdom'],
     ],
-    // setupFiles runs in all environments — keep empty at global level
-    // src/ tests that need jest-dom import it directly in their test file
+    // setupFiles for jsdom environment — provides jest-dom matchers for src/ tests
+    setupFiles: ['./src/test-setup.ts'],
     // Include all test files in api/ and src/ (ts, tsx, js, jsx)
     include: [
       'api/**/__tests__/**/*.{test,spec}.{ts,tsx}',

@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { pdf } from '@react-pdf/renderer';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { C, DS, STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from './constants.js';
-import { loadUserData, saveUserData, loadApiKey, saveApiKey, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { loadUserData, saveUserData, getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { supabase } from './lib/supabaseClient';
 import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffDays } from './utils/dates.js';
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
 import { generateDailyReminder, downloadICS } from './utils/ics.js';
@@ -116,7 +117,6 @@ export default function App({ user, session } = {}) {
   const [instructor,   setInstructor]   = useState(null);
   const [instrForm,    setInstrForm]    = useState({name:'',email:''});
   const [instrConfirm, setInstrConfirm] = useState(false);
-  const [apiKey,       setApiKey]       = useState('');
   const [msgs,         setMsgs]         = useState([]);
   const [input,        setInput]        = useState('');
   const [aiLoading,    setAiLoading]    = useState(false);
@@ -137,7 +137,6 @@ export default function App({ user, session } = {}) {
     } else {
       setObs(demo.obs); setCycleStart(demo.cycleStart); setHistory(demo.history);
     }
-    setApiKey(loadApiKey());
     // Banner: show if user hasn't logged today
     const last = getLastOpenDate();
     if (last !== today()) { setShowBanner(true); setLastOpenDate(today()); }
@@ -197,27 +196,76 @@ export default function App({ user, session } = {}) {
 
   useEffect(() => { chatEnd.current?.scrollIntoView({behavior:'smooth'}); }, [msgs]);
 
+  // sendAI — ADR-016: proxied via Supabase Edge Function (claude-sonnet-4-6 SSE streaming).
+  // LGPD: only { question } is sent — never observations, stamps, notes, or relations.
   const sendAI = async (text) => {
-    const msg = text || input.trim(); if (!msg || aiLoading) return;
-    setInput(''); setMsgs(p=>[...p,{role:'user',content:msg}]); setAiLoading(true);
-    const key = apiKey || loadApiKey();
-    if (!key) {
-      setMsgs(p=>[...p,{role:'assistant',content:t('app.guideNeedApiKeyMsg')}]);
-      setAiLoading(false); return;
+    const msg = text || input.trim();
+    if (!msg || aiLoading) return;
+    setInput('');
+    setMsgs(p => [...p, { role: 'user', content: msg }]);
+    setAiLoading(true);
+
+    // Auth: require Supabase session — no user-provided API key needed
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      setMsgs(p => [...p, { role: 'assistant', content: t('app.guideNeedApiKeyMsg') }]);
+      setAiLoading(false);
+      return;
     }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
-        body:JSON.stringify({
-          model:'claude-haiku-4-5-20251001', max_tokens:600,
-          system:`Você é um guia do Método de Ovulação Billings (MOB). Ajuda mulheres que já fizeram consultoria com instrutora certificada a usar este aplicativo de registro. NUNCA interprete o ciclo como fértil ou infértil — isso é exclusivo da instrutora. Terminologia: Ápice (não pico), PBI. Seja acolhedora, concisa, em português brasileiro.`,
-          messages:[...msgs.slice(-6).map(m=>({role:m.role,content:m.content})),{role:'user',content:msg}],
-        }),
+      const response = await fetch(`${supabaseUrl}/functions/v1/ai-guide`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentSession.access_token}`,
+        },
+        // LGPD: only question is forwarded — never cycle data
+        body: JSON.stringify({ question: msg }),
       });
-      const data = await res.json();
-      setMsgs(p=>[...p,{role:'assistant',content:data.content?.find(b=>b.type==='text')?.text||t('app.guideErrorResponse')}]);
-    } catch { setMsgs(p=>[...p,{role:'assistant',content:t('app.guideErrorConnection')}]); }
+
+      if (!response.ok) {
+        setMsgs(p => [...p, { role: 'assistant', content: t('app.guideErrorConnection') }]);
+        setAiLoading(false);
+        return;
+      }
+
+      // Read SSE stream and accumulate tokens in real time
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMsg = '';
+      setMsgs(p => [...p, { role: 'assistant', content: '' }]);
+
+      let streamDone = false;
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') { streamDone = true; break; }
+            try {
+              const { token } = JSON.parse(data);
+              assistantMsg += token;
+              setMsgs(p => {
+                const next = [...p];
+                next[next.length - 1] = { role: 'assistant', content: assistantMsg };
+                return next;
+              });
+            } catch {
+              // Ignore malformed SSE lines
+            }
+          }
+        }
+      }
+    } catch {
+      setMsgs(p => [...p, { role: 'assistant', content: t('app.guideErrorConnection') }]);
+    }
+
     setAiLoading(false);
   };
 
@@ -687,7 +735,7 @@ export default function App({ user, session } = {}) {
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,marginBottom:8,color:DS.textMain}}>{t('app.guideTitle')}</div>
             <div style={{background:DS.warningLight,border:`1px solid ${DS.warningBorder}`,borderRadius:12,padding:'10px 14px',marginBottom:10}}>
               <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6}}>
-                {t('app.guideWarning')} <strong style={{color:DS.warning}}>{t('app.guideWarningCycleInterpretation')}</strong> {t('app.guideWarningCycleInterpretationSuffix')}{!apiKey&&<span style={{color:DS.error}}>{t('app.guideNeedApiKey')}</span>}
+                {t('app.guideWarning')} <strong style={{color:DS.warning}}>{t('app.guideWarningCycleInterpretation')}</strong> {t('app.guideWarningCycleInterpretationSuffix')}
               </div>
             </div>
           </div>
@@ -834,24 +882,6 @@ export default function App({ user, session } = {}) {
                 data-testid="download-reminder"
                 style={{width:'100%',background:DS.primary,color:DS.surface,border:'none',borderRadius:DS.radiusBtn,padding:'13px',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'Lato,sans-serif',letterSpacing:'0.04em'}}>
                 {t('app.downloadReminder')}
-              </button>
-            </div>
-
-            {/* API Key */}
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,color:DS.textMain,marginBottom:12,marginTop:4}}>{t('app.aiGuideSection')}</div>
-            <div style={{background:DS.surface,border:`1px solid ${DS.border}`,borderRadius:14,padding:'16px',boxShadow:DS.shadowCard}}>
-              <div style={{fontSize:12,color:DS.textSec,lineHeight:1.6,marginBottom:12}}>
-                {t('app.apiKeyDesc')}
-              </div>
-              <input value={apiKey} onChange={e=>setApiKey(e.target.value)} type="password"
-                placeholder="sk-ant-..."
-                aria-label={t('app.aiGuideSection')}
-                style={{width:'100%',background:DS.bg,border:`1px solid ${DS.border}`,borderRadius:10,padding:'11px 14px',fontSize:13,color:DS.textMain,outline:'none',boxSizing:'border-box',marginBottom:10}}
-              />
-              <button onClick={()=>saveApiKey(apiKey)}
-                data-testid="save-api-key"
-                style={{width:'100%',background:apiKey?DS.primary:DS.border,color:apiKey?DS.surface:DS.textSec,border:'none',borderRadius:DS.radiusBtn,padding:'12px',fontSize:13,fontWeight:700,cursor:apiKey?'pointer':'default',fontFamily:'Lato,sans-serif'}}>
-                {t('app.saveKey')}
               </button>
             </div>
 
