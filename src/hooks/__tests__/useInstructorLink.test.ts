@@ -2,10 +2,16 @@
 /**
  * Unit tests — useInstructorLink hook
  *
+ * S8-04 (CA-003): searchInstructor agora usa fetch para GET /api/users/search
+ * em vez de supabase.from('user_profiles') diretamente.
+ *
  * Covers:
- *  - searchInstructor: success path (instructor found)
- *  - searchInstructor: error path (instructor not found / Supabase error)
- *  - searchInstructor: null data without error
+ *  - searchInstructor: success path (instructor found via API)
+ *  - searchInstructor: 404 path (instructor not found)
+ *  - searchInstructor: non-ok API error
+ *  - searchInstructor: network error (fetch throws)
+ *  - searchInstructor: no session path (returns early)
+ *  - searchInstructor: missing data in response body
  *  - requestLink: no session path
  *  - requestLink: 409 with "pending" message
  *  - requestLink: 409 with active/other message
@@ -20,7 +26,7 @@
  *  - getMyLinks: missing instructor_name defaults to ''
  *  - getMyLinks: missing data property defaults to []
  *
- * LGPD: only instructor id and full_name are used — no student data.
+ * LGPD: response contains display_name, never email or phone.
  * Clinical constraint: no fertile/infertile language.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -28,29 +34,12 @@ import { renderHook, act } from '@testing-library/react';
 import { waitFor } from '@testing-library/dom';
 import type { Session } from '@supabase/supabase-js';
 
-// ── Supabase mock ──────────────────────────────────────────────────────────────
-// Must use vi.fn() directly inside factory to avoid hoisting issue
-vi.mock('../../lib/supabaseClient', () => {
-  const single = vi.fn();
-  const builder = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single,
-  };
-  const from = vi.fn().mockReturnValue(builder);
-  return {
-    supabase: { from },
-    __mocks: { from, builder, single },
-  };
-});
-
 // ── Fetch mock ────────────────────────────────────────────────────────────────
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Import after mocks
+// Import after mock
 import { useInstructorLink } from '../useInstructorLink';
-import { supabase } from '../../lib/supabaseClient';
 
 // ── Session fixtures ───────────────────────────────────────────────────────────
 const SESSION_WITH_TOKEN: Session = {
@@ -63,10 +52,10 @@ const SESSION_WITH_TOKEN: Session = {
 };
 
 // ── Response helpers ───────────────────────────────────────────────────────────
-function makeOkResponse(body: unknown): Response {
+function makeOkResponse(body: unknown, status = 200): Response {
   return {
     ok: true,
-    status: 200,
+    status,
     json: () => Promise.resolve(body),
   } as unknown as Response;
 }
@@ -79,35 +68,31 @@ function makeErrorResponse(status: number): Response {
   } as unknown as Response;
 }
 
+function makeNotFoundResponse(): Response {
+  return {
+    ok: false,
+    status: 404,
+    json: () => Promise.resolve({ error: 'NotFound', message: 'Instructor not found' }),
+  } as unknown as Response;
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('useInstructorLink', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: GET /api/instructor-student-links returns empty list
+    // Default: all fetches return empty links list
     mockFetch.mockResolvedValue(makeOkResponse({ data: [] }));
-    // Default: Supabase single returns no data (not found)
-    const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-    fromMock.mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }),
-    });
   });
 
-  // ── searchInstructor: success ──────────────────────────────────────────────
+  // ── searchInstructor ───────────────────────────────────────────────────────
 
   describe('searchInstructor', () => {
-    it('sets instructor state when Supabase returns a match', async () => {
-      const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-      fromMock.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: { id: 'instr-001', full_name: 'Maria Instrutora' },
-          error: null,
-        }),
-      });
+    it('sets instructor state when API returns a match (CA-003: uses fetch, not supabase)', async () => {
+      // GET /api/users/search → 200 with instructor data
+      mockFetch.mockResolvedValueOnce(
+        makeOkResponse({ data: { id: 'instr-001', display_name: 'Maria Instrutora', role: 'instructor' } }),
+      );
 
       const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
 
@@ -122,21 +107,34 @@ describe('useInstructorLink', () => {
 
       expect(result.current.instructor).toEqual({
         id: 'instr-001',
-        full_name: 'Maria Instrutora',
+        display_name: 'Maria Instrutora',
       });
       expect(result.current.error).toBeNull();
     });
 
-    it('sets error state when Supabase returns an error (instructor not found)', async () => {
-      const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-      fromMock.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'No rows returned' },
-        }),
+    it('sends Authorization header with the JWT (CA-003: uses session.access_token)', async () => {
+      mockFetch.mockResolvedValueOnce(
+        makeOkResponse({ data: { id: 'instr-001', display_name: 'Maria', role: 'instructor' } }),
+      );
+
+      const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
+
+      act(() => {
+        result.current.searchInstructor('maria@school.com');
       });
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      const fetchCall = mockFetch.mock.calls[0] as [string, RequestInit];
+      const [url, init] = fetchCall;
+      expect(url).toContain('/api/users/search');
+      expect(url).toContain('role=instructor');
+      expect(url).toContain('email=');
+      expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer mock-token-abc');
+    });
+
+    it('sets error state on 404 (instructor not found)', async () => {
+      mockFetch.mockResolvedValueOnce(makeNotFoundResponse());
 
       const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
 
@@ -150,18 +148,58 @@ describe('useInstructorLink', () => {
       expect(result.current.error).toMatch(/instrutora não encontrada/i);
     });
 
-    it('sets error state when Supabase returns null data without error', async () => {
-      const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-      fromMock.mockReturnValueOnce({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      });
+    it('sets error state on non-ok API response (e.g. 500)', async () => {
+      mockFetch.mockResolvedValueOnce(makeErrorResponse(500));
 
       const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
 
       act(() => {
-        result.current.searchInstructor('unknown@school.com');
+        result.current.searchInstructor('ana@school.com');
+      });
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.instructor).toBeNull();
+      expect(result.current.error).toMatch(/não foi possível buscar/i);
+    });
+
+    it('sets error state when fetch throws (network error)', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
+
+      act(() => {
+        result.current.searchInstructor('ana@school.com');
+      });
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(result.current.instructor).toBeNull();
+      expect(result.current.error).toMatch(/erro de conexão/i);
+    });
+
+    it('sets error and returns early when session is null (no-session path)', async () => {
+      const { result } = renderHook(() => useInstructorLink(null));
+
+      mockFetch.mockClear();
+
+      act(() => {
+        result.current.searchInstructor('ana@school.com');
+      });
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(result.current.error).toMatch(/autenticada/i);
+    });
+
+    it('sets error when API returns 200 but body.data is missing', async () => {
+      mockFetch.mockResolvedValueOnce(makeOkResponse({}));
+
+      const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
+
+      act(() => {
+        result.current.searchInstructor('ana@school.com');
       });
 
       await waitFor(() => expect(result.current.loading).toBe(false));
@@ -381,15 +419,9 @@ describe('useInstructorLink', () => {
   // ── Clinical constraint ────────────────────────────────────────────────────
 
   it('never includes fertile/infertile language in any state', async () => {
-    const fromMock = supabase.from as ReturnType<typeof vi.fn>;
-    fromMock.mockReturnValueOnce({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({
-        data: { id: 'instr-001', full_name: 'Ana' },
-        error: null,
-      }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      makeOkResponse({ data: { id: 'instr-001', display_name: 'Ana', role: 'instructor' } }),
+    );
 
     const { result } = renderHook(() => useInstructorLink(SESSION_WITH_TOKEN));
 

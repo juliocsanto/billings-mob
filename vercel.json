@@ -48,6 +48,10 @@
       "destination": "/api/users/me"
     },
     {
+      "source": "/api/users/search",
+      "destination": "/api/users/search"
+    },
+    {
       "source": "/api/users/push-preferences",
       "destination": "/api/users/push-preferences/index"
     },

@@ -2,25 +2,27 @@
  * useInstructorLink — hook for student–instructor link management.
  *
  * Exposes:
- *  - searchInstructor(email): queries Supabase directly for user_profiles
- *    where role='instructor' AND email matches. Never queries student data.
+ *  - searchInstructor(email): calls GET /api/users/search?role=instructor&email=<email>
+ *    via the authenticated API endpoint (CA-003: no direct Supabase access from frontend).
  *  - requestLink(instructorId): POST /api/instructor-student-links
  *  - getMyLinks(): GET /api/instructor-student-links
  *
  * LGPD constraints:
- *  - Only instructor's id and full_name are fetched (explicit SELECT, never SELECT *)
- *  - No student data is exposed to or fetched by this hook
- *  - 'relations' field never appears here — this hook is for link management only
+ *  - API endpoint returns only id and display_name (no email, no phone).
+ *  - No student data is exposed to or fetched by this hook.
+ *  - 'relations' field never appears here — this hook is for link management only.
  *
  * Clinical constraint:
  *  - This hook contains NO references to fertility, cycles, or clinical data.
  *
- * ADR-005 / ADR-013: RLS on user_profiles enforced by Supabase;
- *  anon key can read instructor profiles by design (they are searchable by email).
+ * CA-003: searchInstructor now calls the REST API instead of Supabase directly,
+ *  respecting the Clean Architecture boundary (Application layer → Infrastructure
+ *  via API, not direct DB access from presentation layer).
+ *
+ * ADR-005: Authentication via Supabase JWT forwarded in Authorization header.
  */
 import { useState, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
 
 const API_BASE = '/api';
 
@@ -28,7 +30,8 @@ const API_BASE = '/api';
 
 export interface InstructorProfile {
   id: string;
-  full_name: string;
+  /** display_name is full_name aliased by the API endpoint (CA-003: no LGPD-sensitive fields). */
+  display_name: string;
 }
 
 export type LinkStatus = 'pending' | 'active' | 'revoked';
@@ -60,29 +63,46 @@ export function useInstructorLink(session: Session | null): InstructorLinkState 
 
   /**
    * Search for an instructor by email address.
-   * Queries user_profiles via the authenticated Supabase client.
-   * Only returns id and full_name — never SELECT *.
+   * CA-003: calls GET /api/users/search instead of querying Supabase directly.
+   * Requires an active session — uses the JWT from `session.access_token`.
    */
   const searchInstructor = useCallback((email: string): void => {
     setError(null);
     setInstructor(null);
     setLoading(true);
 
-    supabase
-      .from('user_profiles')
-      .select('id, full_name')
-      .eq('email', email.trim().toLowerCase())
-      .eq('role', 'instructor')
-      .single()
-      .then(({ data, error: sbError }) => {
+    if (!session?.access_token) {
+      setError('Você precisa estar autenticada para buscar uma instrutora.');
+      setLoading(false);
+      return;
+    }
+
+    const encodedEmail = encodeURIComponent(email.trim().toLowerCase());
+    fetch(`${API_BASE}/users/search?role=instructor&email=${encodedEmail}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(async (res) => {
         setLoading(false);
-        if (sbError || !data) {
+        if (res.status === 404) {
           setError('Instrutora não encontrada. Verifique o e-mail digitado.');
           return;
         }
-        setInstructor({ id: data.id as string, full_name: data.full_name as string });
+        if (!res.ok) {
+          setError('Não foi possível buscar a instrutora. Tente novamente.');
+          return;
+        }
+        const body = await res.json() as { data?: { id: string; display_name: string } };
+        if (!body.data) {
+          setError('Instrutora não encontrada. Verifique o e-mail digitado.');
+          return;
+        }
+        setInstructor({ id: body.data.id, display_name: body.data.display_name });
+      })
+      .catch(() => {
+        setLoading(false);
+        setError('Erro de conexão. Verifique sua internet e tente novamente.');
       });
-  }, []);
+  }, [session]);
 
   /**
    * Send a link request to an instructor.

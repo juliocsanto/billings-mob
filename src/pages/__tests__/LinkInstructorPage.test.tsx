@@ -188,7 +188,7 @@ describe('AC3 — error when instructor not found', () => {
 
 // ── AC4: instructor card when found ───────────────────────────────────────────
 describe('AC4 — instructor card renders when found', () => {
-  const foundInstructor = { id: 'instr-001', full_name: 'Maria Instrutora' };
+  const foundInstructor = { id: 'instr-001', display_name: 'Maria Instrutora' };
 
   it('displays instructor name in a card', () => {
     vi.mocked(useInstructorLink).mockReturnValue({
@@ -243,7 +243,7 @@ describe('AC4 — instructor card renders when found', () => {
 
 // ── AC5: POST is fired when "Solicitar vínculo" clicked ───────────────────────
 describe('AC5 — Solicitar vínculo fires POST', () => {
-  const foundInstructor = { id: 'instr-001', full_name: 'Maria Instrutora' };
+  const foundInstructor = { id: 'instr-001', display_name: 'Maria Instrutora' };
 
   it('calls requestLink with instructor id when button is clicked', async () => {
     const mockRequestLink = vi.fn().mockResolvedValue(undefined);
@@ -342,7 +342,7 @@ describe('clinical constraint — no fertility interpretation', () => {
   it('never renders fertile/infertile labels', () => {
     vi.mocked(useInstructorLink).mockReturnValue({
       ...defaultMock(),
-      instructor: { id: 'instr-001', full_name: 'Maria Instrutora' },
+      instructor: { id: 'instr-001', display_name: 'Maria Instrutora' },
       links: [{ id: 'l1', instructor_id: 'instr-001', status: 'active', instructor_name: 'Maria Instrutora' }],
     });
 

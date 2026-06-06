@@ -29,6 +29,7 @@ import {
   notFound,
 } from '../_lib/errorHandler';
 import { PatchObservationSchema, OBSERVATION_SELECT_COLUMNS } from './schema';
+import { createObservationVersion } from '../_lib/observationDomain';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const app = new Hono();
@@ -41,34 +42,6 @@ app.use('*', requireAuth);
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 type AuthContext = { userId: string; role: string };
-
-/**
- * CC-001: Saves a snapshot of the current observation state to observation_versions
- * before applying any edit (ADR-004 — pre-edit snapshot).
- */
-async function saveVersionSnapshot(
-  supabase: SupabaseClient,
-  observationId: string,
-  current: Record<string, unknown>,
-  auth: AuthContext,
-): Promise<{ error: unknown }> {
-  return supabase.from('observation_versions').insert({
-    observation_id: observationId,
-    vector_clock: current.vector_clock,
-    data: sanitizeForAuditLog({
-      stamp: current.stamp,
-      mucus: current.mucus,
-      bleeding: current.bleeding,
-      sensacao: current.sensacao,
-      tipo_observacao: current.tipo_observacao,
-      cycle_id: current.cycle_id,
-      version: current.version,
-    }),
-    author_id: auth.userId,
-    author_role: auth.role,
-    conflict_resolved: false,
-  });
-}
 
 /**
  * CC-001: Writes an observation update to the audit log (LGPD-safe).
@@ -183,14 +156,15 @@ app.patch('/:id', zValidator('json', PatchObservationSchema), async (c) => {
     : false;
 
   // Save snapshot of current version BEFORE applying the edit (ADR-004)
-  const { error: versionError } = await saveVersionSnapshot(
-    supabase,
-    id,
-    current as unknown as Record<string, unknown>,
-    auth,
-  );
-
-  if (versionError) {
+  // DDD-001: delegated to observationDomain.createObservationVersion (aggregate boundary)
+  try {
+    await createObservationVersion(
+      supabase,
+      id,
+      current as unknown as Parameters<typeof createObservationVersion>[2],
+      auth.userId,
+    );
+  } catch (versionError) {
     return internalError(c, versionError as Error);
   }
 
