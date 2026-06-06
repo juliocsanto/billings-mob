@@ -337,60 +337,112 @@ describe('LGPD contract — sendAI Edge Function body', () => {
     expect(PROHIBITED_FIELDS).toContain('user_id');
   });
 
-  it('LGPD body contract: only { question } is permitted — no clinical/personal fields', () => {
-    // Contract validation: given any body object constructed by sendAI,
-    // it must contain exactly one key: 'question'.
-    //
-    // This mirrors the exact assertion from sendAI.test.jsx AC5.
-    // The definition of compliance:
-    const compliantBody = { question: 'O que é PBI?' };
+  // ── GET /api/billing/status — response must not contain prohibited fields ──
 
-    expect(Object.keys(compliantBody)).toHaveLength(1);
-    expect(Object.keys(compliantBody)).toEqual(['question']);
+  it('GET /api/billing/status response does not contain any LGPD-prohibited fields', async () => {
+    process.env.ASAAS_ENV = 'mock';
+    process.env.ASAAS_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
 
-    // None of the prohibited fields should be present
+    const mod = await import('../billing/index?lgpd-status-' + Date.now());
+    const app = mod.default;
+
+    const res = await app.request('/api/billing/status', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${INSTRUCTOR_JWT}` },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json() as Record<string, unknown>;
+
+    // Assert every LGPD-prohibited field is absent from the actual API response
     for (const field of PROHIBITED_FIELDS) {
-      expect(compliantBody).not.toHaveProperty(field);
+      expect(body, `billing/status must not expose "${field}" in response`).not.toHaveProperty(field);
     }
+
+    delete process.env.ASAAS_ENV;
+    delete process.env.ASAAS_WEBHOOK_SECRET;
   });
 
-  it('any body with a prohibited field fails the LGPD contract (negative contract test)', () => {
-    // Verify that a body with extra fields would violate the contract
-    // (ensures our assertion logic is not vacuous)
-    const violatingBody = {
-      question: 'O que é PBI?',
-      observations: { '2026-06-01': { stamp: 'muco' } }, // LGPD violation
-    };
+  // ── POST /api/billing/subscribe — response must not contain prohibited fields
 
-    expect(Object.keys(violatingBody)).not.toEqual(['question']);
-    expect(violatingBody).toHaveProperty('observations');
+  it('POST /api/billing/subscribe response does not contain any LGPD-prohibited fields', async () => {
+    process.env.ASAAS_ENV = 'mock';
+    process.env.ASAAS_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
+    mockServiceUpdate.mockReturnValue({
+      eq: vi.fn(() => Promise.resolve({ error: null })),
+    });
+
+    const mod = await import('../billing/index?lgpd-subscribe-' + Date.now());
+    const app = mod.default;
+
+    const res = await app.request('/api/billing/subscribe', {
+      method: 'POST',
+      headers: instructorHeaders,
+      body: JSON.stringify({ plan: 'instructor_monthly' }),
+    });
+
+    expect(res.status).toBe(201);
+    const body = await res.json() as Record<string, unknown>;
+
+    // Confirm the permitted fields are present (subscriptionId, status, nextDueDate, paymentUrl)
+    expect(body).toHaveProperty('subscriptionId');
+    expect(body).toHaveProperty('status');
+    expect(body).toHaveProperty('nextDueDate');
+    expect(body).toHaveProperty('paymentUrl');
+
+    // Assert every LGPD-prohibited field is absent from the actual API response
+    for (const field of PROHIBITED_FIELDS) {
+      expect(body, `billing/subscribe must not expose "${field}" in response`).not.toHaveProperty(field);
+    }
+
+    delete process.env.ASAAS_ENV;
+    delete process.env.ASAAS_WEBHOOK_SECRET;
   });
 
-  it('LGPD: `relations` field must never appear in Edge Function requests', () => {
-    // The `relations` field is LGPD Art. 11 restricted —
-    // it must NEVER leave the device or be sent to any external service.
-    const safeBody = { question: 'Como usar o app?' };
+  // ── POST /api/billing/webhook — response must not contain prohibited fields
 
-    expect(safeBody).not.toHaveProperty('relations');
-    expect(Object.keys(safeBody)).not.toContain('relations');
-  });
+  it('POST /api/billing/webhook PAYMENT_RECEIVED response does not contain any LGPD-prohibited fields', async () => {
+    process.env.ASAAS_ENV = 'mock';
+    process.env.ASAAS_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
+    mockServiceUpdate.mockReturnValue({
+      eq: vi.fn(() => Promise.resolve({ error: null })),
+    });
+    mockGetUserByEmail.mockResolvedValue({
+      data: { user: { id: MOCK_INSTRUCTOR_ID, email: 'instructor@test.com' } },
+      error: null,
+    });
 
-  it('LGPD: `notes` field must never appear in Edge Function requests', () => {
-    const safeBody = { question: 'O que é sangramento?' };
+    const mod = await import('../billing/index?lgpd-webhook-' + Date.now());
+    const app = mod.default;
 
-    expect(safeBody).not.toHaveProperty('notes');
-    expect(Object.keys(safeBody)).not.toContain('notes');
-  });
+    const rawBody = JSON.stringify({
+      event: 'PAYMENT_RECEIVED',
+      payment: { subscriptionId: 'sub_abc' },
+      customer: { email: 'instructor@test.com' },
+    });
+    const sig = computeHmac(TEST_WEBHOOK_SECRET, rawBody);
 
-  it('LGPD: `fcm_token` must never be forwarded to Anthropic/Edge Function', () => {
-    const safeBody = { question: 'O que é o Ápice?' };
+    const res = await app.request('/api/billing/webhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'asaas-signature': sig,
+      },
+      body: rawBody,
+    });
 
-    expect(safeBody).not.toHaveProperty('fcm_token');
-  });
+    expect(res.status).toBe(200);
+    const body = await res.json() as Record<string, unknown>;
 
-  it('LGPD: `email` must not appear in Edge Function body (PII)', () => {
-    const safeBody = { question: 'O que é PBI?' };
+    // Confirm the webhook acknowledgement shape
+    expect(body).toHaveProperty('received', true);
 
-    expect(safeBody).not.toHaveProperty('email');
+    // Assert every LGPD-prohibited field is absent from the actual API response
+    for (const field of PROHIBITED_FIELDS) {
+      expect(body, `billing/webhook must not expose "${field}" in response`).not.toHaveProperty(field);
+    }
+
+    delete process.env.ASAAS_ENV;
+    delete process.env.ASAAS_WEBHOOK_SECRET;
   });
 });
