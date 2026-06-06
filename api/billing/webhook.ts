@@ -61,12 +61,13 @@ app.post('/', async (c) => {
   // Service role required — no user JWT available for this endpoint.
   const serviceClient = createServiceClient();
 
-  // Resolve email → user_id via direct lookup (O(1), no pagination limit).
-  // result.customerId is the Asaas customer email.
-  const { data: adminData } = await serviceClient.auth.admin.getUserByEmail(result.customerId);
+  // Resolve email → user_id via listUsers() scan.
+  // getUserByEmail is not available in @supabase/supabase-js v2. At MVP scale
+  // (< 1000 instructors) the pagination limit is not a runtime risk. Revisit in Sprint 8.
+  const { data: usersData } = await serviceClient.auth.admin.listUsers();
+  const targetUser = usersData?.users?.find((u) => u.email === result.customerId);
 
-  if (adminData?.user?.id) {
-    const targetUser = adminData.user;
+  if (targetUser?.id) {
     await serviceClient
       .from('user_profiles')
       .update({ subscription_status: newStatus })
