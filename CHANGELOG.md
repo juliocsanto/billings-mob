@@ -6,6 +6,33 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.0.0] - 2026-06-06
+
+### Added
+- Billing via Asaas (ADR-015): `AsaasPort` hexagonal interface, `MockAsaasAdapter`, `AsaasCloudAdapter`, `billingFactory` (env-based selection)
+- `POST /api/billing/subscribe` — creates Asaas subscription, returns `subscriptionId` + `paymentUrl`
+- `GET /api/billing/status` — returns current `subscriptionStatus`, `plan`, `expiresAt` for the authenticated user
+- `POST /api/billing/webhook` — receives Asaas payment events; HMAC-SHA256 + `timingSafeEqual` signature verification; updates `subscription_status`
+- SQL migration `20260606000001`: four new columns on `user_profiles` (`subscription_status DEFAULT 'trial'`, `asaas_subscription_id`, `subscription_plan`, `subscription_expires_at`); RLS trigger blocks client-side `subscription_status` manipulation
+- Guia IA (ADR-016): Supabase Edge Function proxy to claude-sonnet-4-6 with SSE streaming; `sendAI` in `App.jsx` now calls the Edge Function — client-side API key removed
+- Architecture docs: ADR-015 / ADR-016 / ADR-017 added to `ARCHITECTURE.md`
+
+### Security
+- HMAC-SHA256 + `timingSafeEqual` on both WhatsApp and Asaas webhook endpoints — fail-closed without secret — AH-001 pattern
+- Upstash Redis global rate limiting replaces per-instance in-memory store, eliminating per-serverless-instance bypass (ADR-017)
+- `getUserByEmail` O(1) lookup replaces paginated `listUsers` — eliminates user enumeration window during webhook processing (SEC-S7-01)
+- LGPD: only `{question}` text is sent to Anthropic; no clinical fields, cycle data, observations, or personal identifiers are transmitted
+
+### Changed
+- `sendAI` function updated to use Supabase Edge Function; client-side Anthropic API key input removed from profile tab
+
+### Tests
+- 36 new tests: `AsaasCloudAdapter` coverage 8% → 97.22% statements; global branch coverage 79.38% → 84.97%
+- 6 Playwright E2E scenarios: billing trial/active/expired states + Guia IA input presence and loading state
+- Total: 649 tests passing (up from 613)
+
+---
+
 ## [1.6.0] - 2026-06-05
 
 ### Added
