@@ -54,14 +54,9 @@ const mockServiceFrom = vi.fn(() => ({
   select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(() => Promise.resolve({ data: mockUserProfile, error: null })) })) })),
 }));
 
-// Mock admin.listUsers for webhook tests (resolves email → userId)
-const mockListUsers = vi.fn().mockResolvedValue({
-  data: {
-    users: [
-      { id: MOCK_INSTRUCTOR_ID, email: 'instructor@test.com' },
-      { id: MOCK_USER_ID, email: 'student@test.com' },
-    ],
-  },
+// Mock admin.getUserByEmail for webhook tests (resolves email → userId)
+const mockGetUserByEmail = vi.fn().mockResolvedValue({
+  data: { user: { id: MOCK_INSTRUCTOR_ID, email: 'instructor@test.com' } },
   error: null,
 });
 
@@ -112,7 +107,7 @@ vi.mock('../_lib/supabaseClient', () => ({
     from: mockServiceFrom,
     auth: {
       admin: {
-        listUsers: mockListUsers,
+        getUserByEmail: mockGetUserByEmail,
       },
     },
   })),
@@ -364,13 +359,8 @@ describe('POST /api/billing/webhook', () => {
       update: mockServiceUpdate,
       select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(() => Promise.resolve({ data: mockUserProfile, error: null })) })) })),
     });
-    mockListUsers.mockResolvedValue({
-      data: {
-        users: [
-          { id: MOCK_INSTRUCTOR_ID, email: 'instructor@test.com' },
-          { id: MOCK_USER_ID, email: 'student@test.com' },
-        ],
-      },
+    mockGetUserByEmail.mockResolvedValue({
+      data: { user: { id: MOCK_INSTRUCTOR_ID, email: 'instructor@test.com' } },
       error: null,
     });
   });

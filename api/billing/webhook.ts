@@ -61,17 +61,12 @@ app.post('/', async (c) => {
   // Service role required — no user JWT available for this endpoint.
   const serviceClient = createServiceClient();
 
-  // updateSubscriptionByEmail: find profile rows where the user's email matches
-  // via a join with auth.users. We use an RPC or a direct update with a subquery.
-  // Since Supabase JS SDK doesn't support cross-schema joins, we use the admin
-  // auth API to resolve email → user id, then update user_profiles.
-  const { data: adminData } = await serviceClient.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
+  // Resolve email → user_id via direct lookup (O(1), no pagination limit).
+  // result.customerId is the Asaas customer email.
+  const { data: adminData } = await serviceClient.auth.admin.getUserByEmail(result.customerId);
 
-  const targetUser = adminData?.users?.find((u) => u.email === result.customerId);
-  if (targetUser?.id) {
+  if (adminData?.user?.id) {
+    const targetUser = adminData.user;
     await serviceClient
       .from('user_profiles')
       .update({ subscription_status: newStatus })
