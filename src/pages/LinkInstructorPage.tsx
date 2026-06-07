@@ -299,7 +299,7 @@ export function LinkInstructorPage({ session, onBack }: LinkInstructorPageProps)
               </div>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: DS.textMain }}>
-                  {instructor.full_name}
+                  {instructor.display_name}
                 </div>
                 <div style={{ fontSize: 12, color: DS.textSec, marginTop: 2 }}>
                   {t('linkInstructor.certifiedInstructor')}
