@@ -68,7 +68,7 @@ vi.mock('../_lib/supabaseClient', () => ({
   })),
 }));
 
-import app from '../users/search';
+import app from '../users/index';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -90,7 +90,7 @@ describe('GET /api/users/search', () => {
   });
 
   it('returns 401 when no Authorization header is provided', async () => {
-    const res = await app.request('/?role=instructor&email=ana@example.com');
+    const res = await app.request('/api/users/search?role=instructor&email=ana@example.com');
 
     expect(res.status).toBe(401);
     const json = await res.json() as { error: string };
@@ -105,7 +105,7 @@ describe('GET /api/users/search', () => {
       single: vi.fn().mockResolvedValue({ data: { role: 'student' }, error: null }),
     });
 
-    const res = await app.request('/?role=instructor', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=instructor', { headers: studentHeaders });
 
     expect(res.status).toBe(400);
   });
@@ -117,7 +117,7 @@ describe('GET /api/users/search', () => {
       single: vi.fn().mockResolvedValue({ data: { role: 'student' }, error: null }),
     });
 
-    const res = await app.request('/?role=instructor&email=not-an-email', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=instructor&email=not-an-email', { headers: studentHeaders });
 
     expect(res.status).toBe(400);
   });
@@ -129,7 +129,7 @@ describe('GET /api/users/search', () => {
       single: vi.fn().mockResolvedValue({ data: { role: 'student' }, error: null }),
     });
 
-    const res = await app.request('/?role=admin&email=admin@example.com', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=admin&email=admin@example.com', { headers: studentHeaders });
 
     expect(res.status).toBe(400);
   });
@@ -141,7 +141,7 @@ describe('GET /api/users/search', () => {
       single: vi.fn().mockResolvedValue({ data: { role: 'student' }, error: null }),
     });
 
-    const res = await app.request('/?email=ana@example.com', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?email=ana@example.com', { headers: studentHeaders });
 
     expect(res.status).toBe(400);
   });
@@ -168,7 +168,7 @@ describe('GET /api/users/search', () => {
       };
     });
 
-    const res = await app.request('/?role=instructor&email=ana%40example.com', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=instructor&email=ana%40example.com', { headers: studentHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { data: { id: string; display_name: string; role: string } };
@@ -197,7 +197,7 @@ describe('GET /api/users/search', () => {
       };
     });
 
-    const res = await app.request('/?role=instructor&email=ana%40example.com', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=instructor&email=ana%40example.com', { headers: studentHeaders });
 
     const json = await res.json() as Record<string, unknown>;
     const jsonStr = JSON.stringify(json);
@@ -225,7 +225,7 @@ describe('GET /api/users/search', () => {
       };
     });
 
-    const res = await app.request('/?role=instructor&email=notfound%40example.com', { headers: studentHeaders });
+    const res = await app.request('/api/users/search?role=instructor&email=notfound%40example.com', { headers: studentHeaders });
 
     expect(res.status).toBe(404);
   });
@@ -250,7 +250,7 @@ describe('GET /api/users/search', () => {
       };
     });
 
-    const res = await app.request('/?role=instructor&email=ana%40example.com', { headers: instructorHeaders });
+    const res = await app.request('/api/users/search?role=instructor&email=ana%40example.com', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
   });
