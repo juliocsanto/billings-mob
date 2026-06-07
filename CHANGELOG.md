@@ -6,6 +6,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.1.0] - 2026-06-07
+
+### Added
+- `GET /api/users/search?role=instructor&email=` — new endpoint returning `{ id, display_name, role }` without LGPD-sensitive fields; enables instructor lookup via API instead of direct database access (CA-003)
+- `useInstructorLink.ts` updated to call `/api/users/search` via `fetch` — removes Supabase client direct access from the frontend hook
+
+### Changed
+- `createObservationVersion(supabase, observationId, currentData, authorId)` extracted to `api/_lib/observationDomain.ts` — the `Observation` aggregate boundary now encapsulates `observation_versions` creation; PATCH handler delegates to domain function (DDD-001)
+- `applyVersionResolution(supabase, observationId, versionId, resolution)` extracted to `api/_lib/observationDomain.ts` — conflict resolution handler delegates; `accept_student` and `keep_instructor` paths encapsulated in domain layer (DDD-002)
+
+### Tests
+- 25 new TDD tests covering `observationDomain` functions and the `users/search` endpoint
+- Total: 721 tests passing (up from 696); coverage 96.25% statements / 88.73% branches global; `api/_lib` 100% statements
+
+---
+
 ## [2.0.0] - 2026-06-06
 
 ### Added
