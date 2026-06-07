@@ -44,16 +44,12 @@
       "destination": "/api/instructor-student-links/index"
     },
     {
-      "source": "/api/users/me",
-      "destination": "/api/users/me"
-    },
-    {
-      "source": "/api/users/search",
-      "destination": "/api/users/search"
-    },
-    {
       "source": "/api/users/push-preferences",
       "destination": "/api/users/push-preferences/index"
+    },
+    {
+      "source": "/api/users/(.*)",
+      "destination": "/api/users/index"
     },
     {
       "source": "/api/webhooks/whatsapp",

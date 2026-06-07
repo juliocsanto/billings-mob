@@ -142,8 +142,9 @@ app.post('/webhook', async (c) => {
   // Resolve email → user_id via listUsers() scan.
   // getUserByEmail is not available in @supabase/supabase-js v2. At MVP scale
   // (< 1000 instructors) the pagination limit is not a runtime risk. Revisit in Sprint 8.
-  const { data: usersData } = await serviceClient.auth.admin.listUsers();
-  const targetUser = usersData?.users?.find((u) => u.email === result.customerId);
+  interface AuthUser { id: string; email?: string }
+  const listUsersResult = await serviceClient.auth.admin.listUsers() as unknown as { data: { users: AuthUser[] } };
+  const targetUser = (listUsersResult.data?.users ?? []).find((u: AuthUser) => u.email === result.customerId);
 
   if (targetUser?.id) {
     await serviceClient

@@ -58,7 +58,7 @@ vi.mock('../_lib/supabaseClient', () => ({
   })),
 }));
 
-import app from '../users/me';
+import app from '../users/index';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ describe('GET /api/users/me', () => {
     const profile = makeStudentProfile();
     mockFrom.mockReturnValue(makeProfileChain(profile));
 
-    const res = await app.request('/', { headers: studentHeaders });
+    const res = await app.request('/api/users/me', { headers: studentHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { data: typeof profile };
@@ -124,7 +124,7 @@ describe('GET /api/users/me', () => {
     const profile = makeInstructorProfile();
     mockFrom.mockReturnValue(makeProfileChain(profile));
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/api/users/me', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { data: typeof profile };
@@ -136,7 +136,7 @@ describe('GET /api/users/me', () => {
   it('returns 500 when profile fetch fails (PGRST116 treated as infra error)', async () => {
     mockFrom.mockReturnValue(makeProfileChain(null, { code: 'PGRST116' }));
 
-    const res = await app.request('/', { headers: studentHeaders });
+    const res = await app.request('/api/users/me', { headers: studentHeaders });
 
     expect(res.status).toBe(500);
   });
@@ -144,7 +144,7 @@ describe('GET /api/users/me', () => {
   it('returns 404 when DB returns null profile without error', async () => {
     mockFrom.mockReturnValue(makeProfileChain(null, null));
 
-    const res = await app.request('/', { headers: studentHeaders });
+    const res = await app.request('/api/users/me', { headers: studentHeaders });
 
     expect(res.status).toBe(404);
     const json = await res.json() as { error: string };
@@ -154,14 +154,14 @@ describe('GET /api/users/me', () => {
   it('returns 500 when DB query fails with unexpected error', async () => {
     mockFrom.mockReturnValue(makeProfileChain(null, new Error('Connection timeout')));
 
-    const res = await app.request('/', { headers: studentHeaders });
+    const res = await app.request('/api/users/me', { headers: studentHeaders });
 
     // After the error/resource guard split: error !== null → internalError → 500
     expect(res.status).toBe(500);
   });
 
   it('returns 401 when no Authorization header provided', async () => {
-    const res = await app.request('/');
+    const res = await app.request('/api/users/me');
 
     expect(res.status).toBe(401);
     const json = await res.json() as { error: string };
