@@ -6,6 +6,41 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.0] — 2026-06-08
+
+### Added
+- Community feedback forum: users can post and comment on feature requests, bugs, and improvements (`app_feedback`, `app_feedback_comments`, `app_feedback_discounts` tables with RLS enforced)
+- AI triage pipeline: Supabase Edge Function + Claude classifies feedback as `billings_method` or `app_functionality`
+- Vercel Cron (daily at midnight UTC) to auto-trigger triage for pending feedback items
+- Admin notification via WhatsApp + email after AI triage (impact, roadmap, agents, costs)
+- Two-stage admin approval workflow: approve/reject + final-approve after deploy confirmation
+- 50% subscription discount via Asaas for users whose feedback is implemented (`applySubscriptionDiscount` on AsaasPort/Adapter)
+- User notification (WhatsApp + email) after final approval
+- Hexagonal email adapter: `EmailPort` + `ResendEmailAdapter` + `MockEmailAdapter` + templates (`feedbackPendingAdmin`, `feedbackFinalApproved`)
+- `requireAdmin` middleware for admin-only endpoints (reads role from `user_profiles` — SEC-003 compliant)
+- Feedback tab in PWA (`App.jsx`): `FeedbackPage`, `FeedbackList`, `FeedbackCard`, `FeedbackDetail`, `FeedbackStatusBadge`, `CommentThread`, `NewFeedbackModal`
+- `useFeedback.ts` hook with Supabase Realtime subscription
+- SQL migration `20260607000001_add_feedback_system`: three new tables + RLS policies
+- ADR-018 (Feedback system architecture) + ADR-019 (Resend as transactional email provider) in `ARCHITECTURE.md` v1.5
+
+### Security
+- HTML escaping added to Edge Function email templates — prevents XSS in admin notification emails (SEC-S9-03)
+- Admin panel URL default corrected to `billings-web` dashboard instead of PWA (SEC-S9-07)
+- Resend DPA signed and added to supplier inventory (SEC-S9-01)
+
+### Fixed
+- ESLint `no-undef` on `RequestInit` in test files — replaced with inline fetch option shape
+- ESLint `eqeqeq` in `FeedbackCard.tsx` and `feedbackApi.ts` — `!=` replaced with `!==`
+- `requireAdmin` test isolation — moved tests to `auth.test.ts` where `supabaseClient` is correctly mocked via `vi.hoisted()`
+- Vercel Hobby plan cron limit — changed schedule from hourly to daily (`0 0 * * *`)
+- Vercel Hobby plan 12-function limit — consolidated `cron/feedback-triage.ts` into `feedback/index.ts`; consolidated `instructor-student-links/{[id].ts,pending.ts}` into `instructor-student-links/index.ts`
+
+### Tests
+- 63 new tests covering email adapters, feedback endpoints, Asaas discount, RLS policies, AI triage schema, and E2E feedback flows
+- Total: 888 tests passing (up from 825); coverage Statements 84.88% / Branches 70.85% / Functions 77.16% / Lines 85.85%
+
+---
+
 ## [2.1.0] - 2026-06-07
 
 ### Added
