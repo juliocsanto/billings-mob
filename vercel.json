@@ -6,7 +6,46 @@
   "installCommand": "npm ci --legacy-peer-deps",
   "framework": "vite",
 
+  "crons": [
+    {
+      "path": "/api/cron/feedback-triage",
+      "schedule": "0 * * * *"
+    }
+  ],
+
   "rewrites": [
+    {
+      "source": "/api/feedback/:id/comments",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback/:id/approve",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback/:id/reject",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback/:id/mark-deployed",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback/:id/final-approve",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback/:id",
+      "destination": "/api/feedback/[id]/index"
+    },
+    {
+      "source": "/api/feedback",
+      "destination": "/api/feedback/index"
+    },
+    {
+      "source": "/api/cron/feedback-triage",
+      "destination": "/api/cron/feedback-triage"
+    },
     {
       "source": "/api/observations/versions/:path*",
       "destination": "/api/observations/versions/index"

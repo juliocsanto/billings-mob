@@ -66,4 +66,20 @@ export interface AsaasPort {
    * @param secret      - ASAAS_WEBHOOK_SECRET do ambiente.
    */
   parseWebhookPayload(rawBody: string, signature: string, secret: string): Promise<AsaasWebhookResult>;
+
+  /**
+   * Aplica um desconto percentual na próxima cobrança de uma assinatura.
+   * Usado para recompensar autores de feedback implementado (ADR-018).
+   *
+   * LGPD: apenas subscriptionId e percentual transitam — sem dados de cartão.
+   *
+   * @param subscriptionId  - ID externo da assinatura Asaas.
+   * @param discountPercent - Percentual de desconto (ex.: 50 para 50%).
+   * @param reason          - Texto descritivo para auditoria (ex.: 'feedback_approved: <id>').
+   */
+  applySubscriptionDiscount(
+    subscriptionId: string,
+    discountPercent: number,
+    reason: string,
+  ): Promise<{ success: boolean; discountId?: string; error?: string }>;
 }

@@ -47,6 +47,14 @@ export class MockAsaasAdapter implements AsaasPort {
     return { status: 'active', nextDueDate };
   }
 
+  async applySubscriptionDiscount(
+    _subscriptionId: string,
+    _discountPercent: number,
+    _reason: string,
+  ): Promise<{ success: boolean; discountId?: string; error?: string }> {
+    return { success: true, discountId: 'mock-discount-id' };
+  }
+
   async parseWebhookPayload(
     rawBody: string,
     signature: string,
