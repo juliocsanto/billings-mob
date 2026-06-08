@@ -123,7 +123,7 @@ export function FeedbackCard({ item, onSelect }: Props) {
         }}
       >
         <span>{formatDate(item.created_at)}</span>
-        {item.comment_count != null && item.comment_count > 0 && (
+        {item.comment_count !== null && item.comment_count !== undefined && item.comment_count > 0 && (
           <span aria-label={`${item.comment_count} comentário${item.comment_count !== 1 ? 's' : ''}`}>
             💬 {item.comment_count}
           </span>

@@ -48,8 +48,8 @@ export async function listFeedback(
   const qs = new URLSearchParams();
   if (params?.category) qs.set('category', params.category);
   if (params?.status) qs.set('status', params.status);
-  if (params?.limit != null) qs.set('limit', String(params.limit));
-  if (params?.offset != null) qs.set('offset', String(params.offset));
+  if (params?.limit !== null && params?.limit !== undefined) qs.set('limit', String(params.limit));
+  if (params?.offset !== null && params?.offset !== undefined) qs.set('offset', String(params.offset));
 
   const query = qs.toString() ? `?${qs.toString()}` : '';
   const res = await fetch(`${API_BASE}/api/feedback${query}`, {
