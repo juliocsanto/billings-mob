@@ -12,6 +12,7 @@ import { generateDailyReminder, downloadICS } from './utils/ics.js';
 import { DayDetailModal } from './components/DayDetailModal.jsx';
 import { LinkInstructorPage } from './pages/LinkInstructorPage.tsx';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage.tsx';
+import { FeedbackPage } from './components/feedback/FeedbackPage.tsx';
 
 // ── Micro-components ──────────────────────────────────────
 
@@ -310,7 +311,7 @@ export default function App({ user, session } = {}) {
         </div>
         <nav role="navigation" aria-label={t('nav.hoje')}>
           <div role="tablist" style={{display:'flex',gap:0}}>
-            {[{id:'hoje',l:t('nav.hoje')},{id:'grafico',l:t('nav.grafico')},{id:'analise',l:t('nav.analise')},{id:'guia',l:t('nav.guia')},{id:'vinculo',l:t('nav.vinculo')},{id:'notificacoes',l:t('nav.notificacoes')},{id:'perfil',l:t('nav.perfil')}].map(navItem=>(
+            {[{id:'hoje',l:t('nav.hoje')},{id:'grafico',l:t('nav.grafico')},{id:'analise',l:t('nav.analise')},{id:'guia',l:t('nav.guia')},{id:'feedback',l:'Feedback'},{id:'vinculo',l:t('nav.vinculo')},{id:'notificacoes',l:t('nav.notificacoes')},{id:'perfil',l:t('nav.perfil')}].map(navItem=>(
               <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{
                 flex:1,background:'none',border:'none',cursor:'pointer',padding:'10px 0',
                 fontSize:11,fontWeight:tab===navItem.id?700:400,
@@ -895,10 +896,15 @@ export default function App({ user, session } = {}) {
         </div>
       )}
 
+      {/* ══ FEEDBACK ══════════════════════════════════ */}
+      {tab==='feedback' && (
+        <FeedbackPage session={session} />
+      )}
+
       {/* ══ NAV ══════════════════════════════════════ */}
       <nav role="navigation" aria-label={t('nav.hoje')} style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,background:DS.surface,boxShadow:'0 -2px 8px rgba(0,0,0,0.06)',zIndex:20,padding:'6px 16px 12px'}}>
         <div role="tablist" style={{display:'flex',gap:4}}>
-          {[{id:'hoje',l:t('nav.hoje'),i:'◎'},{id:'grafico',l:t('nav.grafico'),i:'⊞'},{id:'analise',l:t('nav.analise'),i:'◈'},{id:'guia',l:t('nav.guia'),i:'✦'},{id:'vinculo',l:t('nav.vinculo'),i:'⊕'},{id:'notificacoes',l:t('nav.notificacoes'),i:'◉'},{id:'perfil',l:t('nav.perfil'),i:'○'}].map(navItem=>(
+          {[{id:'hoje',l:t('nav.hoje'),i:'◎'},{id:'grafico',l:t('nav.grafico'),i:'⊞'},{id:'analise',l:t('nav.analise'),i:'◈'},{id:'guia',l:t('nav.guia'),i:'✦'},{id:'feedback',l:'Feedback',i:'◫'},{id:'vinculo',l:t('nav.vinculo'),i:'⊕'},{id:'notificacoes',l:t('nav.notificacoes'),i:'◉'},{id:'perfil',l:t('nav.perfil'),i:'○'}].map(navItem=>(
             <button key={navItem.id} role="tab" aria-selected={tab===navItem.id} onClick={()=>setTab(navItem.id)} style={{flex:1,background:tab===navItem.id?`${DS.primary}18`:'transparent',border:`1px solid ${tab===navItem.id?DS.primary:DS.border}`,borderRadius:10,padding:'8px 0 6px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'all 0.2s'}}>
               <span style={{fontSize:16,color:tab===navItem.id?DS.primary:DS.textSec}}>{navItem.i}</span>
               <span style={{fontSize:9,color:tab===navItem.id?DS.primary:DS.textSec,fontWeight:tab===navItem.id?700:400}}>{navItem.l}</span>

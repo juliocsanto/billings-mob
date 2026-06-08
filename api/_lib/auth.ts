@@ -123,3 +123,40 @@ export async function requireAuth(c: Context, next: Next): Promise<Response | vo
 
   await next();
 }
+
+/**
+ * Hono middleware that requires the authenticated user to have the 'admin' role.
+ *
+ * Chains requireAuth first (validates JWT and resolves role), then checks
+ * that auth.role === 'admin'. Returns 403 Forbidden for non-admin users.
+ *
+ * Usage:
+ *   app.patch('/approve', requireAdmin, handler)
+ *
+ * SEC-003: role is read from user_profiles (server-side), never from JWT claims.
+ */
+export async function requireAdmin(c: Context, next: Next): Promise<Response | void> {
+  // First ensure the request is authenticated
+  let authPassed = false;
+  await requireAuth(c, async () => {
+    authPassed = true;
+  });
+
+  if (!authPassed) {
+    // requireAuth already returned an error response — do not continue
+    return c.json(
+      { error: 'Unauthorized', message: 'Missing or invalid Authorization header' },
+      401,
+    );
+  }
+
+  const auth = c.get('auth');
+  if (auth.role !== 'admin') {
+    return c.json(
+      { error: 'Forbidden', message: 'Admin role required' },
+      403,
+    );
+  }
+
+  await next();
+}

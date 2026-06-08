@@ -118,6 +118,46 @@ export class AsaasCloudAdapter implements AsaasPort {
     };
   }
 
+  async applySubscriptionDiscount(
+    subscriptionId: string,
+    discountPercent: number,
+    reason: string,
+  ): Promise<{ success: boolean; discountId?: string; error?: string }> {
+    const apiKey = process.env.ASAAS_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: 'ASAAS_API_KEY not configured' };
+    }
+
+    // Asaas v3: PUT /subscriptions/:id para atualizar desconto na próxima cobrança
+    // O campo discount.value é percentual, dueDateLimitDays define validade do desconto.
+    // reason é registrado apenas no audit_log local — a Asaas não aceita este campo.
+    void reason; // used for audit trail by caller — not forwarded to Asaas
+
+    const response = await fetch(`${ASAAS_API_BASE}/subscriptions/${subscriptionId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        discount: {
+          value: discountPercent,
+          type: 'PERCENTAGE',
+          dueDateLimitDays: 31,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => `http_${response.status}`);
+      console.warn('[AsaasCloud] applySubscriptionDiscount failed:', response.status);
+      return { success: false, error: errText };
+    }
+
+    const data = await response.json() as { id?: string };
+    return { success: true, discountId: data.id ?? subscriptionId };
+  }
+
   async parseWebhookPayload(
     rawBody: string,
     signature: string,

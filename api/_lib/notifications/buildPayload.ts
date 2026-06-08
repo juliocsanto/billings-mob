@@ -55,6 +55,26 @@ export function buildPayload(event: NotificationEvent): NotificationPayload {
         title: 'Vínculo aceito',
         body: 'Sua instrutora aceitou seu pedido de vínculo no Billings Gráfico.',
       };
+
+    // ── Feedback events (ADR-018) ──────────────────────────────────────────
+
+    case 'feedback_triaged':
+      return {
+        title: 'Novo feedback aguarda sua revisão',
+        body: `Feedback "${metadata.feedbackTitle ?? 'sem título'}" foi triado pela IA (impacto: ${metadata.triageImpact ?? 'desconhecido'}). Acesse o painel admin para aprovar ou rejeitar.`,
+      };
+
+    case 'feedback_deployed':
+      return {
+        title: 'Feature deployada — confirmação pendente',
+        body: `A feature "${metadata.feedbackTitle ?? 'sem título'}" foi deployada. Confirme no painel admin para notificar o usuário e liberar o desconto.`,
+      };
+
+    case 'user_feedback_implemented':
+      return {
+        title: 'Sua sugestão foi implementada!',
+        body: `Parabéns, ${metadata.userName ?? 'usuário'}! Sua sugestão "${metadata.feedbackTitle ?? ''}" foi implementada. Você receberá ${metadata.discountPercent ?? 50}% de desconto na próxima mensalidade.`,
+      };
   }
 }
 
@@ -115,6 +135,33 @@ export function buildWhatsAppTemplate(event: NotificationEvent): WhatsAppTemplat
         templateParams: [
           event.metadata.studentName ?? 'sua aluna',
           event.metadata.date ?? '',
+        ],
+      };
+
+    case 'feedback_triaged':
+      return {
+        templateName: 'billings_feedback_triado',
+        templateParams: [
+          event.metadata.feedbackTitle ?? 'Feedback',
+          event.metadata.triageImpact ?? 'desconhecido',
+        ],
+      };
+
+    case 'feedback_deployed':
+      return {
+        templateName: 'billings_feedback_deployado',
+        templateParams: [
+          event.metadata.feedbackTitle ?? 'Feature',
+        ],
+      };
+
+    case 'user_feedback_implemented':
+      return {
+        templateName: 'billings_feedback_implementado',
+        templateParams: [
+          event.metadata.userName ?? 'usuário',
+          event.metadata.feedbackTitle ?? 'sua sugestão',
+          String(event.metadata.discountPercent ?? 50),
         ],
       };
 

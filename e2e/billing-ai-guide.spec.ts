@@ -30,6 +30,7 @@ const MOCK_STUDENT_SESSION = {
   access_token: 'mock-student-access-token',
   refresh_token: 'mock-student-refresh-token',
   expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
   token_type: 'bearer',
   user: {
     id: 'mock-aluna-uuid-001',
@@ -44,6 +45,7 @@ const MOCK_INSTRUCTOR_SESSION = {
   access_token: 'mock-instructor-access-token',
   refresh_token: 'mock-instructor-refresh-token',
   expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
   token_type: 'bearer',
   user: {
     id: 'mock-instrutora-uuid-001',

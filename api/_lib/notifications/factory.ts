@@ -14,6 +14,7 @@
 
 import { NotificationService } from './NotificationService';
 import { getWhatsAppAdapter } from '../whatsapp/factory';
+import { getEmailAdapter } from '../email/emailFactory';
 import { createServiceClient } from '../supabaseClient';
 
 let instance: NotificationService | null = null;
@@ -26,6 +27,7 @@ export function getNotificationService(): NotificationService {
   instance = new NotificationService(
     getWhatsAppAdapter(),
     createServiceClient(),
+    getEmailAdapter(),
   );
 
   return instance;

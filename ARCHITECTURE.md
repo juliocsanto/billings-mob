@@ -1,8 +1,8 @@
 # ARCHITECTURE.md — Billings Gráfico: Plataforma MOB
 
-> Documento de Arquitetura de Software — Versao 1.4  
+> Documento de Arquitetura de Software — Versao 1.5  
 > Projeto: **Billings Grafico** (billings-mob)  
-> Data: 2026-05-24 — atualizado em 2026-06-05  
+> Data: 2026-05-24 — atualizado em 2026-06-07  
 > Arquiteto Responsavel: Julio C. Santo  
 > Status: **APROVADO PARA IMPLEMENTACAO**
 
@@ -3213,5 +3213,476 @@ npm install @upstash/ratelimit @upstash/redis
 | Redis self-hosted (Fly.io) | Adiciona operacoes de infra (backup, upgrade, monitoramento); sem vantagem vs Upstash gerenciado |
 | Cloudflare Workers KV | Exigiria migrar API de Vercel para Cloudflare — escopo incompativel (ADR-007 CLOSED) |
 | Vercel KV (Redis gerenciado) | Disponivel apenas em plano Pro (USD 20/mes); Upstash e gratuito para o volume do MVP |
+
+---
+
+## ADR-018 — Sistema de Feedback Comunitario com Pipeline de Triage por IA
+
+**Status:** ACEITO  
+**Data:** 2026-06-07  
+**Decisao:** Feedback como forum publico com pipeline semi-autonomo: submissao → triage Claude (Edge Function) → aprovacao admin em dois estagios → desconto 50% via Asaas
+
+### Contexto
+
+Alunas e instrutoras precisam de um canal estruturado para sugerir melhorias ao produto.
+O feedback deve ser visivel a toda a comunidade autenticada (nao atrelado a uma observacao
+especifica), rastreavel para o admin, e recompensar sugestoes de alta qualidade com desconto
+na assinatura. A triage manual pelo admin e inviavel em escala — Claude classifica e pontua
+automaticamente cada submissao antes de exibir ao admin.
+
+Restricoes de dados:
+- Feedback e dado publico: qualquer usuario autenticado pode ler e criar posts.
+- Conteudo de feedback NUNCA deve incluir dados clinicos (stamps, observacoes, notas,
+  relacoes sexuais). O frontend e o backend devem bloquear qualquer referencia a esses
+  campos — restricao equivalente a LGPD Art. 11 (dados de saude).
+- O pipeline de IA processa apenas o texto livre do post (titulo + conteudo) — sem
+  acesso a tabelas de observacoes ou ciclos.
+
+### Decisao
+
+**Arquitetura do pipeline (sequencia):**
+
+```
+[Usuario] POST /api/feedback          → status='pending_triage'
+[Vercel Cron 0 * * * *]              → GET /api/cron/feedback-triage
+[Edge Function feedback-triage]       → Claude classifica cada pending_triage
+[Claude output]                       → UPDATE app_feedback SET triage_result, status='pending_admin'
+[Admin notificado]                    → WhatsApp (ADR-011) + Email (ADR-019)
+[Admin aprova]                        → PATCH /api/feedback/:id/approve → status='approved'
+[Admin confirma apos deploy]          → PATCH /api/feedback/:id/final-approve → status='final_approved'
+[Sistema]                             → notifica usuario + aplica desconto 50% Asaas (ADR-015)
+```
+
+**Aprovacao em dois estagios — justificativa:**
+
+Estagio `approved`: admin decide implementar (backlog). Estagio `final_approved`: admin
+confirma que a feature esta em producao. O desconto e emitido APENAS apos confirmacao de
+deploy — evitar prometer recompensa por feature nao entregue.
+
+Registro de auditoria: `approved_at`, `approved_by`, `approval_note` gravados em banco
+em ambos os estagios para rastreabilidade completa.
+
+**Classificacao por IA — dois tipos mutuamente exclusivos:**
+
+| Tipo | Descricao |
+|---|---|
+| `billings_method` | Sugestao relacionada ao Metodo de Ovulacao Billings (educacao, terminologia, fluxo clinico) |
+| `app_functionality` | Sugestao de UX, nova feature, bug report, melhoria de interface |
+
+**Output estruturado da triage Claude:**
+
+```typescript
+interface FeedbackTriageResult {
+  type: 'billings_method' | 'app_functionality';
+  impact: 'low' | 'medium' | 'high' | 'critical';
+  perceived_value: number;       // 0–100
+  roadmap: string;               // descricao de onde se encaixa no roadmap
+  agents: string[];              // agentes do pipeline recomendados para implementar
+  skills: string[];              // skills do pipeline recomendadas
+  costs: string;                 // estimativa de custo de implementacao
+  summary: string;               // resumo da sugestao em 2-3 frases
+}
+```
+
+**Tabelas novas — schema SQL:**
+
+```sql
+-- Tabela principal de feedback
+CREATE TABLE app_feedback (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title           TEXT NOT NULL CHECK (char_length(title) BETWEEN 5 AND 200),
+  content         TEXT NOT NULL CHECK (char_length(content) BETWEEN 20 AND 2000),
+  -- Pipeline status
+  status          TEXT NOT NULL DEFAULT 'pending_triage'
+                  CHECK (status IN (
+                    'pending_triage',
+                    'pending_admin',
+                    'approved',
+                    'rejected',
+                    'final_approved'
+                  )),
+  -- Triage por IA
+  triage_result   JSONB,                    -- FeedbackTriageResult ou null
+  triage_at       TIMESTAMPTZ,
+  -- Aprovacao admin estagio 1
+  approved_at     TIMESTAMPTZ,
+  approved_by     UUID REFERENCES auth.users(id),
+  approval_note   TEXT,
+  -- Aprovacao admin estagio 2 (final)
+  final_approved_at   TIMESTAMPTZ,
+  final_approved_by   UUID REFERENCES auth.users(id),
+  final_approval_note TEXT,
+  -- Auditoria
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Comentarios no feedback (forum)
+CREATE TABLE app_feedback_comments (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  feedback_id UUID NOT NULL REFERENCES app_feedback(id) ON DELETE CASCADE,
+  author_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  content     TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 1000),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Registro de descontos emitidos
+CREATE TABLE app_feedback_discounts (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  feedback_id         UUID NOT NULL REFERENCES app_feedback(id) ON DELETE CASCADE,
+  beneficiary_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  asaas_discount_id   TEXT,                -- ID retornado pela Asaas
+  discount_percent    NUMERIC(5,2) NOT NULL DEFAULT 50.00,
+  applied_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status              TEXT NOT NULL DEFAULT 'applied'
+                      CHECK (status IN ('applied', 'failed', 'reversed'))
+);
+```
+
+**Politicas RLS:**
+
+```sql
+-- app_feedback: leitura publica para autenticados; escrita propria; campos admin via service role
+ALTER TABLE app_feedback ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "feedback_select_authenticated"
+  ON app_feedback FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "feedback_insert_own"
+  ON app_feedback FOR INSERT
+  WITH CHECK (auth.uid() = author_id);
+
+-- UPDATE de status/triage/aprovacao: somente service role (admin/cron)
+-- Nenhuma policy UPDATE para role authenticated — campos de aprovacao protegidos
+CREATE POLICY "feedback_update_service_only"
+  ON app_feedback FOR UPDATE
+  USING (auth.role() = 'service_role');
+
+-- app_feedback_comments: leitura e escrita para autenticados
+ALTER TABLE app_feedback_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "feedback_comments_select"
+  ON app_feedback_comments FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "feedback_comments_insert_own"
+  ON app_feedback_comments FOR INSERT
+  WITH CHECK (auth.uid() = author_id);
+
+-- app_feedback_discounts: somente service role pode ler e escrever
+ALTER TABLE app_feedback_discounts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "feedback_discounts_service_only"
+  ON app_feedback_discounts FOR ALL
+  USING (auth.role() = 'service_role');
+```
+
+**Vercel Cron — configuracao em vercel.json:**
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/feedback-triage",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+```
+
+O endpoint `/api/cron/feedback-triage` valida o header `Authorization: Bearer <CRON_SECRET>`
+(variavel de ambiente `CRON_SECRET`) antes de processar. Requests sem header valido
+retornam 401 fail-closed.
+
+**Notificacoes ao admin:**
+
+- WhatsApp: via `getWhatsAppAdapter()` (ADR-011) — template `billings_novo_feedback`
+- Email: via `getEmailAdapter()` (ADR-019) — template HTML estatico com link direto ao painel admin
+- Ambos enviados ao finalizar triage (`pending_admin`)
+
+**Desconto via Asaas:**
+
+```typescript
+// Novo metodo adicionado a AsaasPort (ADR-015)
+applySubscriptionDiscount(
+  subscriptionId: string,
+  discountPercent: number,  // 50
+  reason: string            // 'feedback_approved: <feedback_id>'
+): Promise<{ discountId: string }>
+```
+
+**Restricao clinica aplicada ao feedback:**
+
+O system prompt da triage Edge Function instrui Claude a rejeitar
+(`impact: 'low'`, `summary: 'Conteudo inapropriado'`) qualquer post que mencione
+classificacoes de ciclo como fertil, infertil, seguro ou inseguro.
+O schema Zod de `POST /api/feedback` rejeita conteudo com esses termos via regex antes
+de persistir.
+
+**Interfaces TypeScript:**
+
+```typescript
+// Domain entity — Feedback
+export interface AppFeedback {
+  id: string;
+  authorId: string;
+  title: string;
+  content: string;
+  status: 'pending_triage' | 'pending_admin' | 'approved' | 'rejected' | 'final_approved';
+  triageResult: FeedbackTriageResult | null;
+  triageAt: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  approvalNote: string | null;
+  finalApprovedAt: string | null;
+  finalApprovedBy: string | null;
+  finalApprovalNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FeedbackTriageResult {
+  type: 'billings_method' | 'app_functionality';
+  impact: 'low' | 'medium' | 'high' | 'critical';
+  perceived_value: number;
+  roadmap: string;
+  agents: string[];
+  skills: string[];
+  costs: string;
+  summary: string;
+}
+```
+
+**Endpoints novos (resumo):**
+
+| Metodo | Caminho | Auth | Descricao |
+|---|---|---|---|
+| POST | /api/feedback | JWT aluna/instrutora | Criar novo post de feedback |
+| GET | /api/feedback | JWT | Listar posts (paginado, sem dados clinicos) |
+| GET | /api/feedback/:id | JWT | Detalhe do post + comentarios |
+| POST | /api/feedback/:id/comments | JWT | Adicionar comentario |
+| PATCH | /api/feedback/:id/approve | JWT service_role (admin) | Aprovar para implementacao |
+| PATCH | /api/feedback/:id/final-approve | JWT service_role (admin) | Confirmar apos deploy + disparar desconto |
+| GET | /api/cron/feedback-triage | CRON_SECRET header | Processar fila pending_triage |
+
+### Consequencias positivas
+
+- Comunidade engajada: usuarios veem suas sugestoes evoluindo de `pending_triage` ate `final_approved`
+- Admin tem contexto rico (triage IA) antes de tomar decisao — reduz tempo de avaliacao
+- Auditabilidade completa: `approved_by`, `approved_at`, `approval_note` em banco
+- Desconto apenas apos confirmacao de deploy: protege contra promessas nao cumpridas
+- Conteudo de feedback isolado de dados clinicos por design (RLS + Zod schema)
+
+### Consequencias negativas
+
+- Edge Function adicional (`feedback-triage`) aumenta custo de compute Supabase
+- Vercel Cron: disponivel apenas em plano Hobby com 1 cron job — plano Hobby ja tem esse limite; sprint 8 ja usou o slot; se outro cron for necessario, exigira upgrade para Pro
+- Latencia de triage: ate 1 hora apos submissao (cron hourly) — aceitavel para feedback assíncrono
+- `applySubscriptionDiscount` e novo metodo em `AsaasPort` — requer atualizacao do `MockAsaasAdapter` e `AsaasCloudAdapter` (debito tecnico ate implementacao)
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Feedback por observacao (per-observation) | Feedback comunitario requer visibilidade ampla entre usuarios, nao contexto restrito de uma observacao individual |
+| Aprovacao em um unico estagio | Necessidade de notificar usuario APENAS apos confirmacao de deploy; aprovacao unica geraria desconto antes de a feature estar disponivel |
+| Triage sincrona (sem cron) | Adiciona latencia ao POST /api/feedback e expoe timeout de 10s do Vercel Hobby para chamadas Claude |
+| Triage manual pelo admin | Inviavel em escala; Claude fornece contexto estruturado (impact, agents, skills) que acelera decisao humana |
+
+---
+
+## ADR-019 — Resend como Provedor de Email Transacional
+
+**Status:** ACEITO  
+**Data:** 2026-06-07  
+**Decisao:** Resend como provedor de email transacional, implementado via hexagonal adapter (EmailPort + ResendEmailAdapter + MockEmailAdapter + emailFactory), seguindo o padrao estabelecido pelo WhatsApp adapter (ADR-011)
+
+### Contexto
+
+O sistema de feedback (ADR-018) e outras notificacoes ao admin (ex.: nova aluna vinculada,
+alerta de conflito de versao nao resolvido) requerem entrega de email transacional confiavel.
+O WhatsApp (ADR-009/ADR-011) cobre notificacoes urgentes para usuarios finais, mas email
+e o canal preferido para comunicacao admin-to-system e para logs de auditoria que precisam
+de historico persistente na caixa de entrada do admin.
+
+Restricao LGPD (Art. 7, 11):
+
+- Emails NUNCA devem conter dados clinicos (stamps, relacoes, notas, ciclo fertil/infertil).
+- Somente metadados de feedback sao transmitidos: titulo, ID do post, link de acao.
+- O `RESEND_API_KEY` deve ser tratado como segredo server-side — nunca exposto ao frontend.
+
+### Decisao
+
+**Provedor escolhido: Resend (resend.com)**
+
+Justificativa frente aos concorrentes avaliados:
+
+| Criterio | Resend | SendGrid | AWS SES | Nodemailer SMTP |
+|---|---|---|---|---|
+| DX para Vercel/Node.js | Excelente (SDK TypeScript nativo) | Boa | Media (requer conta AWS) | Fraca (sem garantias de entrega) |
+| Free tier | 100 emails/dia, 3.000/mes | 100 emails/dia | 62.000/mes (mas requer verificacao AWS) | N/A (custo de SMTP proprio) |
+| DPA disponivel (LGPD) | Sim (GDPR/LGPD — dados na UE) | Sim | Sim (AWS DPA) | N/A (operacao propria) |
+| TypeScript types | Nativos no SDK oficial | Via @types | Via AWS SDK | Via @types/nodemailer |
+| Complexidade de setup | Minima (API key + npm install) | Media | Alta (IAM, verificacao de dominio, SES policies) | Alta (servidor SMTP, SPF/DKIM manual) |
+
+**Arquitetura hexagonal — Port + Adapters + Factory:**
+
+```
+api/_lib/email/
+  EmailPort.ts             — interface TypeScript (contrato do dominio)
+  MockEmailAdapter.ts      — adapter de desenvolvimento (sem envio real; loga no console)
+  ResendEmailAdapter.ts    — adapter producao (Resend REST API via SDK oficial)
+  emailFactory.ts          — factory getEmailAdapter() — seleciona via EMAIL_ENV
+  index.ts                 — barrel export
+```
+
+Segue exatamente o padrao do WhatsApp adapter (`api/_lib/whatsapp/`), substituindo
+`WHATSAPP_ADAPTER=mock|cloud` por `EMAIL_ENV=mock|production`.
+
+**Interface EmailPort:**
+
+```typescript
+// api/_lib/email/EmailPort.ts
+
+/** Mensagem de email transacional. */
+export interface EmailMessage {
+  /** Destinatario — obrigatoriamente um endereco verificado no Resend (producao) */
+  to: string;
+  /** Assunto do email */
+  subject: string;
+  /**
+   * Corpo HTML do email.
+   * NUNCA incluir dados clinicos (stamps, relacoes, notas, ciclos ferteis/inferteis).
+   * LGPD Art. 11: dados de saude nao podem transitar por processadores externos sem
+   * base legal especifica — email transacional nao se qualifica.
+   */
+  html: string;
+  /** Corpo texto plano (fallback para clientes sem suporte a HTML) */
+  text?: string;
+}
+
+/** Resultado de envio retornado por qualquer implementacao. */
+export interface EmailSendResult {
+  success: boolean;
+  /** Presente quando success=true; ID opaco do email no provedor */
+  messageId?: string;
+  /** Presente quando success=false; descricao legivel do erro */
+  error?: string;
+}
+
+/**
+ * Hexagonal outbound port.
+ * Codigo de aplicacao depende apenas desta interface — nunca de um adapter concreto.
+ */
+export interface EmailPort {
+  sendEmail(message: EmailMessage): Promise<EmailSendResult>;
+  isAvailable(): boolean;
+}
+```
+
+**Factory — selecao por variavel de ambiente:**
+
+```typescript
+// api/_lib/email/emailFactory.ts
+import type { EmailPort } from './EmailPort';
+import { MockEmailAdapter } from './MockEmailAdapter';
+import { ResendEmailAdapter } from './ResendEmailAdapter';
+
+let instance: EmailPort | null = null;
+
+export function getEmailAdapter(): EmailPort {
+  if (instance !== null) return instance;
+
+  const env = process.env['EMAIL_ENV'];
+  instance = env === 'production'
+    ? new ResendEmailAdapter()
+    : new MockEmailAdapter();           // default: mock — seguro para dev e CI
+
+  return instance;
+}
+```
+
+**Templates de email — strings HTML estaticas:**
+
+Templates implementados como funcoes que retornam string HTML (sem React Email —
+evitar nova dependencia de build). Localizados em `api/_lib/email/templates/`:
+
+```
+api/_lib/email/templates/
+  feedbackPendingAdmin.ts    — notificacao ao admin: novo feedback aguardando revisao
+  feedbackFinalApproved.ts   — notificacao ao usuario: sua sugestao foi implementada
+```
+
+Cada template recebe apenas parametros tipados sem dados clinicos:
+
+```typescript
+// Exemplo: feedbackPendingAdmin.ts
+export function feedbackPendingAdminHtml(params: {
+  feedbackId: string;
+  feedbackTitle: string;
+  triageSummary: string;
+  triageImpact: string;
+  adminPanelUrl: string;
+}): string { ... }
+```
+
+**Variaveis de ambiente novas:**
+
+```bash
+RESEND_API_KEY=re_...           # Chave API do Resend — somente server-side, nunca exposta
+EMAIL_FROM=noreply@billings.app # Remetente verificado no Resend
+EMAIL_ADMIN=admin@billings.app  # Destinatario das notificacoes admin
+EMAIL_ENV=mock                  # 'mock' em dev/CI; 'production' em Vercel production
+```
+
+**Pacote novo:**
+
+```bash
+npm install resend
+# billings-mob/package.json (escopo api/)
+```
+
+**Inventario de fornecedores (LGPD / ISO 27001 A.5.19):**
+
+Resend adicionado ao `/home/juliocsanto/billings/docs/dpa-inventory.md` como
+processador de dados de categoria "email transacional". DPA disponivel em
+resend.com/legal/dpa — conforme GDPR; compativel com LGPD por equivalencia.
+Revisao anual de DPA agendada junto com demais fornecedores (Supabase, Vercel, Meta).
+
+**Bounded Context:**
+
+O EmailPort pertence a camada Infrastructure do bounded context NOTIFICATIONS.
+A camada Application (use cases do sistema de feedback) depende apenas de `EmailPort`
+— nunca de `ResendEmailAdapter` diretamente. Isso garante que a troca de provedor
+(ex.: migrar para SendGrid) nao afeta nenhum use case.
+
+### Consequencias positivas
+
+- Free tier (3.000 emails/mes) suficiente para MVP e fase beta com dezenas de instrutoras
+- SDK TypeScript nativo: zero erros de tipo em tempo de compilacao
+- Padrao hexagonal identico ao WhatsApp e Asaas: time ja conhece o padrao — onboarding zero
+- MockEmailAdapter: CI nunca envia email real — sem risco de spam em ambiente de teste
+- Templates como strings HTML: sem nova dependencia de build (React Email rejeitado)
+- DPA disponivel: conformidade LGPD documentada sem esforco adicional
+
+### Consequencias negativas
+
+- Dependencia externa adicional: Resend (nao e auto-hospedado)
+- Free tier limitado: 3.000 emails/mes — monitorar ao escalar para centenas de instrutoras
+- Entregabilidade depende de configuracao SPF/DKIM no dominio `billings.app`
+  (acao manual necessaria antes de ativar `EMAIL_ENV=production`)
+- Templates HTML estaticos: sem preview visual integrado — testar via MockEmailAdapter
+  que loga o HTML no console
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| SendGrid | API mais complexa, preco mais alto na escala, DX inferior ao Resend para Vercel/Node.js |
+| AWS SES | Requer conta AWS, IAM, verificacao de sandbox — complexidade desproporcional para o porte do MVP |
+| Nodemailer + SMTP proprio | Sem garantias de entrega, gestao de servidor SMTP propria, SPF/DKIM manuais — operacional inviavel para time de 2 pessoas |
+| React Email (templates) | Nova dependencia de build (React no servidor); overhead injustificado para 2 templates iniciais — revisitar se templates ultrapassarem 10 |
 
 ---

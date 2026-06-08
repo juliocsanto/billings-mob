@@ -26,6 +26,7 @@ async function setupAuthenticatedSession(page: Page): Promise<void> {
     access_token: 'mock-access-token',
     refresh_token: 'mock-refresh-token',
     expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
     token_type: 'bearer',
     user: {
       id: 'mock-aluna-uuid-001',
