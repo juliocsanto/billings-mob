@@ -101,7 +101,7 @@ app.get('/', async (c) => {
     }
   }
 
-  console.log(`[cron/feedback-triage] completed: processed=${processed}, errors=${errors.length}`);
+  console.warn(`[cron/feedback-triage] completed: processed=${processed}, errors=${errors.length}`);
 
   return c.json({
     processed,

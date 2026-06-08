@@ -79,7 +79,7 @@ describe('AsaasCloudAdapter.applySubscriptionDiscount', () => {
     expect(result.success).toBe(true);
     expect(result.discountId).toBe('sub_001');
 
-    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, options] = fetchMock.mock.calls[0] as [string, { method?: string; body?: string; headers?: Record<string, string> }];
     expect(url).toContain('/subscriptions/sub_001');
     expect(options.method).toBe('PUT');
 
@@ -118,7 +118,7 @@ describe('AsaasCloudAdapter.applySubscriptionDiscount', () => {
     const adapter = new AsaasCloudAdapter();
     await adapter.applySubscriptionDiscount('sub_001', 50, 'feedback_approved: secret-id');
 
-    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [, options] = fetchMock.mock.calls[0] as [string, { method?: string; body?: string; headers?: Record<string, string> }];
     const body = JSON.parse(options.body as string) as Record<string, unknown>;
 
     // reason must NOT be in the Asaas request (it's local audit trail only)

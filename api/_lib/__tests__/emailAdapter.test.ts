@@ -164,7 +164,7 @@ describe('ResendEmailAdapter', () => {
     expect(result.success).toBe(true);
     expect(result.messageId).toBe('resend-msg-001');
 
-    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, options] = fetchMock.mock.calls[0] as [string, { method?: string; body?: string; headers?: Record<string, string> }];
     expect(url).toBe('https://api.resend.com/emails');
     expect((options.headers as Record<string, string>)['Authorization']).toBe(
       'Bearer re_test_abc123',
