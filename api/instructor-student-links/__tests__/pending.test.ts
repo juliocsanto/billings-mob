@@ -75,7 +75,7 @@ vi.mock('../../_lib/supabaseClient', () => ({
 }));
 
 // Import AFTER mocks are in place
-import app from '../pending';
+import app from '../index';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ describe('GET /api/instructor-student-links/pending', () => {
 
   // AC-1: Returns 401 without token
   it('returns 401 when no Authorization header is provided', async () => {
-    const res = await app.request('/');
+    const res = await app.request('/pending');
 
     expect(res.status).toBe(401);
     const json = await res.json() as { error: string };
@@ -112,7 +112,7 @@ describe('GET /api/instructor-student-links/pending', () => {
 
   // AC-2: Returns 403 if role is not instructor
   it('returns 403 when caller is a student (role != instructor)', async () => {
-    const res = await app.request('/', { headers: studentHeaders });
+    const res = await app.request('/pending', { headers: studentHeaders });
 
     expect(res.status).toBe(403);
     const json = await res.json() as { error: string };
@@ -127,7 +127,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { links: unknown[] };
@@ -143,7 +143,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: [rawLink], error: null }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as {
@@ -179,7 +179,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: [ownLink], error: null }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { links: Array<{ id: string }> };
@@ -195,7 +195,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: null, error: new Error('DB error') }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
 
     expect(res.status).toBe(500);
     const json = await res.json() as { error: string };
@@ -217,7 +217,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: [link1, link2], error: null }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
 
     expect(res.status).toBe(200);
     const json = await res.json() as { links: Array<{ student_name: string }> };
@@ -235,7 +235,7 @@ describe('GET /api/instructor-student-links/pending', () => {
       order: vi.fn().mockResolvedValue({ data: [rawLink], error: null }),
     });
 
-    const res = await app.request('/', { headers: instructorHeaders });
+    const res = await app.request('/pending', { headers: instructorHeaders });
     const body = await res.text();
 
     expect(body).not.toMatch(/fertil/i);
@@ -259,7 +259,7 @@ describe('GET /pending — defense-in-depth: explicit instructor_id filter', () 
       order: mockOrder,
     });
 
-    await app.request('/', { headers: instructorHeaders });
+    await app.request('/pending', { headers: instructorHeaders });
 
     // The handler must explicitly filter by instructor_id regardless of RLS
     const eqCalls = mockEq.mock.calls as [string, unknown][];
@@ -279,7 +279,7 @@ describe('GET /pending — defense-in-depth: explicit instructor_id filter', () 
       order: mockOrder,
     });
 
-    await app.request('/', { headers: instructorHeaders });
+    await app.request('/pending', { headers: instructorHeaders });
 
     const eqCalls = mockEq.mock.calls as [string, unknown][];
     const hasStatusFilter = eqCalls.some(

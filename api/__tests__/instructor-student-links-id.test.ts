@@ -70,7 +70,7 @@ vi.mock('../_lib/supabaseClient', () => ({
   })),
 }));
 
-import app from '../instructor-student-links/[id]';
+import app from '../instructor-student-links/index';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

@@ -1,10 +1,15 @@
 /**
  * GET /api/feedback  — lista posts de feedback (paginado)
  * POST /api/feedback — cria novo post de feedback
+ * GET  /api/cron/feedback-triage — Vercel Cron worker (consolidated to stay within 12-function Hobby limit)
+ *
+ * Note: the cron route is reached via vercel.json rewrite:
+ *   /api/cron/feedback-triage → /api/feedback/index
+ * This consolidation keeps the function count at 11 (Hobby plan limit: 12).
  *
  * Vercel Serverless Function (Node.js runtime, Hono.js handler).
  * ADR-018: Sistema de Feedback Comunitário com Pipeline de Triage por IA
- * ADR-005: Requer Supabase JWT no header Authorization
+ * ADR-005: Requer Supabase JWT no header Authorization (feedback routes)
  * ADR-003: RLS da Supabase enforça isolamento de dados
  *
  * LGPD: feedback é dado público do usuário (não clínico).
@@ -28,6 +33,91 @@ import {
 } from './schema';
 
 const app = new Hono();
+
+// ─── GET /api/cron/feedback-triage (Vercel Cron — no JWT, uses CRON_SECRET) ──
+// This route is mounted before the global requireAuth middleware.
+
+app.get('/cron/feedback-triage', async (c) => {
+  const cronSecret = process.env['CRON_SECRET'];
+  if (!cronSecret) {
+    console.error('[cron/feedback-triage] CRON_SECRET not configured — rejecting all requests');
+    return c.json({ error: 'service_unavailable' }, 503);
+  }
+
+  const authHeader = c.req.header('Authorization');
+  const provided = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const vercelCronHeader = c.req.header('x-vercel-cron-secret');
+
+  if (provided !== cronSecret && vercelCronHeader !== cronSecret) {
+    return c.json({ error: 'unauthorized' }, 401);
+  }
+
+  const serviceClient = createServiceClient();
+
+  const { data: pendingItems, error: fetchError } = await serviceClient
+    .from('app_feedback')
+    .select('id')
+    .eq('status', 'pending_triage')
+    .order('created_at', { ascending: true })
+    .limit(50);
+
+  if (fetchError) {
+    console.error('[cron/feedback-triage] fetch error:', fetchError.message);
+    return c.json({ error: 'fetch_failed', message: fetchError.message }, 500);
+  }
+
+  if (!pendingItems || pendingItems.length === 0) {
+    return c.json({ processed: 0, errors: [], message: 'No pending feedback' });
+  }
+
+  const supabaseUrl = process.env['SUPABASE_URL'] ?? '';
+  const serviceRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '';
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('[cron/feedback-triage] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    return c.json({ error: 'configuration_error' }, 500);
+  }
+
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/feedback-triage`;
+
+  let processed = 0;
+  const errors: string[] = [];
+
+  for (const item of pendingItems as Array<{ id: string }>) {
+    try {
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ feedbackId: item.id }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => `http_${response.status}`);
+        errors.push(`${item.id}: ${errorText}`);
+        console.warn(`[cron/feedback-triage] edge function failed for ${item.id}:`, errorText);
+      } else {
+        processed++;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`${item.id}: ${message}`);
+      console.warn(`[cron/feedback-triage] fetch error for ${item.id}:`, message);
+    }
+  }
+
+  console.warn(`[cron/feedback-triage] completed: processed=${processed}, errors=${errors.length}`);
+
+  return c.json({
+    processed,
+    errors,
+    total: (pendingItems as Array<{ id: string }>).length,
+  });
+});
+
+// ─── Global middleware for feedback routes ─────────────────────────────────────
 
 app.use('*', apiRateLimit);
 app.use('*', requireAuth);

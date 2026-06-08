@@ -16,27 +16,27 @@
   "rewrites": [
     {
       "source": "/api/feedback/:id/comments",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback/:id/approve",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback/:id/reject",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback/:id/mark-deployed",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback/:id/final-approve",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback/:id",
-      "destination": "/api/feedback/[id]/index"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/feedback",
@@ -44,7 +44,7 @@
     },
     {
       "source": "/api/cron/feedback-triage",
-      "destination": "/api/cron/feedback-triage"
+      "destination": "/api/feedback/index"
     },
     {
       "source": "/api/observations/versions/:path*",
@@ -72,11 +72,11 @@
     },
     {
       "source": "/api/instructor-student-links/pending",
-      "destination": "/api/instructor-student-links/pending"
+      "destination": "/api/instructor-student-links/index"
     },
     {
       "source": "/api/instructor-student-links/:id",
-      "destination": "/api/instructor-student-links/[id]"
+      "destination": "/api/instructor-student-links/index"
     },
     {
       "source": "/api/instructor-student-links",
