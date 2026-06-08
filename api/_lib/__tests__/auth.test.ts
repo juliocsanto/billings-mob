@@ -49,7 +49,7 @@ vi.mock('../supabaseClient', () => ({
   createServiceClient: vi.fn(),
 }));
 
-import { requireAuth } from '../auth';
+import { requireAuth, requireAdmin } from '../auth';
 
 // ─── Test app setup ──────────────────────────────────────────────────────────
 
@@ -238,5 +238,61 @@ describe('requireAuth middleware', () => {
     });
 
     expect(createAuthenticatedClient).toHaveBeenCalledWith(MOCK_JWT);
+  });
+});
+
+// ─── requireAdmin middleware ──────────────────────────────────────────────────
+
+describe('requireAdmin middleware', () => {
+  function buildAdminApp() {
+    const app = new Hono();
+    app.use('*', requireAdmin);
+    app.get('/admin', (c) => c.json({ ok: true }));
+    return app;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('calls next() when auth context has role admin', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: MOCK_USER_ID, user_metadata: {} } },
+      error: null,
+    });
+    mockProfileSingle.mockResolvedValue({ data: { role: 'admin' }, error: null });
+
+    const app = buildAdminApp();
+    const res = await app.request('/admin', {
+      headers: { Authorization: `Bearer ${MOCK_JWT}` },
+    });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 403 when auth context has role student', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: MOCK_USER_ID, user_metadata: {} } },
+      error: null,
+    });
+    mockProfileSingle.mockResolvedValue({ data: { role: 'student' }, error: null });
+
+    const app = buildAdminApp();
+    const res = await app.request('/admin', {
+      headers: { Authorization: `Bearer ${MOCK_JWT}` },
+    });
+
+    expect(res.status).toBe(403);
+    const json = await res.json() as { error: string };
+    expect(json.error).toBe('Forbidden');
+  });
+
+  it('returns 401 when no Authorization header is present', async () => {
+    const app = buildAdminApp();
+    const res = await app.request('/admin');
+
+    expect(res.status).toBe(401);
+    const json = await res.json() as { error: string };
+    expect(json.error).toBe('Unauthorized');
   });
 });
