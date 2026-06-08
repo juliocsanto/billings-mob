@@ -19,7 +19,6 @@
  */
 
 import { Hono } from 'hono';
-import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { handle } from 'hono/vercel';
 import { requireAuth } from '../_lib/auth';
@@ -31,16 +30,14 @@ import { getNotificationService } from '../_lib/notifications/factory';
 
 // ─── pending endpoint types ───────────────────────────────────────────────────
 
-const PendingLinkItemSchema = z.object({
-  id: z.string().uuid(),
-  student_id: z.string().uuid(),
-  student_name: z.string(),
-  student_email: z.string().email(),
-  status: z.literal('pending'),
-  invited_at: z.string(),
-});
-
-type PendingLinkItem = z.infer<typeof PendingLinkItemSchema>;
+type PendingLinkItem = {
+  id: string;
+  student_id: string;
+  student_name: string;
+  student_email: string;
+  status: 'pending';
+  invited_at: string;
+};
 
 interface RawLinkRow {
   id: string;
