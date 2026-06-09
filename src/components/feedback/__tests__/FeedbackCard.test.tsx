@@ -18,18 +18,40 @@ import type { FeedbackItem } from '../../../types/feedback';
 
 afterEach(() => cleanup());
 
-const MOCK_ITEM: FeedbackItem = {
-  id: 'abc-123',
-  author_id: 'user-1',
-  author_role: 'student',
-  category: 'feature',
-  title: 'Adicionar modo escuro',
-  content: 'Seria ótimo ter um modo escuro no aplicativo.',
-  status: 'pending_triage',
-  discount_applied: false,
-  comment_count: 3,
-  created_at: '2026-06-01T10:00:00Z',
-};
+// ── Mock react-i18next so components render with pt-BR values ─────────────────
+vi.mock('react-i18next', () => {
+  const keys: Record<string, string> = {
+    'feedback.categoryLabelBug':         'Erro',
+    'feedback.categoryLabelFeature':     'Nova funcionalidade',
+    'feedback.categoryLabelImprovement': 'Melhoria',
+    'feedback.cardAriaLabel':            'Feedback: {{title}}. Status: {{status}}. Clique para ver detalhes.',
+    'feedback.commentCountAria':         '{{count}} comentário',
+    'feedback.commentCountAria_plural':  '{{count}} comentários',
+    'feedback.statusPendingTriage':      'Em análise',
+    'feedback.statusTriaged':            'Aguardando aprovação',
+    'feedback.statusPendingApproval':    'Aguardando aprovação',
+    'feedback.statusApproved':           'Aprovado',
+    'feedback.statusImplementing':       'Aprovado',
+    'feedback.statusDeployed':           'Em validação',
+    'feedback.statusFinalApproved':      'Implementado',
+    'feedback.statusRejected':           'Rejeitado',
+    'feedback.statusAriaLabel':          'Status: {{label}}',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string, params?: Record<string, unknown>) => {
+        let val = keys[key] ?? key;
+        if (params) {
+          Object.entries(params).forEach(([k, v]) => {
+            val = val.replace(`{{${k}}}`, String(v));
+          });
+        }
+        return val;
+      },
+      i18n: { language: 'pt-BR', changeLanguage: vi.fn() },
+    }),
+  };
+});
 
 // Mock constants.js (no actual Tailwind/DS in jsdom)
 vi.mock('../../../constants.js', () => ({
@@ -45,6 +67,19 @@ vi.mock('../../../constants.js', () => ({
     primaryBorder: '#C7D4EC',
   },
 }));
+
+const MOCK_ITEM: FeedbackItem = {
+  id: 'abc-123',
+  author_id: 'user-1',
+  author_role: 'student',
+  category: 'feature',
+  title: 'Adicionar modo escuro',
+  content: 'Seria ótimo ter um modo escuro no aplicativo.',
+  status: 'pending_triage',
+  discount_applied: false,
+  comment_count: 3,
+  created_at: '2026-06-01T10:00:00Z',
+};
 
 describe('FeedbackCard', () => {
   it('renders the feedback title via data-testid', () => {

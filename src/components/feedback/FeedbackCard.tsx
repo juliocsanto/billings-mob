@@ -7,8 +7,10 @@
  * Restrição clínica: NUNCA exibe termos de classificação de ciclo.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
+import { useTranslation } from 'react-i18next';
 import type { FeedbackCategory, FeedbackItem } from '../../types/feedback';
 import { FeedbackStatusBadge } from './FeedbackStatusBadge';
 import { DS } from '../../constants.js';
@@ -18,10 +20,10 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-const CATEGORY_LABEL: Record<FeedbackCategory, string> = {
-  bug: 'Erro',
-  feature: 'Nova funcionalidade',
-  improvement: 'Melhoria',
+const CATEGORY_LABEL_KEY: Record<FeedbackCategory, string> = {
+  bug:         'feedback.categoryLabelBug',
+  feature:     'feedback.categoryLabelFeature',
+  improvement: 'feedback.categoryLabelImprovement',
 };
 
 const CATEGORY_COLOR: Record<FeedbackCategory, { color: string; bg: string; border: string }> = {
@@ -43,7 +45,9 @@ function formatDate(iso: string): string {
 }
 
 export function FeedbackCard({ item, onSelect }: Props) {
+  const { t } = useTranslation();
   const catStyle = CATEGORY_COLOR[item.category] ?? CATEGORY_COLOR.improvement;
+  const categoryLabel = t(CATEGORY_LABEL_KEY[item.category] ?? 'feedback.categoryLabelImprovement');
 
   const handleClick = () => onSelect(item.id);
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -58,7 +62,7 @@ export function FeedbackCard({ item, onSelect }: Props) {
       role="button"
       tabIndex={0}
       data-testid={`feedback-card-${item.id}`}
-      aria-label={`Feedback: ${item.title}. Status: ${item.status}. Clique para ver detalhes.`}
+      aria-label={t('feedback.cardAriaLabel', { title: item.title, status: item.status })}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       style={{
@@ -93,7 +97,7 @@ export function FeedbackCard({ item, onSelect }: Props) {
             padding: '2px 8px',
           }}
         >
-          {CATEGORY_LABEL[item.category]}
+          {categoryLabel}
         </span>
         <FeedbackStatusBadge status={item.status} />
       </div>
@@ -124,7 +128,14 @@ export function FeedbackCard({ item, onSelect }: Props) {
       >
         <span>{formatDate(item.created_at)}</span>
         {item.comment_count !== null && item.comment_count !== undefined && item.comment_count > 0 && (
-          <span aria-label={`${item.comment_count} comentário${item.comment_count !== 1 ? 's' : ''}`}>
+          <span
+            aria-label={t(
+              item.comment_count !== 1
+                ? 'feedback.commentCountAria_plural'
+                : 'feedback.commentCountAria',
+              { count: item.comment_count },
+            )}
+          >
             💬 {item.comment_count}
           </span>
         )}
