@@ -10,9 +10,11 @@
  * Restrição clínica: NUNCA exibe termos de classificação de ciclo.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FeedbackCategory } from '../../types/feedback';
 import { useListFeedback } from '../../hooks/useFeedback';
 import { FeedbackCard } from './FeedbackCard';
@@ -27,13 +29,6 @@ interface Props {
 const PAGE_SIZE = 10;
 
 type CategoryFilter = FeedbackCategory | 'all';
-
-const FILTER_TABS: Array<{ value: CategoryFilter; label: string }> = [
-  { value: 'all', label: 'Todos' },
-  { value: 'bug', label: 'Erros' },
-  { value: 'feature', label: 'Funcionalidades' },
-  { value: 'improvement', label: 'Melhorias' },
-];
 
 function SkeletonCard() {
   return (
@@ -79,6 +74,7 @@ function SkeletonCard() {
 }
 
 export function FeedbackList({ token, onSelectFeedback }: Props) {
+  const { t } = useTranslation();
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [showNewModal, setShowNewModal] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -87,6 +83,13 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
     token,
     categoryFilter !== 'all' ? { category: categoryFilter } : undefined,
   );
+
+  const FILTER_TABS: Array<{ value: CategoryFilter; label: string }> = [
+    { value: 'all',         label: t('feedback.filterAll') },
+    { value: 'bug',         label: t('feedback.filterBug') },
+    { value: 'feature',     label: t('feedback.filterFeature') },
+    { value: 'improvement', label: t('feedback.filterImprovement') },
+  ];
 
   const visibleItems = items.slice(0, visibleCount);
   const hasMore = items.length > visibleCount;
@@ -117,17 +120,17 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
             marginBottom: 4,
           }}
         >
-          Sugestões da comunidade
+          {t('feedback.pageTitle')}
         </div>
         <div style={{ fontSize: 12, color: DS.textSec }}>
-          Compartilhe ideias e acompanhe melhorias no aplicativo
+          {t('feedback.pageSubtitle')}
         </div>
       </div>
 
       {/* Category filter tabs */}
       <div
         role="tablist"
-        aria-label="Filtrar por categoria"
+        aria-label={t('feedback.filterAriaLabel')}
         style={{
           display: 'flex',
           overflowX: 'auto',
@@ -178,7 +181,7 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
               marginBottom: 16,
             }}
           >
-            Erro ao carregar sugestões: {error}
+            {t('feedback.errorLoad', { error })}
             <button
               onClick={refresh}
               style={{
@@ -192,14 +195,14 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
                 textDecoration: 'underline',
               }}
             >
-              Tentar novamente
+              {t('feedback.retry')}
             </button>
           </div>
         )}
 
         {/* Loading skeletons */}
         {loading && items.length === 0 && (
-          <div role="status" aria-label="Carregando sugestões...">
+          <div role="status" aria-label={t('feedback.loadingAria')}>
             {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
           </div>
         )}
@@ -221,12 +224,12 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
                 marginBottom: 6,
               }}
             >
-              Nenhuma sugestão ainda
+              {t('feedback.emptyTitle')}
             </div>
             <div style={{ fontSize: 13 }}>
               {categoryFilter !== 'all'
-                ? 'Nenhuma sugestão nesta categoria. Tente outro filtro.'
-                : 'Seja a primeira a enviar uma sugestão!'}
+                ? t('feedback.emptyCategory')
+                : t('feedback.emptyAll')}
             </div>
           </div>
         )}
@@ -245,7 +248,7 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
           <button
             data-testid="load-more-btn"
             onClick={handleLoadMore}
-            aria-label="Carregar mais sugestões"
+            aria-label={t('feedback.loadMoreAria')}
             style={{
               width: '100%',
               background: 'transparent',
@@ -260,7 +263,7 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
               marginTop: 8,
             }}
           >
-            Carregar mais ({items.length - visibleCount} restantes)
+            {t('feedback.loadMore', { count: items.length - visibleCount })}
           </button>
         )}
       </div>
@@ -269,7 +272,7 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
       <button
         data-testid="new-feedback-fab"
         onClick={() => setShowNewModal(true)}
-        aria-label="Criar nova sugestão"
+        aria-label={t('feedback.newFeedbackFabLabel')}
         style={{
           position: 'fixed',
           bottom: 90,
@@ -291,7 +294,7 @@ export function FeedbackList({ token, onSelectFeedback }: Props) {
           transition: 'transform 0.15s',
         }}
       >
-        + Nova sugestão
+        {t('feedback.newFeedbackFab')}
       </button>
 
       {/* New feedback modal */}

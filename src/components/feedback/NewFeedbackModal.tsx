@@ -11,9 +11,11 @@
  * Não usar termos: fértil, infértil, seguro, inseguro em labels, placeholders ou mensagens.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FeedbackCategory } from '../../types/feedback';
 import { createFeedback } from '../../lib/feedbackApi';
 import { DS } from '../../constants.js';
@@ -30,18 +32,13 @@ interface FormErrors {
   content?: string;
 }
 
-const CATEGORY_OPTIONS: Array<{ value: FeedbackCategory; label: string }> = [
-  { value: 'bug', label: 'Erro no aplicativo' },
-  { value: 'feature', label: 'Nova funcionalidade' },
-  { value: 'improvement', label: 'Melhoria existente' },
-];
-
 const CONTENT_MAX = 2000;
 const TITLE_MIN = 5;
 const TITLE_MAX = 100;
 const CONTENT_MIN = 10;
 
 export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
+  const { t } = useTranslation();
   const [category, setCategory] = useState<FeedbackCategory | ''>('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -80,11 +77,11 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!category) newErrors.category = 'Selecione uma categoria.';
-    if (title.length < TITLE_MIN) newErrors.title = `O título deve ter pelo menos ${TITLE_MIN} caracteres.`;
-    if (title.length > TITLE_MAX) newErrors.title = `O título pode ter no máximo ${TITLE_MAX} caracteres.`;
-    if (content.length < CONTENT_MIN) newErrors.content = `Descreva com pelo menos ${CONTENT_MIN} caracteres.`;
-    if (content.length > CONTENT_MAX) newErrors.content = `O conteúdo pode ter no máximo ${CONTENT_MAX} caracteres.`;
+    if (!category) newErrors.category = t('feedback.categoryRequired');
+    if (title.length < TITLE_MIN) newErrors.title = t('feedback.titleTooShort', { min: TITLE_MIN });
+    if (title.length > TITLE_MAX) newErrors.title = t('feedback.titleTooLong', { max: TITLE_MAX });
+    if (content.length < CONTENT_MIN) newErrors.content = t('feedback.contentTooShort', { min: CONTENT_MIN });
+    if (content.length > CONTENT_MAX) newErrors.content = t('feedback.contentTooLong', { max: CONTENT_MAX });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,7 +97,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
       onSuccess();
       onClose();
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Erro ao enviar sugestão.');
+      setSubmitError(err instanceof Error ? err.message : t('feedback.submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -157,12 +154,12 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
               fontFamily: 'Cormorant Garamond, serif',
             }}
           >
-            Nova sugestão
+            {t('feedback.modalTitle')}
           </h2>
           <button
             data-testid="close-new-feedback-modal"
             onClick={onClose}
-            aria-label="Fechar modal de nova sugestão"
+            aria-label={t('feedback.modalCloseAria')}
             style={{
               background: 'none',
               border: 'none',
@@ -190,7 +187,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
               marginBottom: 6,
             }}
           >
-            Categoria
+            {t('feedback.categoryLabel')}
           </label>
           <select
             id="feedback-category"
@@ -212,12 +209,10 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
               boxSizing: 'border-box',
             }}
           >
-            <option value="">Selecione uma categoria...</option>
-            {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
+            <option value="">{t('feedback.categoryPlaceholder')}</option>
+            <option value="bug">{t('feedback.categoryOptionBug')}</option>
+            <option value="feature">{t('feedback.categoryOptionFeature')}</option>
+            <option value="improvement">{t('feedback.categoryOptionImprovement')}</option>
           </select>
           {errors.category && (
             <p id="category-error" role="alert" style={{ fontSize: 12, color: DS.error, margin: '4px 0 0' }}>
@@ -240,7 +235,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
               marginBottom: 6,
             }}
           >
-            Título
+            {t('feedback.titleLabel')}
           </label>
           <input
             id="feedback-title"
@@ -248,7 +243,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Resumo breve da sua sugestão"
+            placeholder={t('feedback.titlePlaceholder')}
             aria-describedby={errors.title ? 'title-error' : undefined}
             maxLength={TITLE_MAX}
             style={{
@@ -298,14 +293,14 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
               marginBottom: 6,
             }}
           >
-            Descrição
+            {t('feedback.descriptionLabel')}
           </label>
           <textarea
             id="feedback-content"
             data-testid="feedback-content-textarea"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Descreva sua sugestão com detalhes..."
+            placeholder={t('feedback.descriptionPlaceholder')}
             aria-describedby={errors.content ? 'content-error' : undefined}
             rows={5}
             maxLength={CONTENT_MAX}
@@ -372,7 +367,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
           data-testid="submit-feedback-btn"
           onClick={() => void handleSubmit()}
           disabled={submitting}
-          aria-label="Enviar sugestão"
+          aria-label={t('feedback.submitButtonAria')}
           style={{
             width: '100%',
             background: submitting ? DS.border : DS.primary,
@@ -388,7 +383,7 @@ export function NewFeedbackModal({ token, onClose, onSuccess }: Props) {
             transition: 'background 0.15s',
           }}
         >
-          {submitting ? 'Enviando...' : 'Enviar sugestão'}
+          {submitting ? t('feedback.submitButtonSubmitting') : t('feedback.submitButton')}
         </button>
       </div>
     </div>

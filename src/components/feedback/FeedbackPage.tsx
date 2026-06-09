@@ -7,9 +7,11 @@
  * Restrição clínica: NUNCA exibe termos de classificação de ciclo.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Session } from '@supabase/supabase-js';
 import { FeedbackList } from './FeedbackList';
 import { FeedbackDetail } from './FeedbackDetail';
@@ -22,6 +24,7 @@ interface Props {
 type FeedbackView = 'list' | 'detail';
 
 export function FeedbackPage({ session }: Props) {
+  const { t } = useTranslation();
   const [view, setView] = useState<FeedbackView>('list');
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<string | null>(null);
 
@@ -39,7 +42,7 @@ export function FeedbackPage({ session }: Props) {
           fontSize: 13,
         }}
       >
-        Faça login para acessar as sugestões da comunidade.
+        {t('feedback.loginRequired')}
       </div>
     );
   }

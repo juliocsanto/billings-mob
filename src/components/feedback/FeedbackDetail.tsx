@@ -8,9 +8,11 @@
  * Restrição clínica: NUNCA exibe termos de classificação de ciclo.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FeedbackCategory } from '../../types/feedback';
 import { FeedbackStatusBadge } from './FeedbackStatusBadge';
 import { CommentThread } from './CommentThread';
@@ -24,10 +26,10 @@ interface Props {
   onBack: () => void;
 }
 
-const CATEGORY_LABEL: Record<FeedbackCategory, string> = {
-  bug: 'Erro',
-  feature: 'Nova funcionalidade',
-  improvement: 'Melhoria',
+const CATEGORY_KEY: Record<FeedbackCategory, string> = {
+  bug:         'feedback.categoryLabelBug',
+  feature:     'feedback.categoryLabelFeature',
+  improvement: 'feedback.categoryLabelImprovement',
 };
 
 function formatDate(iso: string): string {
@@ -43,6 +45,7 @@ function formatDate(iso: string): string {
 }
 
 export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
+  const { t } = useTranslation();
   const { feedback, comments, loading, error, refresh } = useFeedbackDetail(token, feedbackId);
   const [submitting, setSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -54,7 +57,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
       await addComment(token, feedbackId, content);
       refresh();
     } catch (err) {
-      setCommentError(err instanceof Error ? err.message : 'Erro ao enviar comentário.');
+      setCommentError(err instanceof Error ? err.message : t('feedback.submitError'));
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +80,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
         <button
           data-testid="feedback-back-btn"
           onClick={onBack}
-          aria-label="Voltar para lista de sugestões"
+          aria-label={t('feedback.backAria')}
           style={{
             background: 'none',
             border: 'none',
@@ -92,7 +95,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
             gap: 6,
           }}
         >
-          ← Voltar
+          {t('feedback.backButton')}
         </button>
       </div>
 
@@ -103,7 +106,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
             aria-live="polite"
             style={{ textAlign: 'center', color: DS.textSec, fontSize: 13 }}
           >
-            Carregando...
+            {t('feedback.detailLoading')}
           </div>
         )}
 
@@ -119,7 +122,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
               fontSize: 13,
             }}
           >
-            Erro ao carregar: {error}
+            {t('feedback.detailErrorLoad', { error })}
           </div>
         )}
 
@@ -139,7 +142,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
                     padding: '2px 8px',
                   }}
                 >
-                  {CATEGORY_LABEL[feedback.category]}
+                  {t(CATEGORY_KEY[feedback.category] ?? 'feedback.categoryLabelImprovement')}
                 </span>
                 <FeedbackStatusBadge status={feedback.status} />
               </div>
@@ -179,7 +182,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
               >
                 <span style={{ color: DS.success, fontSize: 16 }}>✓</span>
                 <span style={{ fontSize: 13, color: DS.success, fontWeight: 600 }}>
-                  Esta sugestão foi implementada!
+                  {t('feedback.implementedBanner')}
                 </span>
               </div>
             )}
@@ -206,7 +209,7 @@ export function FeedbackDetail({ feedbackId, token, onBack }: Props) {
                     marginBottom: 4,
                   }}
                 >
-                  Motivo da rejeição
+                  {t('feedback.rejectionReasonLabel')}
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: DS.textMain, lineHeight: 1.6 }}>
                   {feedback.rejection_reason}

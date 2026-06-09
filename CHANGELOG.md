@@ -6,6 +6,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.4.1] - 2026-06-09
+
+### Added
+- i18n EN/PT-BR na área de feedback (sugestões da comunidade)
+
+---
+
 ## [1.4.0] — 2026-06-08
 
 ### Added

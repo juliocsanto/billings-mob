@@ -7,9 +7,11 @@
  * Restrição clínica: NUNCA exibe termos de classificação de ciclo.
  * LGPD: o campo `relations` nunca aparece aqui.
  * Usa inline styles (billings-mob não tem Tailwind).
+ * ADR-014: strings via useTranslation — namespace 'feedback'.
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FeedbackComment } from '../../types/feedback';
 import { DS } from '../../constants.js';
 
@@ -33,19 +35,20 @@ function formatDate(iso: string): string {
   }
 }
 
-const ROLE_LABEL: Record<string, string> = {
-  student:    'Aluna',
-  instructor: 'Instrutora',
-};
-
 export function CommentThread({ comments, submitting, onAddComment }: Props) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const ROLE_LABEL: Record<string, string> = {
+    student:    t('feedback.roleStudent'),
+    instructor: t('feedback.roleInstructor'),
+  };
 
   const handleSubmit = async () => {
     const trimmed = content.trim();
     if (!trimmed) {
-      setLocalError('O comentário não pode estar vazio.');
+      setLocalError(t('feedback.commentEmptyError'));
       return;
     }
     setLocalError(null);
@@ -59,8 +62,12 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
     }
   };
 
+  const commentsHeader = comments.length > 0
+    ? t('feedback.commentsHeaderWithCount', { count: comments.length })
+    : t('feedback.commentsHeader');
+
   return (
-    <section aria-label="Comentários">
+    <section aria-label={t('feedback.commentsSectionAria')}>
       <div
         style={{
           fontSize: 12,
@@ -71,7 +78,7 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
           marginBottom: 12,
         }}
       >
-        Comentários {comments.length > 0 && `(${comments.length})`}
+        {commentsHeader}
       </div>
 
       {/* Comment list */}
@@ -85,7 +92,7 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
             padding: '16px 0',
           }}
         >
-          Nenhum comentário ainda. Seja a primeira a comentar!
+          {t('feedback.commentsEmpty')}
         </div>
       ) : (
         <div style={{ marginBottom: 16 }}>
@@ -151,7 +158,7 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
             marginBottom: 6,
           }}
         >
-          Adicionar comentário
+          {t('feedback.commentInputLabel')}
         </label>
         <textarea
           id="new-comment-input"
@@ -159,8 +166,8 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escreva seu comentário... (Ctrl+Enter para enviar)"
-          aria-label="Novo comentário"
+          placeholder={t('feedback.commentInputPlaceholder')}
+          aria-label={t('feedback.commentInputAria')}
           rows={3}
           style={{
             width: '100%',
@@ -187,7 +194,7 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
           data-testid="submit-comment-btn"
           onClick={() => void handleSubmit()}
           disabled={submitting || !content.trim()}
-          aria-label="Enviar comentário"
+          aria-label={t('feedback.commentSubmitAria')}
           style={{
             background: content.trim() && !submitting ? DS.primary : DS.border,
             color: content.trim() && !submitting ? DS.surface : DS.textSec,
@@ -201,7 +208,7 @@ export function CommentThread({ comments, submitting, onAddComment }: Props) {
             transition: 'background 0.15s',
           }}
         >
-          {submitting ? 'Enviando...' : 'Comentar'}
+          {submitting ? t('feedback.commentSubmitting') : t('feedback.commentSubmit')}
         </button>
       </div>
     </section>

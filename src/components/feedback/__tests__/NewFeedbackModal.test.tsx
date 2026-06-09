@@ -18,6 +18,46 @@ import { NewFeedbackModal } from '../NewFeedbackModal';
 
 afterEach(() => cleanup());
 
+// ── Mock react-i18next so components render with pt-BR values ─────────────────
+vi.mock('react-i18next', () => {
+  const keys: Record<string, string> = {
+    'feedback.modalTitle':                'Nova sugestão',
+    'feedback.modalCloseAria':            'Fechar modal de nova sugestão',
+    'feedback.categoryLabel':             'Categoria',
+    'feedback.categoryPlaceholder':       'Selecione uma categoria...',
+    'feedback.categoryOptionBug':         'Erro no aplicativo',
+    'feedback.categoryOptionFeature':     'Nova funcionalidade',
+    'feedback.categoryOptionImprovement': 'Melhoria existente',
+    'feedback.categoryRequired':          'Selecione uma categoria.',
+    'feedback.titleLabel':                'Título',
+    'feedback.titlePlaceholder':          'Resumo breve da sua sugestão',
+    'feedback.titleTooShort':             'O título deve ter pelo menos {{min}} caracteres.',
+    'feedback.titleTooLong':              'O título pode ter no máximo {{max}} caracteres.',
+    'feedback.descriptionLabel':          'Descrição',
+    'feedback.descriptionPlaceholder':    'Descreva sua sugestão com detalhes...',
+    'feedback.contentTooShort':           'Descreva com pelo menos {{min}} caracteres.',
+    'feedback.contentTooLong':            'O conteúdo pode ter no máximo {{max}} caracteres.',
+    'feedback.submitButton':              'Enviar sugestão',
+    'feedback.submitButtonSubmitting':    'Enviando...',
+    'feedback.submitButtonAria':          'Enviar sugestão',
+    'feedback.submitError':               'Erro ao enviar sugestão.',
+  };
+  return {
+    useTranslation: () => ({
+      t: (key: string, params?: Record<string, unknown>) => {
+        let val = keys[key] ?? key;
+        if (params) {
+          Object.entries(params).forEach(([k, v]) => {
+            val = val.replace(`{{${k}}}`, String(v));
+          });
+        }
+        return val;
+      },
+      i18n: { language: 'pt-BR', changeLanguage: vi.fn() },
+    }),
+  };
+});
+
 vi.mock('../../../constants.js', () => ({
   DS: {
     surface: '#FFFFFF',
