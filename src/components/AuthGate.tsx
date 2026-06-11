@@ -30,7 +30,7 @@ interface AuthGateProps {
 
 export function AuthGate({ children }: AuthGateProps) {
   const { t, i18n } = useTranslation();
-  const { user, session, loading, signInWithMagicLink, signOut } = useAuth();
+  const { user, session, loading, signInWithMagicLink } = useAuth();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,39 +93,9 @@ export function AuthGate({ children }: AuthGateProps) {
 
   // State 3: authenticated — render app
   if (user && session) {
-    return (
-      <>
-        {/* Sign-out affordance + language selector — fixed to header area */}
-        <div style={{
-          position: 'fixed',
-          top: 8,
-          right: 12,
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <LanguageSelector />
-          <button
-            onClick={signOut}
-            title={t('auth.signOut')}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${DS.border}`,
-              borderRadius: 8,
-              padding: '4px 10px',
-              fontSize: 10,
-              color: DS.textSec,
-              cursor: 'pointer',
-              fontFamily: 'Lato, sans-serif',
-            }}
-          >
-            {t('auth.signOut')}
-          </button>
-        </div>
-        {children({ user, session })}
-      </>
-    );
+    // Language and sign-out moved into the Perfil tab (Sprint 6 UI refresh) —
+    // the floating bar collided with the daily reminder banner at 375px.
+    return <>{children({ user, session })}</>;
   }
 
   // State 2: no session — magic link login

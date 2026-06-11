@@ -13,3 +13,4 @@ coverage/
 # the plugin fails to delete them.
 *.map
 
+scripts/.test-credentials.env

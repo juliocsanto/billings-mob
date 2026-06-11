@@ -1,0 +1,83 @@
+/**
+ * Billings Gráfico — semantic design tokens (Wise-inspired DS).
+ *
+ * Single source of truth for color, shadow and radius. Consumed by Tailwind
+ * via `rgb(var(--color-*) / <alpha-value>)` so every utility class supports
+ * opacity modifiers and dark mode is a pure variable swap under `.dark`.
+ *
+ * ⚠ Copy-synced with billings-web/src/styles/tokens.css — the repos are
+ * independent; keep both files identical when editing.
+ *
+ * Values are space-separated RGB channels (Tailwind alpha syntax).
+ */
+
+:root {
+  /* Brand */
+  --color-primary: 55 81 126;          /* #37517E navy */
+  --color-primary-light: 235 240 248;  /* #EBF0F8 */
+  --color-secondary: 46 196 182;       /* #2EC4B6 teal */
+
+  /* Surfaces */
+  --color-bg: 247 248 250;             /* #F7F8FA app background */
+  --color-surface: 255 255 255;        /* cards */
+  --color-surface-raised: 255 255 255; /* modals / sheets */
+
+  /* Text */
+  --color-text-main: 26 43 74;         /* #1A2B4A */
+  --color-text-sec: 95 106 124;        /* #5F6A7C — AA on bg/surface */
+
+  /* Lines */
+  --color-border: 229 231 235;         /* #E5E7EB */
+
+  /* Feedback */
+  --color-success: 4 120 87;           /* #047857 — AA as text on white and on success-light */
+  --color-success-light: 209 250 229;  /* #D1FAE5 */
+  --color-warning: 146 64 14;          /* #92400E — AA as text on white and on warning-light */
+  --color-warning-light: 254 243 199;  /* #FEF3C7 */
+  --color-danger: 185 28 28;           /* #B91C1C — AA as text on white and on danger-light */
+  --color-danger-light: 254 226 226;   /* #FEE2E2 */
+
+  /* Navigation chrome (sidebar/drawer) — navy in light, surface in dark */
+  --color-nav: 26 43 74;               /* #1A2B4A */
+  --color-nav-fg: 247 248 250;         /* #F7F8FA */
+
+  /* Elevation */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 4px 24px rgba(26, 43, 74, 0.18);
+  --shadow-fab: 0 4px 12px rgba(26, 43, 74, 0.24);
+}
+
+.dark {
+  /* Brand — primary lightened so it passes AA both as fill (white text) and
+     as text on the dark background */
+  --color-primary: 122 150 198;        /* #7A96C6 */
+  --color-primary-light: 32 44 66;     /* #202C42 subtle tint */
+  --color-secondary: 46 196 182;       /* teal keeps its identity */
+
+  /* Surfaces — navy-tinted near-blacks */
+  --color-bg: 15 22 35;                /* #0F1623 */
+  --color-surface: 26 35 51;           /* #1A2333 */
+  --color-surface-raised: 35 46 66;    /* #232E42 */
+
+  /* Text */
+  --color-text-main: 232 236 244;      /* #E8ECF4 */
+  --color-text-sec: 154 164 182;       /* #9AA4B6 */
+
+  /* Lines */
+  --color-border: 51 63 84;            /* #333F54 */
+
+  /* Feedback — lightened for dark, deep tints for the *-light backgrounds */
+  --color-success: 52 211 153;         /* #34D399 */
+  --color-success-light: 6 44 34;      /* #062C22 */
+  --color-warning: 251 191 36;         /* #FBBF24 */
+  --color-warning-light: 54 40 3;      /* #362803 */
+  --color-danger: 248 113 113;         /* #F87171 */
+  --color-danger-light: 60 18 18;      /* #3C1212 */
+
+  --color-nav: 26 35 51;               /* #1A2333 */
+  --color-nav-fg: 232 236 244;         /* #E8ECF4 */
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 4px 24px rgba(0, 0, 0, 0.55);
+  --shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.5);
+}

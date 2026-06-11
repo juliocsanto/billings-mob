@@ -80,16 +80,16 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para a tab Gráfico (existe no header e no nav inferior)
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
 
     // Título da seção de gráfico deve aparecer
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
-    // Stats do ciclo: linha "Registros" confirma que o grid foi renderizado
-    await expect(page.getByText('Registros')).toBeVisible();
+    // Stats do ciclo: card "Registros" confirma que o grid foi renderizado
+    await expect(page.getByTestId('chart-stat-registros')).toBeVisible();
 
-    // Label da linha de números de dia
-    await expect(page.getByText('Ápice')).toBeVisible();
+    // Legenda do gráfico: contém a entrada de "Ápice" (stamp apice)
+    await expect(page.getByTestId('chart-legend-apice')).toBeVisible();
   });
 
   test('C2 — clicar em dia do ciclo atual abre o DayDetailModal', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para Gráfico
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
     // O ciclo atual é a view padrão (seletor "Atual" ativo).
@@ -121,8 +121,8 @@ test.describe('Observation — grid e DayDetailModal', () => {
       await expect(page.getByText(/dia \d+ do ciclo/i)).toBeVisible({ timeout: 5_000 });
     } else {
       // Fallback: o gráfico renderizou mas o círculo não foi encontrado via style
-      // Verifica que a tab Gráfico está ativa e mostra dados
-      await expect(page.getByText('Ápice')).toBeVisible();
+      // Verifica que a tab Gráfico está ativa e mostra dados (via stable testid)
+      await expect(page.getByTestId('chart-legend-apice')).toBeVisible();
     }
   });
 
@@ -133,7 +133,7 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para Gráfico
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
     const clickableCircle = page

@@ -1,62 +1,37 @@
-export const C = {
-  bg:          '#DDD3C4',
-  surface:     '#D4C9B8',
-  card:        '#E4D8C8',
-  border:      '#B8A898',
-  borderStrong:'#9A8878',
-  text:        '#241408',
-  textSec:     '#6A5040',
-  textMuted:   '#9A8070',
-  terra:       '#8C3C28',
-  terraLight:  '#E8C8BC',
-  terraBorder: '#C49080',
-  sage:        '#3E5E48',
-  sageLight:   '#C8D8CC',
-  sageBorder:  '#7EA48A',
-  amber:       '#846010',
-  amberLight:  '#E4D4A0',
-  amberBorder: '#B89848',
-  rose:        '#7A2828',
-  roseLight:   '#E8C8C8',
-  roseBorder:  '#C09090',
-  white:       '#F0E8DC',
-  shadow:      'rgba(44,26,16,0.12)',
-};
-
-/**
- * DS — Wise-inspired design system tokens (Sprint 6.5)
- * Use these for all new or redesigned components.
- * Legacy C tokens remain for backwards compatibility with untouched components.
- */
+// DS — Wise-inspired design tokens, backed by the CSS custom properties in
+// src/styles/tokens.css (single source of truth; dark mode = .dark variable
+// swap). Kept as a JS object only for the remaining inline-styled components
+// (DayDetailModal, LinkInstructorPage, NotificationPreferencesPage, feedback/*);
+// new code uses Tailwind classes instead.
 export const DS = {
-  // Palette
-  primary:    '#37517E',
-  secondary:  '#2EC4B6',
-  bg:         '#F7F8FA',
-  surface:    '#FFFFFF',
-  textMain:   '#1A2B4A',
-  textSec:    '#6B7280',
-  border:     '#E5E7EB',
-  success:    '#10B981',
-  warning:    '#F59E0B',
-  error:      '#EF4444',
-  primaryLight:   '#EBF0F8',
-  primaryBorder:  '#C7D4EC',
-  successLight:   '#DCFCE7',
-  successBorder:  '#86EFAC',
-  warningLight:   '#FEF3C7',
-  warningBorder:  '#FCD34D',
-  errorLight:     '#FEE2E2',
-  errorBorder:    '#FCA5A5',
-  warningText:    '#92400E',
-  bleedingColor:  '#A03030',
+  // Palette (CSS-var backed — resolves per theme)
+  primary:    'rgb(var(--color-primary))',
+  secondary:  'rgb(var(--color-secondary))',
+  bg:         'rgb(var(--color-bg))',
+  surface:    'rgb(var(--color-surface))',
+  textMain:   'rgb(var(--color-text-main))',
+  textSec:    'rgb(var(--color-text-sec))',
+  border:     'rgb(var(--color-border))',
+  success:    'rgb(var(--color-success))',
+  warning:    'rgb(var(--color-warning))',
+  error:      'rgb(var(--color-danger))',
+  primaryLight:   'rgb(var(--color-primary-light))',
+  primaryBorder:  'rgb(var(--color-primary) / 0.35)',
+  successLight:   'rgb(var(--color-success-light))',
+  successBorder:  'rgb(var(--color-success) / 0.4)',
+  warningLight:   'rgb(var(--color-warning-light))',
+  warningBorder:  'rgb(var(--color-warning) / 0.45)',
+  errorLight:     'rgb(var(--color-danger-light))',
+  errorBorder:    'rgb(var(--color-danger) / 0.4)',
+  warningText:    'rgb(var(--color-warning))',
+  bleedingColor:  '#A03030', // clinical notation color — theme-invariant
   // Shape & shadow tokens
   radiusCard:   8,
   radiusBtn:    24,
   radiusInput:  8,
-  shadowCard:   '0 1px 3px rgba(0,0,0,0.08)',
-  shadowModal:  '0 4px 24px rgba(26,43,74,0.18)',
-  shadowFAB:    '0 4px 16px rgba(55,81,126,0.4)',
+  shadowCard:   'var(--shadow-card)',
+  shadowModal:  'var(--shadow-modal)',
+  shadowFAB:    'var(--shadow-fab)',
 };
 
 export const STAMPS = [

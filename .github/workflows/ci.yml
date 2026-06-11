@@ -7,6 +7,12 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger (e.g. re-run after silent push)'
+        required: false
+        default: 'manual'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

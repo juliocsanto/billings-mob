@@ -53,9 +53,13 @@ describe('PrivacyPolicyPage', () => {
     cleanup();
   });
 
-  it('AC1: renders without crash', () => {
-    const { container } = render(React.createElement(PrivacyPolicyPage));
-    expect(container).toBeTruthy();
+  it('AC1: renders without crash and shows the main heading', () => {
+    render(React.createElement(PrivacyPolicyPage));
+    // The page heading must be present — confirms the component rendered its content
+    const headings = document.querySelectorAll('h1, h2');
+    expect(headings.length).toBeGreaterThan(0);
+    // Back link must be present in PT-BR
+    expect(screen.getByText(/← Voltar/i)).toBeInTheDocument();
   });
 
   it('AC2: contains the contact email in PT-BR mode', () => {

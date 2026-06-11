@@ -398,3 +398,152 @@ describe('POST /api/observations', () => {
     expect(res.status).toBe(500);
   });
 });
+
+// ─── GET /api/observations — date range filters ───────────────────────────────
+
+describe('GET /api/observations — date range filters', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuditInsert.mockResolvedValue({ error: null });
+    mockServiceFrom.mockReturnValue({ insert: mockAuditInsert });
+  });
+
+  it('applies gte filter when "from" query param is provided (covers line 56)', async () => {
+    const chain = makeGetChain([]);
+    const gteSpy = vi.fn().mockReturnValue(chain);
+    (chain as Record<string, unknown>).gte = gteSpy;
+    mockFrom.mockReturnValue(chain);
+
+    const res = await app.request('/?from=2026-01-01', { headers: studentHeaders });
+
+    expect(res.status).toBe(200);
+    expect(gteSpy).toHaveBeenCalledWith('date', '2026-01-01');
+  });
+
+  it('applies lte filter when "to" query param is provided (covers line 59)', async () => {
+    const chain = makeGetChain([]);
+    const lteSpy = vi.fn().mockReturnValue(chain);
+    (chain as Record<string, unknown>).lte = lteSpy;
+    mockFrom.mockReturnValue(chain);
+
+    const res = await app.request('/?to=2026-03-31', { headers: studentHeaders });
+
+    expect(res.status).toBe(200);
+    expect(lteSpy).toHaveBeenCalledWith('date', '2026-03-31');
+  });
+
+  it('applies both gte and lte when both from and to are provided', async () => {
+    const chain = makeGetChain([]);
+    const gteSpy = vi.fn().mockReturnValue(chain);
+    const lteSpy = vi.fn().mockReturnValue(chain);
+    (chain as Record<string, unknown>).gte = gteSpy;
+    (chain as Record<string, unknown>).lte = lteSpy;
+    mockFrom.mockReturnValue(chain);
+
+    const res = await app.request('/?from=2026-01-01&to=2026-03-31', { headers: studentHeaders });
+
+    expect(res.status).toBe(200);
+    expect(gteSpy).toHaveBeenCalledWith('date', '2026-01-01');
+    expect(lteSpy).toHaveBeenCalledWith('date', '2026-03-31');
+  });
+});
+
+// ─── POST /api/observations — instructor notification path ─────────────────────
+// Lines 129-131: when activeLink.instructor_id is truthy, getNotificationService() is called.
+// This is a fire-and-forget async IIFE — we set up the mock to exercise the path.
+
+describe('POST /api/observations — notification dispatch when instructor is linked', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 201 and does not throw when serviceFrom handles instructor_student_links', async () => {
+    const created = makeObservation();
+
+    // mockFrom handles the observations insert (authenticated client)
+    mockFrom.mockReturnValue({
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: created, error: null }),
+    });
+
+    // mockServiceFrom must handle both 'instructor_student_links' and 'audit_log'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockServiceFrom as any).mockImplementation((table: string) => {
+      if (table === 'instructor_student_links') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({
+            data: { instructor_id: 'instructor-uuid-001' },
+            error: null,
+          }),
+        };
+      }
+      // audit_log table
+      return { insert: mockAuditInsert };
+    });
+
+    mockAuditInsert.mockResolvedValue({ error: null });
+
+    const res = await app.request('/', {
+      method: 'POST',
+      headers: studentHeaders,
+      body: JSON.stringify({
+        date: '2026-05-25',
+        stamp: 'muco',
+        mucus: 'elastico',
+        bleeding: null,
+        relations: false,
+        notes: 'Test',
+        cycle_id: MOCK_CYCLE_ID,
+      }),
+    });
+
+    // Response must be 201 regardless of the async notification path
+    expect(res.status).toBe(201);
+    const json = await res.json() as { data: typeof created };
+    expect(json.data.id).toBe(MOCK_OBS_ID);
+  });
+
+  it('returns 201 even when instructor_student_links returns no active link', async () => {
+    const created = makeObservation();
+
+    mockFrom.mockReturnValue({
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: created, error: null }),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockServiceFrom as any).mockImplementation((table: string) => {
+      if (table === 'instructor_student_links') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          // No active link found
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+      return { insert: mockAuditInsert };
+    });
+
+    mockAuditInsert.mockResolvedValue({ error: null });
+
+    const res = await app.request('/', {
+      method: 'POST',
+      headers: studentHeaders,
+      body: JSON.stringify({
+        date: '2026-05-26',
+        stamp: 'seco',
+        mucus: null,
+        bleeding: null,
+        relations: false,
+        notes: '',
+        cycle_id: MOCK_CYCLE_ID,
+      }),
+    });
+
+    expect(res.status).toBe(201);
+  });
+});

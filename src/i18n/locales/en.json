@@ -25,7 +25,7 @@
     "analise": "Analysis",
     "guia": "Guide",
     "vinculo": "Connect",
-    "notificacoes": "Notif."
+    "notificacoes": "Notifications"
   },
   "stamps": {
     "sangramento": "Bleeding",
@@ -277,7 +277,17 @@
     "phaseSeco": "BIP",
     "phaseMuco": "Mucus",
     "phaseApice": "Peak",
-    "loginRequired": "Log in to manage your notifications."
+    "loginRequired": "Log in to manage your notifications.",
+    "selectStampHint": "Choose an observation above to save",
+    "statsDuration": "Duration",
+    "rowDay": "Day",
+    "rowDate": "Date",
+    "noRecordsHint": "Record today's observation in the Today tab.",
+    "guideSend": "Send question",
+    "manageLink": "Manage link",
+    "noInstructorHint": "Link with your instructor to share your records.",
+    "appearanceSection": "Appearance",
+    "pendingSync": "{{count}} to sync"
   },
   "feedback": {
     "loginRequired": "Log in to access community suggestions.",
@@ -380,5 +390,9 @@
     "stampSeco": "Dry",
     "stampMuco": "Mucus",
     "stampApice": "Peak"
+  },
+  "ui": {
+    "darkMode": "Dark theme",
+    "offline": "You are offline — your entries will sync when the connection returns"
   }
 }
