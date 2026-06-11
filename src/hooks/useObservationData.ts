@@ -289,8 +289,13 @@ export function useObservationData(
           fetch(`${API_BASE}/observations?limit=100`, { headers }),
         ]);
         if (!cyclesRes.ok || !obsRes.ok || cancelled) return;
-        const cycles: ServerCycle[] = (await cyclesRes.json())?.data ?? [];
-        const observations: ServerObservation[] = (await obsRes.json())?.data ?? [];
+        // Guard against non-JSON responses (e.g. a dev server without the API
+        // answering /api/* with the SPA fallback) — treat as "no server data".
+        const cyclesBody = await cyclesRes.json().catch(() => null);
+        const obsBody = await obsRes.json().catch(() => null);
+        if (!cyclesBody || !obsBody) return;
+        const cycles: ServerCycle[] = cyclesBody.data ?? [];
+        const observations: ServerObservation[] = obsBody.data ?? [];
 
         if (cycles.length === 0 && observations.length === 0) return; // nothing server-side yet
 
@@ -331,6 +336,9 @@ export function useObservationData(
 
         persist();
         await flushQueue();
+      } catch {
+        // Network failure mid-hydration: keep local state; the offline queue
+        // and the 'online' listener cover the retry path.
       } finally {
         if (!cancelled) setHydrating(false);
       }

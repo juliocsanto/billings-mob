@@ -32,7 +32,7 @@
   /* Feedback */
   --color-success: 4 120 87;           /* #047857 — AA as text on white and on success-light */
   --color-success-light: 209 250 229;  /* #D1FAE5 */
-  --color-warning: 180 110 5;          /* #B46E05 — AA as text on light */
+  --color-warning: 146 64 14;          /* #92400E — AA as text on white and on warning-light */
   --color-warning-light: 254 243 199;  /* #FEF3C7 */
   --color-danger: 185 28 28;           /* #B91C1C — AA as text on white and on danger-light */
   --color-danger-light: 254 226 226;   /* #FEE2E2 */

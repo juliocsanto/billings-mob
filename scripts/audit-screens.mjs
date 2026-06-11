@@ -46,8 +46,12 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
 });
 
+const THEME = process.env.THEME === 'dark' ? 'dark' : 'light';
+const OUT_JSON = `/home/juliocsanto/billings/docs/audit-data${THEME === 'dark' ? '-dark' : ''}.json`;
+
 async function newPage(viewport, session, { disableLocks = false } = {}) {
   const ctx = await browser.newContext({ viewport, locale: 'pt-BR' });
+  await ctx.addInitScript((t) => localStorage.setItem('billings-theme', t), THEME);
   if (session) {
     await ctx.addInitScript(
       ([k, v]) => localStorage.setItem(k, v),
@@ -77,7 +81,7 @@ async function newPage(viewport, session, { disableLocks = false } = {}) {
 }
 
 async function capture(app, name, vpName, page, logs) {
-  const file = `${app}-${name}-${vpName}.png`;
+  const file = `${app}-${name}-${vpName}${THEME === 'dark' ? '-dark' : ''}.png`;
   await page.screenshot({ path: `${OUT_DIR}/${file}`, fullPage: true });
   let axe = { violations: [] };
   try {
@@ -120,27 +124,41 @@ for (const [vpName, viewport] of Object.entries(VIEWPORTS)) {
     const { ctx, page, logs } = await newPage(viewport, sessionAluna);
     await page.goto('http://localhost:5173/', { waitUntil: 'load' });
     await page.waitForTimeout(3500);
-    for (let i = 0; i < MOB_TABS.length; i++) {
-      const tab = page.locator('[role="tab"]').nth(i);
+    // Sprint 6 nav: 5 primary tabs (data-testid nav-*); vinculo/notificacoes/
+    // feedback live as menu entries inside Perfil (data-testid menu-*).
+    const go = async (testId) => {
+      await page.getByTestId(testId).click({ timeout: 5000 });
+      await page.waitForTimeout(1200);
+    };
+    try {
+      await capture('mob', 'tab-hoje', vpName, page, logs);
+      await go('nav-grafico');
+      await capture('mob', 'tab-grafico', vpName, page, logs);
       try {
-        await tab.click({ timeout: 5000 });
-        await page.waitForTimeout(1500);
-        await capture('mob', `tab-${MOB_TABS[i]}`, vpName, page, logs);
-        if (MOB_TABS[i] === 'grafico') {
-          const day = page.locator('div[role="button"][aria-label]').nth(8);
-          try {
-            await day.click({ timeout: 3000 });
-            await page.waitForTimeout(1200);
-            await capture('mob', 'day-detail-modal', vpName, page, logs);
-            await page.keyboard.press('Escape');
-            await page.waitForTimeout(500);
-          } catch {
-            console.log('  ⚠ day-detail-modal: click failed');
-          }
-        }
-      } catch (e) {
-        console.log(`  ⚠ tab ${MOB_TABS[i]}: ${String(e).slice(0, 120)}`);
+        await page.locator('div[role="button"][aria-label]').first().click({ timeout: 3000 });
+        await page.waitForTimeout(1000);
+        await capture('mob', 'day-detail-modal', vpName, page, logs);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(400);
+      } catch {
+        console.log('  ⚠ day-detail-modal: click failed');
       }
+      await go('nav-analise');
+      await capture('mob', 'tab-analise', vpName, page, logs);
+      await go('nav-guia');
+      await capture('mob', 'tab-guia', vpName, page, logs);
+      await go('nav-perfil');
+      await capture('mob', 'tab-perfil', vpName, page, logs);
+      await go('menu-vinculo');
+      await capture('mob', 'tab-vinculo', vpName, page, logs);
+      await go('nav-perfil');
+      await go('menu-notificacoes');
+      await capture('mob', 'tab-notificacoes', vpName, page, logs);
+      await go('nav-perfil');
+      await go('menu-feedback');
+      await capture('mob', 'tab-feedback', vpName, page, logs);
+    } catch (e) {
+      console.log(`  ⚠ mob nav: ${String(e).slice(0, 140)}`);
     }
     await ctx.close();
   }
@@ -167,9 +185,9 @@ await browser.close();
 let merged = findings;
 if (ONLY !== 'all') {
   try {
-    const prev = JSON.parse(readFileSync('/home/juliocsanto/billings/docs/audit-data.json', 'utf8'));
+    const prev = JSON.parse(readFileSync(OUT_JSON, 'utf8'));
     merged = [...prev.filter((f) => f.app !== (ONLY === 'web' ? 'web' : 'mob')), ...findings];
   } catch { /* first run */ }
 }
-writeFileSync('/home/juliocsanto/billings/docs/audit-data.json', JSON.stringify(merged, null, 2));
+writeFileSync(OUT_JSON, JSON.stringify(merged, null, 2));
 console.log(`\nDone. ${findings.length} captures → docs/audit-data.json`);

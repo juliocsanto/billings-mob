@@ -21,6 +21,10 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173',
+    // ADR-014: the app detects the browser language; this suite asserts pt-BR
+    // strings, so the browser must report pt-BR (Playwright defaults to en-US,
+    // which silently flipped every text assertion after i18n landed).
+    locale: 'pt-BR',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
