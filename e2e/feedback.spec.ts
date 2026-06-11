@@ -249,22 +249,11 @@ async function setupStudentSession(
  * antes de procurar a tab Feedback.
  */
 async function navigateToFeedbackTab(page: Page): Promise<void> {
-  // Aguarda o app principal carregar — AuthGate deve ter resolvido a sessão.
-  // O app renderiza um tablist de navegação assim que autenticado.
-  // Usamos waitForFunction para aguardar até que role="tab" com texto "Feedback" apareça.
-  await page.waitForFunction(
-    () => {
-      const tabs = document.querySelectorAll('[role="tab"]');
-      return Array.from(tabs).some((t) => t.textContent?.includes('Feedback'));
-    },
-    undefined,
-    { timeout: 15_000 },
-  );
-
-  // O app usa role="tab" para os botões de navegação — sem data-testid nos tabs do App.jsx
-  // Pode haver dois tabuleiros (header + nav inferior) — clicamos no primeiro visível
-  const feedbackTab = page.getByRole('tab', { name: 'Feedback' }).first();
-  await feedbackTab.click();
+  // Sprint 6 UI refresh: Feedback vive dentro do Perfil (bottom nav de 5 itens).
+  // Navegação: tab Perfil (data-testid nav-perfil) → item de menu Feedback
+  // (data-testid menu-feedback).
+  await page.getByTestId('nav-perfil').click();
+  await page.getByTestId('menu-feedback').click();
 
   // Aguarda render da FeedbackList (cabeçalho "Sugestões da comunidade")
   await expect(page.getByText('Sugestões da comunidade')).toBeVisible({ timeout: 8_000 });

@@ -25,7 +25,7 @@
     "analise": "Análise",
     "guia": "Guia",
     "vinculo": "Vínculo",
-    "notificacoes": "Notific."
+    "notificacoes": "Notificações"
   },
   "stamps": {
     "sangramento": "Sangramento",
@@ -277,7 +277,17 @@
     "phaseSeco": "PBI",
     "phaseMuco": "Muco",
     "phaseApice": "Ápice",
-    "loginRequired": "Faça login para gerenciar suas notificações."
+    "loginRequired": "Faça login para gerenciar suas notificações.",
+    "selectStampHint": "Escolha uma observação acima para salvar",
+    "statsDuration": "Duração",
+    "rowDay": "Dia",
+    "rowDate": "Data",
+    "noRecordsHint": "Registre a observação de hoje na aba Hoje.",
+    "guideSend": "Enviar pergunta",
+    "manageLink": "Gerenciar vínculo",
+    "noInstructorHint": "Associe-se à sua instrutora para compartilhar seus registros.",
+    "appearanceSection": "Aparência",
+    "pendingSync": "{{count}} a sincronizar"
   },
   "feedback": {
     "loginRequired": "Faça login para acessar as sugestões da comunidade.",

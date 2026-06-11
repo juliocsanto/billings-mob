@@ -142,11 +142,13 @@ function edgeFetchCall() {
 function installFetchRouting() {
   mockFetch.mockImplementation(async (url) => {
     const u = String(url);
-    if (u.includes('/api/cycles') || u.includes('/api/observations')) {
+    if (u.startsWith('/api/')) {
       return { ok: true, status: 200, json: async () => ({ data: [] }) };
     }
-    if (edgeResponses.length > 0) return edgeResponses.shift();
-    return { ok: false, status: 500, body: null };
+    if (u.includes('/functions/v1/ai-guide') && edgeResponses.length > 0) {
+      return edgeResponses.shift();
+    }
+    return { ok: false, status: 500, body: null, json: async () => ({}) };
   });
 }
 
