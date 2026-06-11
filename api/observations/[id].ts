@@ -28,7 +28,7 @@ import {
   internalError,
   notFound,
 } from '../_lib/errorHandler';
-import { PatchObservationSchema, OBSERVATION_SELECT_COLUMNS } from './schema';
+import { PatchObservationSchema, OBSERVATION_SELECT_COLUMNS } from '../_lib/schemas/observationSchemas';
 import { createObservationVersion } from '../_lib/observationDomain';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

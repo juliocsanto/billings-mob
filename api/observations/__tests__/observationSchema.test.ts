@@ -5,7 +5,7 @@
  * Clinical constraint: stamp must never be 'fertil', 'infertil', 'seguro', 'inseguro'
  */
 import { describe, it, expect } from 'vitest';
-import { CreateObservationSchema, PatchObservationSchema, SensacaoValues, TipoObservacaoValues } from '../schema';
+import { CreateObservationSchema, PatchObservationSchema, SensacaoValues, TipoObservacaoValues } from '../../_lib/schemas/observationSchemas';
 
 describe('CreateObservationSchema', () => {
   const valid = {

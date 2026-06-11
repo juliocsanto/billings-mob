@@ -33,7 +33,7 @@ import {
   FEEDBACK_SELECT_COLUMNS,
   FEEDBACK_PUBLIC_SELECT_COLUMNS,
   COMMENT_SELECT_COLUMNS,
-} from '../schema';
+} from '../../_lib/schemas/feedbackSchemas';
 import { getNotificationService } from '../../_lib/notifications/factory';
 import { getBillingAdapter } from '../../_lib/billing/billingFactory';
 

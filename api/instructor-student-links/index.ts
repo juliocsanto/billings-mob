@@ -25,7 +25,7 @@ import { requireAuth } from '../_lib/auth';
 import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { badRequest, conflict, forbidden, internalError, notFound } from '../_lib/errorHandler';
-import { CreateLinkSchema, PatchLinkSchema } from './schema';
+import { CreateLinkSchema, PatchLinkSchema } from '../_lib/schemas/linkSchemas';
 import { getNotificationService } from '../_lib/notifications/factory';
 
 // ─── pending endpoint types ───────────────────────────────────────────────────

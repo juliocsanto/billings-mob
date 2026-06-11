@@ -19,7 +19,7 @@ import {
   CreateCommentSchema,
   ApproveSchema,
   RejectSchema,
-} from '../../feedback/schema';
+} from '../schemas/feedbackSchemas';
 
 // ─── CreateFeedbackSchema ─────────────────────────────────────────────────────
 
