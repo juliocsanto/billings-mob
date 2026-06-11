@@ -1,16 +1,57 @@
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: #DDD3C4; }
-body { font-family: 'Lato', sans-serif; -webkit-tap-highlight-color: transparent; }
-input, textarea, button { font-family: inherit; }
-textarea { resize: none; }
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #B0988A; border-radius: 2px; }
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: rgb(var(--color-bg));
+}
+body {
+  font-family: 'Lato', system-ui, sans-serif;
+  color: rgb(var(--color-text-main));
+  -webkit-tap-highlight-color: transparent;
+}
+input,
+textarea,
+button {
+  font-family: inherit;
+}
+textarea {
+  resize: none;
+}
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-border));
+  border-radius: 2px;
+}
 @keyframes dot {
-  0%, 100% { opacity: .3; transform: scale(.7); }
-  50%       { opacity: 1;  transform: scale(1);  }
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
