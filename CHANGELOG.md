@@ -6,6 +6,29 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.0] - 2026-06-11
+
+### Added
+- Modo escuro completo (toggle no Perfil, persistido, sincroniza `theme-color` do PWA)
+- Sincronização de observações fim-a-fim (`useObservationData`): hidratação do servidor no login, fila offline com flush ao reconectar, criação/arquivamento de ciclos via API (ADR-004)
+- Primitivas de design system (`src/components/ui/`): Button, Card, Input, Modal com focus-trap, Skeleton, EmptyState, Badge, ThemeToggle, OfflineIndicator
+- Toasts (sonner) e indicador de offline no shell; badge de pendências de sincronização no header
+
+### Changed
+- App.jsx decomposto em páginas (`src/pages/Hoje|Grafico|Analise|Guia|Perfil`); navegação única de 5 itens (ícones lucide, safe-area) substitui as barras duplicadas de 8 abas — Vínculo/Notificações/Feedback vivem no Perfil
+- Migração para Tailwind v3 com tokens semânticos CSS-var (`src/styles/tokens.css`, copy-sync com billings-web); paleta legada `C` removida
+- Manifest PWA atualizado para a identidade Wise (navy #37517E); viewport permite zoom (WCAG 1.4.4) e respeita safe-area
+- Seletor de idioma e Sair movidos para o Perfil (a barra flutuante colidia com o banner de lembrete em 375px)
+
+### Fixed
+- **Clínico (auto-Critical, auditoria C-1):** a aba Análise exibia "PBI confirmado", derivava "Fase Lútea" e sugeria teste de gravidez — removidos; a aba agora mostra apenas fatos registrados (durações de ciclo, dias de ápice carimbados pela aluna)
+- Dados demo não aparecem mais para usuárias autenticadas (auditoria C-3); o formulário localStorage "Minha Instrutora" duplicado foi removido em favor do vínculo real
+- Contraste WCAG AA: zero violações axe em todas as telas, nos dois temas
+- Suíte E2E: Playwright agora roda com locale pt-BR (falhava silenciosamente em 45/46 testes desde a chegada do i18n)
+
+### Security
+- Migration `20260611000001`: corrige `uuid_generate_v7()` quebrada (INSERTs com DEFAULT falhavam) e recria o trigger SEC-003 `on_auth_user_created` — **pendente de aplicação no projeto live** (ver `docs/db-drift-hotfix-ticket-2026-06.md`)
+
 ## [1.4.1] - 2026-06-09
 
 ### Added
