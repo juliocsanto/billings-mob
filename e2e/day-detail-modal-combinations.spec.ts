@@ -99,7 +99,7 @@ async function openDayDetailModal(page: Page): Promise<boolean> {
   await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
   // Navega para a tab Gráfico
-  await page.getByRole('button', { name: 'Gráfico' }).first().click();
+  await page.getByTestId('nav-grafico').click();
   await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 8_000 });
 
   // Localiza o primeiro dia clicável no ciclo atual

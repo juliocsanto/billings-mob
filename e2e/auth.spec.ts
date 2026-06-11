@@ -40,7 +40,7 @@ test.describe('Auth — magic link', () => {
     // O AuthGate pode mostrar brevemente um spinner de carregamento;
     // aguarda o formulário ou o spinner desaparecer.
     // A label "E-mail" identifica o formulário de magic link (acessibilidade Sprint 4.5 C-01).
-    await expect(page.getByText('Billings Grafico')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Billings Gr[aá]fico/)).toBeVisible({ timeout: 10_000 });
 
     // Aguarda o estado de "no session" (formulário de login)
     await expect(page.getByLabel('E-mail')).toBeVisible({ timeout: 10_000 });
@@ -87,6 +87,6 @@ test.describe('Auth — magic link', () => {
 
     // A SPA deve carregar normalmente — o AuthGate renderiza o formulário
     // de login (não há router para mostrar um 404 de componente)
-    await expect(page.getByText('Billings Grafico')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Billings Gr[aá]fico/)).toBeVisible({ timeout: 10_000 });
   });
 });

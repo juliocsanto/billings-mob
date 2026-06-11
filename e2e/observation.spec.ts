@@ -80,7 +80,7 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para a tab Gráfico (existe no header e no nav inferior)
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
 
     // Título da seção de gráfico deve aparecer
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
@@ -99,7 +99,7 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para Gráfico
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
     // O ciclo atual é a view padrão (seletor "Atual" ativo).
@@ -133,7 +133,7 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Billings Gráfico')).toBeVisible({ timeout: 15_000 });
 
     // Navega para Gráfico
-    await page.getByRole('button', { name: 'Gráfico' }).first().click();
+    await page.getByTestId('nav-grafico').click();
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
     const clickableCircle = page

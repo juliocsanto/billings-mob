@@ -76,7 +76,7 @@ test.describe('NotificationPreferencesPage', () => {
   test('C1 — sem autenticação, AuthGate protege o app inteiro (guard)', async ({ page }) => {
     // Sem sessão injetada → AuthGate mostra formulário de magic link
     await page.goto('/');
-    await expect(page.getByText('Billings Grafico')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Billings Gr[aá]fico/)).toBeVisible({ timeout: 10_000 });
 
     // Formulário de login visível — tab Notific. não acessível sem auth
     await expect(page.getByLabel('E-mail')).toBeVisible({ timeout: 10_000 });

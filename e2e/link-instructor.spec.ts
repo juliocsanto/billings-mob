@@ -65,7 +65,7 @@ test.describe('LinkInstructorPage', () => {
   test('C1 — sem autenticação, AuthGate exibe formulário de magic link (guard)', async ({ page }) => {
     // Sem injetar sessão, o AuthGate deve exibir o formulário de login
     await page.goto('/');
-    await expect(page.getByText('Billings Grafico')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Billings Gr[aá]fico/)).toBeVisible({ timeout: 10_000 });
 
     // O formulário de magic link protege toda a app — incluindo a tab Vínculo
     await expect(page.getByLabel('E-mail')).toBeVisible({ timeout: 10_000 });
