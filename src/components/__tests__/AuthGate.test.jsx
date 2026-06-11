@@ -125,7 +125,7 @@ describe('AuthGate — Google OAuth button', () => {
   it('AC1: renders the "Entrar com Google" button in PT-BR', () => {
     render(React.createElement(AuthGate, null, () => null));
 
-    expect(screen.getByText('Entrar com Google')).toBeTruthy();
+    expect(screen.getByText('Entrar com Google')).toBeInTheDocument();
   });
 
   it('AC2: clicking the Google button calls signInWithOAuth with provider google', async () => {
@@ -146,48 +146,50 @@ describe('AuthGate — Google OAuth button', () => {
     render(React.createElement(AuthGate, null, () => null));
 
     const googleBtn = screen.getByText('Entrar com Google').closest('button');
-    expect(googleBtn).toBeTruthy();
-    expect(googleBtn.getAttribute('aria-label')).toBeTruthy();
+    expect(googleBtn).toBeInTheDocument();
+    expect(googleBtn.getAttribute('aria-label')).not.toBeNull();
+    expect(googleBtn.getAttribute('aria-label').length).toBeGreaterThan(0);
   });
 
   it('AC4: the Google button visible focus style is applied on focus', () => {
     render(React.createElement(AuthGate, null, () => null));
 
     const googleBtn = screen.getByText('Entrar com Google').closest('button');
-    expect(googleBtn).toBeTruthy();
+    expect(googleBtn).toBeInTheDocument();
     // Button exists and is interactive
     expect(googleBtn.tagName).toBe('BUTTON');
+    expect(googleBtn).not.toBeDisabled();
   });
 
   it('AC5: the privacy policy link is visible below the form', () => {
     render(React.createElement(AuthGate, null, () => null));
 
     const privacyLink = screen.getByText('Política de Privacidade');
-    expect(privacyLink).toBeTruthy();
-    expect(privacyLink.closest('a').getAttribute('href')).toBe('/privacy');
+    expect(privacyLink).toBeInTheDocument();
+    expect(privacyLink.closest('a')).toHaveAttribute('href', '/privacy');
   });
 
   it('AC6: the "ou" separator is rendered between magic link and Google button', () => {
     render(React.createElement(AuthGate, null, () => null));
 
     // Separator text visible between magic link form and Google button
-    expect(screen.getByText('ou')).toBeTruthy();
+    expect(screen.getByText('ou')).toBeInTheDocument();
   });
 
   it('does not break existing magic link form', () => {
     render(React.createElement(AuthGate, null, () => null));
 
     // Magic link button still renders
-    expect(screen.getByText('Enviar link de acesso')).toBeTruthy();
+    expect(screen.getByText('Enviar link de acesso')).toBeInTheDocument();
     // Email input still renders
-    expect(screen.getByLabelText('E-MAIL')).toBeTruthy();
+    expect(screen.getByLabelText('E-MAIL')).toBeInTheDocument();
   });
 
   it('renders English text when language is en', () => {
     mockLanguage = 'en';
     render(React.createElement(AuthGate, null, () => null));
 
-    expect(screen.getByText('Continue with Google')).toBeTruthy();
+    expect(screen.getByText('Continue with Google')).toBeInTheDocument();
   });
 
   it('renders children when user and session are present', () => {
@@ -202,8 +204,8 @@ describe('AuthGate — Google OAuth button', () => {
       )
     );
 
-    expect(screen.getByTestId('app-content')).toBeTruthy();
-    expect(screen.getByText('Hello test@example.com')).toBeTruthy();
+    expect(screen.getByTestId('app-content')).toBeInTheDocument();
+    expect(screen.getByText('Hello test@example.com')).toBeInTheDocument();
   });
 
   it('renders loading spinner when loading is true', () => {
@@ -211,7 +213,11 @@ describe('AuthGate — Google OAuth button', () => {
 
     render(React.createElement(AuthGate, null, () => null));
 
-    // The spinner role=status should be present
-    expect(screen.getByRole('status')).toBeTruthy();
+    // The spinner role=status should be present with aria-label for screen readers
+    const spinner = screen.getByRole('status');
+    expect(spinner).toBeInTheDocument();
+    expect(spinner).toHaveAttribute('aria-label', 'Carregando...');
+    // The loading text is also rendered in a sibling element
+    expect(screen.getByText('Carregando...')).toBeInTheDocument();
   });
 });

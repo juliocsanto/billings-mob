@@ -613,4 +613,243 @@ describe('NotificationService', () => {
       expect(insertMock).not.toHaveBeenCalled();
     });
   });
+
+  // ─── Email dispatch for feedback events (ADR-018) ─────────────────────────
+
+  describe('email dispatch — feedback_triaged event', () => {
+    it('calls email.sendEmail for feedback_triaged when ADMIN_EMAIL is set', async () => {
+      const originalAdminEmail = process.env['ADMIN_EMAIL'];
+      process.env['ADMIN_EMAIL'] = 'admin@billings.app';
+
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'email-001' }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({ rateLimitData: null, prefsData: null });
+
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'feedback_triaged',
+        recipientId: 'admin-uuid',
+        entityId: 'feedback-uuid-001',
+        metadata: {
+          feedbackTitle: 'Melhorar gráfico de ciclo',
+          triageImpact: 'high',
+          adminPanelUrl: 'https://billings-mob.vercel.app/admin/feedback/uuid-001',
+        },
+      };
+
+      await svc.dispatch(event);
+
+      expect(emailAdapter.sendEmail).toHaveBeenCalledOnce();
+      const callArg = emailAdapter.sendEmail.mock.calls[0][0] as { to: string; subject: string; html: string; text: string };
+      expect(callArg.to).toBe('admin@billings.app');
+      expect(callArg.subject).toContain('Feedback para revisão');
+      expect(callArg.html).toContain('Melhorar gráfico de ciclo');
+      expect(callArg.text).toContain('Melhorar gráfico de ciclo');
+
+      if (originalAdminEmail !== undefined) {
+        process.env['ADMIN_EMAIL'] = originalAdminEmail;
+      } else {
+        delete process.env['ADMIN_EMAIL'];
+      }
+    });
+
+    it('does NOT call email.sendEmail for feedback_triaged when ADMIN_EMAIL is absent', async () => {
+      const originalAdminEmail = process.env['ADMIN_EMAIL'];
+      delete process.env['ADMIN_EMAIL'];
+
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({ rateLimitData: null, prefsData: null });
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'feedback_triaged',
+        recipientId: 'admin-uuid',
+        entityId: 'feedback-uuid-002',
+        metadata: { feedbackTitle: 'Bug na sincronização' },
+      };
+
+      await svc.dispatch(event);
+
+      expect(emailAdapter.sendEmail).not.toHaveBeenCalled();
+
+      if (originalAdminEmail !== undefined) {
+        process.env['ADMIN_EMAIL'] = originalAdminEmail;
+      }
+    });
+
+    it('dispatch() resolves without throwing when email.sendEmail rejects', async () => {
+      const originalAdminEmail = process.env['ADMIN_EMAIL'];
+      process.env['ADMIN_EMAIL'] = 'admin@billings.app';
+
+      const emailAdapter = {
+        sendEmail: vi.fn().mockRejectedValue(new Error('SMTP timeout')),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({ rateLimitData: null, prefsData: null });
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'feedback_triaged',
+        recipientId: 'admin-uuid',
+        entityId: 'feedback-uuid-003',
+        metadata: { feedbackTitle: 'Email error test', triageImpact: 'low' },
+      };
+
+      await expect(svc.dispatch(event)).resolves.toBeUndefined();
+
+      if (originalAdminEmail !== undefined) {
+        process.env['ADMIN_EMAIL'] = originalAdminEmail;
+      } else {
+        delete process.env['ADMIN_EMAIL'];
+      }
+    });
+  });
+
+  describe('email dispatch — user_feedback_implemented event', () => {
+    it('calls email.sendEmail to the feedback author when profile email is found', async () => {
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'email-impl-001' }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: null,
+        profileData: { email: 'aluna@billings.app', full_name: 'Ana Souza' },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'user_feedback_implemented',
+        recipientId: 'user-aluna-001',
+        entityId: 'feedback-impl-001',
+        metadata: {
+          feedbackTitle: 'Melhorar exportação de PDF',
+          discountPercent: 30,
+        },
+      };
+
+      await svc.dispatch(event);
+
+      expect(emailAdapter.sendEmail).toHaveBeenCalledOnce();
+      const callArg = emailAdapter.sendEmail.mock.calls[0][0] as { to: string; subject: string; html: string; text: string };
+      expect(callArg.to).toBe('aluna@billings.app');
+      expect(callArg.subject).toContain('implementada');
+      expect(callArg.html).toContain('Ana Souza');
+      expect(callArg.html).toContain('30%');
+    });
+
+    it('does NOT call email.sendEmail when author email is not found in user_profiles', async () => {
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      // Profile exists but email is missing
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: null,
+        profileData: { email: null, full_name: 'Sem Email' },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'user_feedback_implemented',
+        recipientId: 'user-no-email',
+        entityId: 'feedback-impl-002',
+        metadata: { feedbackTitle: 'Sugestão X', discountPercent: 50 },
+      };
+
+      await svc.dispatch(event);
+
+      expect(emailAdapter.sendEmail).not.toHaveBeenCalled();
+    });
+
+    it('uses metadata.userName as fallback when full_name is absent from profile', async () => {
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true, messageId: 'email-fallback-001' }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: null,
+        profileData: { email: 'user@billings.app', full_name: null },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'user_feedback_implemented',
+        recipientId: 'user-meta-name',
+        entityId: 'feedback-impl-003',
+        metadata: {
+          feedbackTitle: 'Alerta de vencimento',
+          discountPercent: 50,
+          userName: 'Carla Oliveira',
+        },
+      };
+
+      await svc.dispatch(event);
+
+      const callArg = emailAdapter.sendEmail.mock.calls[0][0] as { html: string };
+      expect(callArg.html).toContain('Carla Oliveira');
+    });
+
+    it('does not dispatch email when no email adapter is provided', async () => {
+      const supabase = makeSupabaseMock({ rateLimitData: null, prefsData: null });
+
+      // No email adapter — third constructor param omitted
+      const svc = new NotificationService(mockAdapter, supabase);
+
+      const event: NotificationEvent = {
+        type: 'user_feedback_implemented',
+        recipientId: 'user-no-adapter',
+        entityId: 'feedback-impl-004',
+        metadata: { feedbackTitle: 'Test', discountPercent: 50 },
+      };
+
+      // Must resolve without throwing — email path is skipped
+      await expect(svc.dispatch(event)).resolves.toBeUndefined();
+    });
+
+    it('email body does not contain clinical terms (LGPD + clinical constraint)', async () => {
+      const emailAdapter = {
+        sendEmail: vi.fn().mockResolvedValue({ success: true }),
+        isAvailable: vi.fn().mockReturnValue(true),
+      };
+
+      const supabase = makeSupabaseMock({
+        rateLimitData: null,
+        prefsData: null,
+        profileData: { email: 'test@billings.app', full_name: 'Test User' },
+      });
+
+      const svc = new NotificationService(mockAdapter, supabase, emailAdapter);
+
+      const event: NotificationEvent = {
+        type: 'user_feedback_implemented',
+        recipientId: 'user-clinical-check',
+        entityId: 'feedback-clinical-001',
+        metadata: { feedbackTitle: 'Notificação de ápice', discountPercent: 50 },
+      };
+
+      await svc.dispatch(event);
+
+      const callArg = emailAdapter.sendEmail.mock.calls[0][0] as { html: string; text: string };
+      expect(callArg.html).not.toMatch(/fértil|infértil|fertil|infertil|seguro|inseguro/i);
+      expect(callArg.text).not.toMatch(/fértil|infértil|fertil|infertil|seguro|inseguro/i);
+    });
+  });
 });

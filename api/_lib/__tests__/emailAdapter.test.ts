@@ -291,3 +291,175 @@ describe('getEmailAdapter singleton behavior', () => {
     expect(first).toBe(second);
   });
 });
+
+// ─── ResendEmailAdapter: text plain-text field branch ────────────────────────
+
+describe('ResendEmailAdapter — optional text field', () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('includes text field in request body when message.text is provided', async () => {
+    vi.stubEnv('RESEND_API_KEY', 're_test_key_text');
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 'resend-msg-text-001' }), { status: 200 }),
+    );
+
+    const adapter = new ResendEmailAdapter();
+    const result = await adapter.sendEmail({
+      to: 'admin@billings.app',
+      subject: 'Feedback para revisão',
+      html: '<p>Resumo de triage</p>',
+      text: 'Resumo de triage em texto puro',
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.messageId).toBe('resend-msg-text-001');
+
+    const [, options] = fetchMock.mock.calls[0] as [string, { method?: string; body?: string }];
+    const body = JSON.parse(options.body as string) as Record<string, unknown>;
+    // text field MUST be present in the request when provided
+    expect(body['text']).toBe('Resumo de triage em texto puro');
+
+    fetchMock.mockRestore();
+  });
+
+  it('omits text field from request body when message.text is absent', async () => {
+    vi.stubEnv('RESEND_API_KEY', 're_test_key_no_text');
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 'resend-msg-notext-001' }), { status: 200 }),
+    );
+
+    const adapter = new ResendEmailAdapter();
+    await adapter.sendEmail({
+      to: 'admin@billings.app',
+      subject: 'Test without text',
+      html: '<p>HTML only</p>',
+      // no text field
+    });
+
+    const [, options] = fetchMock.mock.calls[0] as [string, { method?: string; body?: string }];
+    const body = JSON.parse(options.body as string) as Record<string, unknown>;
+    // text field must NOT be present when omitted from message
+    expect(body).not.toHaveProperty('text');
+
+    fetchMock.mockRestore();
+  });
+
+  it('logs warning (not error) on HTTP failure and does not throw', async () => {
+    vi.stubEnv('RESEND_API_KEY', 're_test_key_warn');
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response('Internal Server Error', { status: 500 }),
+    );
+
+    const adapter = new ResendEmailAdapter();
+    const result = await adapter.sendEmail({
+      to: 'x@test.com',
+      subject: 'Fail',
+      html: '<p>Fail</p>',
+    });
+
+    expect(result.success).toBe(false);
+    const warnOutput = warnSpy.mock.calls.map(c => c.join(' ')).join('\n');
+    expect(warnOutput).toContain('ResendEmailAdapter');
+
+    warnSpy.mockRestore();
+    fetchMock.mockRestore();
+  });
+});
+
+// ─── feedbackFinalApprovedText (text function coverage) ──────────────────────
+
+describe('feedbackFinalApprovedText — plain-text template', () => {
+  it('contains userName, feedbackTitle, and discountPercent', async () => {
+    const { feedbackFinalApprovedText } = await import(
+      '../email/templates/feedbackFinalApproved'
+    );
+
+    const text = feedbackFinalApprovedText({
+      userName: 'Ana Souza',
+      feedbackTitle: 'Melhorar exportação de PDF',
+      discountPercent: 30,
+    });
+
+    expect(text).toContain('Ana Souza');
+    expect(text).toContain('Melhorar exportação de PDF');
+    expect(text).toContain('30%');
+  });
+
+  it('does not contain clinical terms (clinical constraint)', async () => {
+    const { feedbackFinalApprovedText } = await import(
+      '../email/templates/feedbackFinalApproved'
+    );
+
+    const text = feedbackFinalApprovedText({
+      userName: 'Bia',
+      feedbackTitle: 'Sugestão de melhoria',
+      discountPercent: 50,
+    });
+
+    expect(text).not.toMatch(/fértil|infértil|fertil|infertil|seguro|inseguro/i);
+  });
+});
+
+// ─── feedbackPendingAdminText (text function coverage) ───────────────────────
+
+describe('feedbackPendingAdminText — plain-text template', () => {
+  it('contains feedbackId, feedbackTitle, and triageImpact', async () => {
+    const { feedbackPendingAdminText } = await import(
+      '../email/templates/feedbackPendingAdmin'
+    );
+
+    const text = feedbackPendingAdminText({
+      feedbackId: 'uuid-feedback-001',
+      feedbackTitle: 'Notificação de ápice duplicada',
+      category: 'bug',
+      authorRole: 'student',
+      triageType: 'bug_report',
+      triageImpact: 'high',
+      triageSummary: 'Notificação dispara duas vezes.',
+      triageRoadmap: 'Sprint 9',
+      triageAgents: 'fullstack-developer',
+      triageSkills: 'tdd-cycle-executor',
+      triageCosts: '2h',
+      adminPanelUrl: 'https://billings-mob.vercel.app/admin/feedback/uuid-feedback-001',
+    });
+
+    expect(text).toContain('uuid-feedback-001');
+    expect(text).toContain('Notificação de ápice duplicada');
+    expect(text).toContain('high');
+    expect(text).toContain('Sprint 9');
+    expect(text).toContain('https://billings-mob.vercel.app/admin/feedback/uuid-feedback-001');
+  });
+
+  it('does not contain clinical terms (clinical constraint)', async () => {
+    const { feedbackPendingAdminText } = await import(
+      '../email/templates/feedbackPendingAdmin'
+    );
+
+    const text = feedbackPendingAdminText({
+      feedbackId: 'uuid-002',
+      feedbackTitle: 'Sugestão de UX',
+      category: 'feature',
+      authorRole: 'student',
+      triageType: 'feature_request',
+      triageImpact: 'medium',
+      triageSummary: 'Melhorar a usabilidade.',
+      triageRoadmap: '',
+      triageAgents: '',
+      triageSkills: '',
+      triageCosts: '',
+      adminPanelUrl: '',
+    });
+
+    expect(text).not.toMatch(/fértil|infértil|fertil|infertil|seguro|inseguro/i);
+  });
+});

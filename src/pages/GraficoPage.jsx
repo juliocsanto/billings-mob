@@ -82,18 +82,19 @@ export function GraficoPage({
       </div>
 
       {/* Stats — recorded facts only */}
-      <div className="flex gap-2 border-b border-border px-5 py-3.5">
+      <div className="flex gap-2 border-b border-border px-5 py-3.5" data-testid="chart-stats">
         {[
-          { l: t('app.statsRecords'), v: Object.keys(vObs).length },
-          { l: t('app.statsApice'), v: apiceN ? t('app.dayN', { n: apiceN }) : '—' },
+          { l: t('app.statsRecords'), v: Object.keys(vObs).length, testid: 'chart-stat-registros' },
+          { l: t('app.statsApice'), v: apiceN ? t('app.dayN', { n: apiceN }) : '—', testid: 'chart-stat-apice' },
           {
             l: t('app.statsDuration'),
             v: t('app.days', {
               count: selCycle ? selCycle.duration || Object.keys(vObs).length : todayN,
             }),
+            testid: 'chart-stat-duracao',
           },
         ].map((s) => (
-          <Card key={s.l} padded={false} className="flex-1 px-2 py-2.5 text-center">
+          <Card key={s.l} padded={false} className="flex-1 px-2 py-2.5 text-center" data-testid={s.testid}>
             <div className="font-display text-base font-bold text-text-main">{s.v}</div>
             <div className="mt-0.5 text-xs text-text-sec">{s.l}</div>
           </Card>
@@ -101,9 +102,9 @@ export function GraficoPage({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 border-b border-border bg-surface px-5 py-3" aria-hidden="true">
+      <div className="flex flex-wrap gap-3 border-b border-border bg-surface px-5 py-3" aria-hidden="true" data-testid="chart-legend">
         {STAMPS.map((s) => (
-          <div key={s.id} className="flex items-center gap-1.5">
+          <div key={s.id} className="flex items-center gap-1.5" data-testid={`chart-legend-${s.id}`}>
             <span
               className="flex h-4 w-4 items-center justify-center rounded-full border-[1.5px] font-serif text-[9px] font-bold"
               style={{ background: s.bg, borderColor: s.c, color: s.c }}
