@@ -380,5 +380,9 @@
     "stampSeco": "Seco",
     "stampMuco": "Muco",
     "stampApice": "Ápice"
+  },
+  "ui": {
+    "darkMode": "Tema escuro",
+    "offline": "Você está offline — seus registros serão sincronizados quando a conexão voltar"
   }
 }

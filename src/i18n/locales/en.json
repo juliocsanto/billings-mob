@@ -380,5 +380,9 @@
     "stampSeco": "Dry",
     "stampMuco": "Mucus",
     "stampApice": "Peak"
+  },
+  "ui": {
+    "darkMode": "Dark theme",
+    "offline": "You are offline — your entries will sync when the connection returns"
   }
 }
