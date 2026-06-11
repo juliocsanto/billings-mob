@@ -14,7 +14,7 @@ import { requireAuth } from '../_lib/auth';
 import { apiRateLimit } from '../_lib/rateLimit';
 import { createAuthenticatedClient, createServiceClient } from '../_lib/supabaseClient';
 import { badRequest, internalError, notFound } from '../_lib/errorHandler';
-import { CreateCycleSchema, PatchCycleSchema } from './schema';
+import { CreateCycleSchema, PatchCycleSchema } from '../_lib/schemas/cycleSchemas';
 
 const app = new Hono();
 // Rate limiting (SEC-001)

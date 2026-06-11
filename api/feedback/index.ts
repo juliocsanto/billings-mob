@@ -30,7 +30,7 @@ import {
   CreateFeedbackSchema,
   ListFeedbackQuerySchema,
   FEEDBACK_PUBLIC_SELECT_COLUMNS,
-} from './schema';
+} from '../_lib/schemas/feedbackSchemas';
 
 const app = new Hono();
 

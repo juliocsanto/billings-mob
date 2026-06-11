@@ -21,7 +21,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { sanitizeForAuditLog } from './sanitizeAuditData';
 import { mergeVectorClocks, type VectorClock } from './vectorClock';
-import type { ObservationSnapshot } from '../observations/schema';
+import type { ObservationSnapshot } from './schemas/observationSchemas';
 
 // ─── S8-02: createObservationVersion ─────────────────────────────────────────
 

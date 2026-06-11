@@ -27,7 +27,7 @@ import {
   CreateObservationSchema,
   ListObservationsQuerySchema,
   OBSERVATION_SELECT_COLUMNS,
-} from './schema';
+} from '../_lib/schemas/observationSchemas';
 import { getNotificationService } from '../_lib/notifications/factory';
 
 const app = new Hono();

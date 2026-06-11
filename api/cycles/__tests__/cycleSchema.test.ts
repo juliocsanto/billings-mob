@@ -5,7 +5,7 @@
  * Tests CreateCycleSchema and PatchCycleSchema validation rules.
  */
 import { describe, it, expect } from 'vitest';
-import { CreateCycleSchema, PatchCycleSchema } from '../schema';
+import { CreateCycleSchema, PatchCycleSchema } from '../../_lib/schemas/cycleSchemas';
 
 describe('CreateCycleSchema', () => {
   it('accepts a valid cycle with start_date only', () => {
