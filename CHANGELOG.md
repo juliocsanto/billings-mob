@@ -29,6 +29,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Security
 - Migration `20260611000001`: corrige `uuid_generate_v7()` quebrada (INSERTs com DEFAULT falhavam) e recria o trigger SEC-003 `on_auth_user_created` — **pendente de aplicação no projeto live** (ver `docs/db-drift-hotfix-ticket-2026-06.md`)
 
+## [1.5.1] - 2026-06-11
+
+### Fixed
+- Serverless function count reduced from 16 to 8 by moving the four `api/<domain>/schema.ts` validation files into `api/_lib/schemas/` — Vercel excludes `_lib/` from function detection. The previous location caused the Hobby plan hard limit ("No more than 12 Serverless Functions") to be exceeded, blocking the v1.5.0 production deploy (run 27379494348). Nine import sites updated; zero logic change (#42).
+
+---
+
 ## [1.4.1] - 2026-06-09
 
 ### Added
