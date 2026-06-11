@@ -126,8 +126,29 @@ vi.mock('../pages/NotificationPreferencesPage.tsx', () => ({
 }));
 
 // ── fetch mock ────────────────────────────────────────────────────────────────
+// Routed by URL: hydration GETs from useObservationData (/api/cycles,
+// /api/observations) answer with empty data; Edge Function calls consume the
+// per-test `edgeResponses` queue (replaces the old mockResolvedValueOnce
+// pattern, which the hydration calls would otherwise consume first).
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
+const edgeResponses = [];
+function queueEdgeResponse(res) {
+  edgeResponses.push(res);
+}
+function edgeFetchCall() {
+  return mockFetch.mock.calls.find(([url]) => String(url).includes('/functions/v1/ai-guide'));
+}
+function installFetchRouting() {
+  mockFetch.mockImplementation(async (url) => {
+    const u = String(url);
+    if (u.includes('/api/cycles') || u.includes('/api/observations')) {
+      return { ok: true, status: 200, json: async () => ({ data: [] }) };
+    }
+    if (edgeResponses.length > 0) return edgeResponses.shift();
+    return { ok: false, status: 500, body: null };
+  });
+}
 
 // ── Import subject under test ─────────────────────────────────────────────────
 import App from '../App.jsx';
@@ -158,6 +179,9 @@ function buildSSEStream(tokens, done = true) {
 describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    edgeResponses.length = 0;
+    installFetchRouting();
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
   });
@@ -200,7 +224,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
     it('displays guideErrorConnection when Edge Function returns 401', async () => {
       mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null });
 
-      mockFetch.mockResolvedValueOnce({
+      queueEdgeResponse({
         ok: false,
         status: 401,
         body: null,
@@ -229,7 +253,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
     it('sends only { question } to the Edge Function — no observations/stamps/notes/relations', async () => {
       mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null });
 
-      mockFetch.mockResolvedValueOnce({
+      queueEdgeResponse({
         ok: true,
         status: 200,
         body: buildSSEStream(['Olá!', ' Posso ajudar.']),
@@ -253,7 +277,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
       });
 
       // Verify the body sent to the Edge Function
-      const [url, options] = mockFetch.mock.calls[0];
+      const [url, options] = edgeFetchCall();
 
       // Must target the Edge Function, not the Anthropic API directly
       expect(url).toContain('/functions/v1/ai-guide');
@@ -278,7 +302,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
     it('Authorization header uses JWT from session, not an API key', async () => {
       mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null });
 
-      mockFetch.mockResolvedValueOnce({
+      queueEdgeResponse({
         ok: true,
         status: 200,
         body: buildSSEStream(['Resposta.']),
@@ -297,7 +321,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalled());
 
-      const [, options] = mockFetch.mock.calls[0];
+      const [, options] = edgeFetchCall();
       // Must use Supabase JWT, not an Anthropic API key
       expect(options.headers['Authorization']).toBe(`Bearer ${mockSession.access_token}`);
       expect(options.headers['Authorization']).not.toContain('sk-ant-');
@@ -308,7 +332,7 @@ describe('sendAI — Supabase Edge Function integration (S7-11)', () => {
     it('accumulates SSE tokens into the assistant message', async () => {
       mockGetSession.mockResolvedValue({ data: { session: mockSession }, error: null });
 
-      mockFetch.mockResolvedValueOnce({
+      queueEdgeResponse({
         ok: true,
         status: 200,
         body: buildSSEStream(['Ápice', ' é o', ' dia de pico.']),

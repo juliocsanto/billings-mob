@@ -9,6 +9,7 @@ import { supabase } from './lib/supabaseClient';
 import { today, fmtLong, fmtShort, fmtMonthYear, getDay, genDays, addDays, diffDays } from './utils/dates.js';
 import { computeMultiCycleStats, getApiceDay } from './utils/analysis.js';
 import { generateDailyReminder, downloadICS } from './utils/ics.js';
+import { useObservationData } from './hooks/useObservationData';
 import { DayDetailModal } from './components/DayDetailModal.jsx';
 import { LinkInstructorPage } from './pages/LinkInstructorPage.tsx';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage.tsx';
@@ -107,13 +108,9 @@ export default function App({ user, session } = {}) {
   const { t } = useTranslation();
   const userId = user?.id ?? null;
   const [tab,          setTab]          = useState('hoje');
-  const [cycleStart,   setCycleStart]   = useState(today());
-  const [obs,          setObs]          = useState({});
   const [form,         setForm]         = useState({...EMPTY_FORM});
   const [saved,        setSaved]        = useState(false);
-  const [loaded,       setLoaded]       = useState(false);
   const [confirmNew,   setConfirmNew]   = useState(false);
-  const [history,      setHistory]      = useState([]);
   const [selCycle,     setSelCycle]     = useState(null);
   const [instructor,   setInstructor]   = useState(null);
   const [instrForm,    setInstrForm]    = useState({name:'',email:''});
@@ -126,36 +123,41 @@ export default function App({ user, session } = {}) {
   const [selectedDay,  setSelectedDay]  = useState(null); // { date, n, obs } for DayDetailModal
   const chatEnd = useRef(null);
 
-  // Load persisted data (user-scoped when authenticated, anonymous otherwise)
+  // Local-first observation store with server sync (C-3 / ADR-004).
+  const {
+    loaded,
+    hydrating,
+    obs,
+    cycleStart,
+    history,
+    saveObservation,
+    startNewCycle,
+  } = useObservationData(session ?? null, buildDemoData);
+
+  // Instructor display (localStorage) + daily reminder banner.
   useEffect(() => {
     const d = loadUserData(userId);
-    const demo = buildDemoData();
-    if (d) {
-      setObs(d.obs || {}); setCycleStart(d.cycleStart || today());
-      setHistory(d.history || demo.history);
-      if (d.instructor) setInstructor(d.instructor);
-      if (d.obs?.[today()]) { setForm({...EMPTY_FORM, ...d.obs[today()]}); setSaved(true); }
-    } else {
-      setObs(demo.obs); setCycleStart(demo.cycleStart); setHistory(demo.history);
-    }
-    // Banner: show if user hasn't logged today
+    if (d?.instructor) setInstructor(d.instructor);
     const last = getLastOpenDate();
     if (last !== today()) { setShowBanner(true); setLastOpenDate(today()); }
-    setLoaded(true);
   }, [userId]);
 
-  const persist = (newForm, ns) => {
-    const u = {...obs, [today()]: newForm};
-    setObs(u);
-    const data = { cycleStart: ns||cycleStart, obs:u, history, instructor };
-    saveUserData(data, userId); setSaved(true);
+  // Reflect today's observation in the form once data (and hydration) land.
+  useEffect(() => {
+    if (!loaded || hydrating) return;
+    const todayObs = obs?.[today()];
+    if (todayObs) { setForm({ ...EMPTY_FORM, ...todayObs }); setSaved(true); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, hydrating]);
+
+  const persist = (newForm) => {
+    void saveObservation(today(), newForm);
+    setSaved(true);
   };
 
   const archiveAndReset = (f, ns) => {
-    const archived = { start:cycleStart, obs, label:fmtMonthYear(cycleStart) };
-    const nh = [archived, ...history].slice(0,12);
-    setHistory(nh); setCycleStart(ns); setObs({[ns]:f}); setForm(f); setSaved(true);
-    saveUserData({ cycleStart:ns, obs:{[ns]:f}, history:nh, instructor }, userId);
+    void startNewCycle(f, ns);
+    setForm(f); setSaved(true);
   };
 
   const saveInstructor = (instr) => {
@@ -171,14 +173,11 @@ export default function App({ user, session } = {}) {
 
   // Save edited observation from DayDetailModal (supports past and today)
   const handleDaySave = (date, formData) => {
-    const updatedObs = { ...obs, [date]: formData };
-    setObs(updatedObs);
+    void saveObservation(date, formData);
     if (date === today()) {
       setForm({ ...EMPTY_FORM, ...formData });
       setSaved(true);
     }
-    const data = { cycleStart, obs: updatedObs, history, instructor };
-    saveUserData(data, userId);
   };
 
   const handlePDFDownload = async () => {
