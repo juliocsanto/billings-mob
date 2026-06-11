@@ -30,12 +30,16 @@
   --color-border: 229 231 235;         /* #E5E7EB */
 
   /* Feedback */
-  --color-success: 16 185 129;         /* #10B981 */
+  --color-success: 4 120 87;           /* #047857 — AA as text on white and on success-light */
   --color-success-light: 209 250 229;  /* #D1FAE5 */
   --color-warning: 180 110 5;          /* #B46E05 — AA as text on light */
   --color-warning-light: 254 243 199;  /* #FEF3C7 */
-  --color-danger: 220 38 38;           /* #DC2626 — AA as text on light */
+  --color-danger: 185 28 28;           /* #B91C1C — AA as text on white and on danger-light */
   --color-danger-light: 254 226 226;   /* #FEE2E2 */
+
+  /* Navigation chrome (sidebar/drawer) — navy in light, surface in dark */
+  --color-nav: 26 43 74;               /* #1A2B4A */
+  --color-nav-fg: 247 248 250;         /* #F7F8FA */
 
   /* Elevation */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -69,6 +73,9 @@
   --color-warning-light: 54 40 3;      /* #362803 */
   --color-danger: 248 113 113;         /* #F87171 */
   --color-danger-light: 60 18 18;      /* #3C1212 */
+
+  --color-nav: 26 35 51;               /* #1A2333 */
+  --color-nav-fg: 232 236 244;         /* #E8ECF4 */
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 4px 24px rgba(0, 0, 0, 0.55);

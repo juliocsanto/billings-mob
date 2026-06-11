@@ -16,6 +16,8 @@ export default {
         'text-main': 'rgb(var(--color-text-main) / <alpha-value>)',
         'text-sec': 'rgb(var(--color-text-sec) / <alpha-value>)',
         border: 'rgb(var(--color-border) / <alpha-value>)',
+        nav: 'rgb(var(--color-nav) / <alpha-value>)',
+        'nav-fg': 'rgb(var(--color-nav-fg) / <alpha-value>)',
         success: 'rgb(var(--color-success) / <alpha-value>)',
         'success-light': 'rgb(var(--color-success-light) / <alpha-value>)',
         warning: 'rgb(var(--color-warning) / <alpha-value>)',
