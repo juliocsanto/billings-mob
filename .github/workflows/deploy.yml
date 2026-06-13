@@ -1,8 +1,16 @@
 # Connect this repo to Vercel dashboard first: vercel.com/new
 # After connecting, populate these secrets in GitHub repo settings:
-#   VERCEL_TOKEN       — from Vercel account settings → Tokens (classic personal access token)
-#   VERCEL_ORG_ID      — from Vercel project settings → General → Team ID (team_...)
-#   VERCEL_PROJECT_ID  — from Vercel project settings → General → Project ID (prj_...)
+#   VERCEL_TOKEN             — from Vercel account settings → Tokens (classic personal access token)
+#   VERCEL_ORG_ID            — from Vercel project settings → General → Team ID (team_...)
+#   VERCEL_PROJECT_ID        — from Vercel project settings → General → Project ID (prj_...)
+#
+# Supabase deploy secrets (required for migration push + edge function deploy):
+#   SUPABASE_ACCESS_TOKEN    — from supabase.com → Account → Access Tokens
+#   SUPABASE_DB_PASSWORD     — database password for project gcwxwrjzbbqkuzcweyut
+#   SUPABASE_PROJECT_REF     — gcwxwrjzbbqkuzcweyut
+#
+# Graceful degradation: if any SUPABASE_* secret is absent, the supabase-deploy job
+# is skipped entirely (workflow does not fail — Vercel deploy still completes).
 
 name: Deploy to Vercel
 
@@ -12,9 +20,9 @@ on:
     types: [completed]
     branches: [main]
 
-# Only run after CI passes (ci.yml must be green on main)
+# Only one production deploy at a time. A new push cancels an in-flight deploy.
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: true
 
 jobs:
@@ -51,3 +59,80 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # ─── Supabase: migration push + edge function deploy ──────────────────────────
+  #
+  # Runs AFTER the Vercel deploy completes so that the API is live before the DB
+  # schema it depends on is updated. (API handlers are backward-compatible with the
+  # old schema; the new tables simply start existing.)
+  #
+  # supabase db push is idempotent: migrations already applied are skipped.
+  # supabase functions deploy is idempotent: re-deploying an unchanged function is safe.
+  #
+  # SKIP condition: if SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, or
+  # SUPABASE_PROJECT_REF are not set, this job is skipped without failing the
+  # workflow. Set all three secrets to enable automatic Supabase deploys.
+  supabase-deploy:
+    name: Supabase — Migrations + Edge Functions
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    # Guard: skip gracefully when Supabase secrets are not yet configured.
+    # All three must be present; a single missing secret skips the entire job.
+    if: |
+      needs.deploy-production.result == 'success' &&
+      secrets.SUPABASE_ACCESS_TOKEN != '' &&
+      secrets.SUPABASE_DB_PASSWORD != '' &&
+      secrets.SUPABASE_PROJECT_REF != ''
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Pin to a specific Supabase CLI version for supply-chain integrity.
+      # Upgrade intentionally — do not use @latest in production pipelines.
+      - name: Setup Supabase CLI (v1.226.4)
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.226.4
+
+      # Link to the production Supabase project.
+      # Uses SUPABASE_ACCESS_TOKEN (env) + project ref + db-password for the link.
+      - name: Link Supabase project
+        run: |
+          supabase link \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --password "$SUPABASE_DB_PASSWORD"
+
+      # Apply any unapplied migrations in supabase/migrations/.
+      # Safe to re-run: already-applied migrations are recorded in supabase_migrations
+      # schema history and are skipped automatically.
+      # --include-all: ensures newly committed migration files are picked up even if
+      # the local migration history diverges from remote.
+      - name: Apply database migrations (supabase db push)
+        run: |
+          supabase db push \
+            --password "$SUPABASE_DB_PASSWORD" \
+            --include-all
+
+      # Deploy the feedback-triage edge function to production.
+      # This function requires ANTHROPIC_API_KEY, RESEND_API_KEY, ADMIN_EMAIL to be
+      # set as Supabase project secrets (supabase secrets set ...) — not injected here.
+      # SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected by the platform.
+      - name: Deploy edge function — feedback-triage
+        run: |
+          supabase functions deploy feedback-triage \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --no-verify-jwt
+
+      # Re-deploy ai-guide as well to keep both functions at the same CLI version.
+      # Remove this step if ai-guide has independent deploy cadence.
+      - name: Deploy edge function — ai-guide
+        run: |
+          supabase functions deploy ai-guide \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --no-verify-jwt
