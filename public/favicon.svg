@@ -1,4 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <circle cx="16" cy="16" r="14" fill="#8C3C28"/>
-  <text x="16" y="21" text-anchor="middle" font-size="16" fill="white">○</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Billings Gráfico logomark: four clinical notation symbols in a 2×2 grid -->
+  <!-- ● sangramento — top-left -->
+  <circle cx="6" cy="6" r="4" fill="#A03030"/>
+  <!-- | seco — top-right -->
+  <rect x="17" y="2.5" width="2" height="7" rx="1" fill="#2E6040"/>
+  <!-- ○ muco — bottom-left -->
+  <circle cx="6" cy="18" r="4" fill="none" stroke="#806020" stroke-width="1.5"/>
+  <!-- ✕ apice — bottom-right -->
+  <path d="M15 15l6 6M21 15l-6 6" stroke="#8C3C28" stroke-width="1.5" stroke-linecap="round"/>
 </svg>

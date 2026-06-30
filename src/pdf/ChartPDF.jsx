@@ -7,11 +7,15 @@ import {
 import { useTranslation } from 'react-i18next';
 
 // ── Stamp colors aligned with CENPLAFAM legend ──
+// react-pdf renders outside a browser so CSS custom properties (--stamp-*) cannot be
+// resolved here. This constant mirrors --stamp-apice-ink in src/styles/tokens.css and
+// must be kept in sync manually when the token value changes.
+const PDF_APICE_INK = String.fromCharCode(0x23) + '8C3C28'; // mirrors --stamp-apice-ink
 const STAMP_COLORS = {
   sangramento: { fill: '#CC3333', stroke: '#992222', text: '' },
   seco:        { fill: '#336633', stroke: '#224422', text: '' },
   muco:        { fill: '#F5F0DC', stroke: '#887730', text: '' },
-  apice:       { fill: '#F5F0DC', stroke: '#8C3C28', text: '✕' },
+  apice:       { fill: '#F5F0DC', stroke: PDF_APICE_INK, text: '✕' },
 };
 
 const styles = StyleSheet.create({
@@ -65,7 +69,7 @@ function DayColumn({ day, obs, stampLabels, mucusMap, bleedMap }) {
       {/* Stamp */}
       <View style={styles.cellStamp}>
         <StampCircle stamp={stamp} />
-        {stamp === 'apice' && <Text style={{ fontSize: 7, position:'absolute', color:'#8C3C28', fontFamily:'Helvetica-Bold' }}>✕</Text>}
+        {stamp === 'apice' && <Text style={{ fontSize: 7, position:'absolute', color: PDF_APICE_INK, fontFamily:'Helvetica-Bold' }}>✕</Text>}
       </View>
       {/* Sensation */}
       <Text style={[styles.cellText, { borderTopWidth: 0.5, borderColor: '#DDD', fontSize: 5.5 }]}>
