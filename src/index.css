@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background: #DDD3C4; }
 body { font-family: 'Lato', sans-serif; -webkit-tap-highlight-color: transparent; }

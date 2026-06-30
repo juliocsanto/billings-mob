@@ -7,7 +7,7 @@ export const C = {
   text:        '#241408',
   textSec:     '#6A5040',
   textMuted:   '#9A8070',
-  terra:       '#8C3C28',
+  terra:       'var(--stamp-apice-ink)', // same hue as ápice ink; hex defined in src/styles/tokens.css
   terraLight:  '#E8C8BC',
   terraBorder: '#C49080',
   sage:        '#3E5E48',
@@ -49,7 +49,7 @@ export const DS = {
   errorLight:     '#FEE2E2',
   errorBorder:    '#FCA5A5',
   warningText:    '#92400E',
-  bleedingColor:  '#A03030',
+  bleedingColor:  'var(--stamp-sangramento-ink)', // clinical notation color — theme-invariant, see src/styles/tokens.css
   // Shape & shadow tokens
   radiusCard:   8,
   radiusBtn:    24,
@@ -59,11 +59,16 @@ export const DS = {
   shadowFAB:    '0 4px 16px rgba(55,81,126,0.4)',
 };
 
+/**
+ * STAMPS — clinical notation symbols.
+ * Colors reference CSS custom properties defined in src/styles/tokens.css.
+ * These are theme-invariant: clinical notation colors do NOT change in dark mode.
+ */
 export const STAMPS = [
-  { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',          c:'#A03030', bg:'#F5E8E8', border:'#D4A0A0' },
-  { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',      c:'#2E6040', bg:'#E4F0E8', border:'#7AB498' },
-  { id:'muco',        sym:'○', label:'Muco',         sub:'Fluxo presente',      c:'#806020', bg:'#F5ECD4', border:'#C4A860' },
-  { id:'apice',       sym:'✕', label:'Ápice',        sub:'Último dia lubrificante', c:'#8C3C28', bg:'#F0DCD4', border:'#C49080' },
+  { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',              c:'var(--stamp-sangramento-ink)', bg:'var(--stamp-sangramento-bg)', border:'var(--stamp-sangramento-ring)' },
+  { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',          c:'var(--stamp-seco-ink)',        bg:'var(--stamp-seco-bg)',        border:'var(--stamp-seco-ring)'        },
+  { id:'muco',        sym:'○', label:'Muco',         sub:'Fluxo presente',          c:'var(--stamp-muco-ink)',        bg:'var(--stamp-muco-bg)',        border:'var(--stamp-muco-ring)'        },
+  { id:'apice',       sym:'✕', label:'Ápice',        sub:'Último dia lubrificante', c:'var(--stamp-apice-ink)',       bg:'var(--stamp-apice-bg)',       border:'var(--stamp-apice-ring)'       },
 ];
 
 export const MUCUS = [

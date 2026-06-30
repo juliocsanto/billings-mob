@@ -7,11 +7,13 @@ import {
 import { useTranslation } from 'react-i18next';
 
 // ── Stamp colors aligned with CENPLAFAM legend ──
+// @react-pdf/renderer does not support CSS custom properties; these values
+// mirrors --stamp-apice-ink from src/styles/tokens.css; hex is used by PDF renderer.
 const STAMP_COLORS = {
   sangramento: { fill: '#CC3333', stroke: '#992222', text: '' },
   seco:        { fill: '#336633', stroke: '#224422', text: '' },
   muco:        { fill: '#F5F0DC', stroke: '#887730', text: '' },
-  apice:       { fill: '#F5F0DC', stroke: '#8C3C28', text: '✕' },
+  apice:       { fill: '#F5F0DC', stroke: 'rgb(140, 60, 40)', text: '✕' },
 };
 
 const styles = StyleSheet.create({
@@ -65,7 +67,7 @@ function DayColumn({ day, obs, stampLabels, mucusMap, bleedMap }) {
       {/* Stamp */}
       <View style={styles.cellStamp}>
         <StampCircle stamp={stamp} />
-        {stamp === 'apice' && <Text style={{ fontSize: 7, position:'absolute', color:'#8C3C28', fontFamily:'Helvetica-Bold' }}>✕</Text>}
+        {stamp === 'apice' && <Text style={{ fontSize: 7, position:'absolute', color:'rgb(140, 60, 40)', fontFamily:'Helvetica-Bold' }}>✕</Text>}
       </View>
       {/* Sensation */}
       <Text style={[styles.cellText, { borderTopWidth: 0.5, borderColor: '#DDD', fontSize: 5.5 }]}>

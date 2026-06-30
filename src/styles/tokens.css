@@ -1,0 +1,25 @@
+/**
+ * Billings Gráfico — semantic design tokens.
+ *
+ * ⚠ Copy-synced with billings-web/src/styles/tokens.css — the repos are
+ * independent; keep both files identical when editing.
+ *
+ * Stamp colors below are theme-invariant: clinical notation colors must not
+ * change with dark mode — they are the visual DNA of the Billings method.
+ */
+
+:root {
+  /* Stamp notation colors — clinical, theme-invariant */
+  --stamp-sangramento-ink:  #A03030;
+  --stamp-sangramento-bg:   #F5E8E8;
+  --stamp-sangramento-ring: #D4A0A0;
+  --stamp-seco-ink:         #2E6040;
+  --stamp-seco-bg:          #E4F0E8;
+  --stamp-seco-ring:        #7AB498;
+  --stamp-muco-ink:         #806020;
+  --stamp-muco-bg:          #F5ECD4;
+  --stamp-muco-ring:        #C4A860;
+  --stamp-apice-ink:        #8C3C28;
+  --stamp-apice-bg:         #F0DCD4;
+  --stamp-apice-ring:       #C49080;
+}

@@ -421,7 +421,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 <Lbl>{t('dayDetail.intensity')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {BLEEDING.map(b => (
-                    <Pill key={b.id} label={b.label} active={form.bleeding === b.id} color='#A03030'
+                    <Pill key={b.id} label={b.label} active={form.bleeding === b.id} color={DS.bleedingColor}
                       onClick={() => setForm(p => ({ ...p, bleeding: b.id }))} />
                   ))}
                 </div>
@@ -434,7 +434,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                 <Lbl>{t('dayDetail.whatYouObserve')}</Lbl>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {TIPO_OBSERVACAO.map(t => (
-                    <Pill key={t.id} label={t.label} active={form.tipo_observacao === t.id} color='#A03030'
+                    <Pill key={t.id} label={t.label} active={form.tipo_observacao === t.id} color={DS.bleedingColor}
                       onClick={() => setForm(p => ({ ...p, tipo_observacao: p.tipo_observacao === t.id ? null : t.id }))} />
                   ))}
                 </div>
