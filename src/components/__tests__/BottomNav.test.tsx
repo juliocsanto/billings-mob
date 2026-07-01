@@ -42,7 +42,6 @@ describe('BottomNav', () => {
     render(<BottomNav tab="hoje" onNavigate={vi.fn()} />);
     const buttons = screen.getAllByRole('tab');
     buttons.forEach((btn) => {
-      const indicator = btn.querySelector('[aria-hidden="true"]');
       // The icon also has aria-hidden; we need the span indicator specifically
       const spans = btn.querySelectorAll('span[aria-hidden="true"]');
       expect(spans.length).toBeGreaterThanOrEqual(1);
