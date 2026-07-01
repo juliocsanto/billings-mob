@@ -105,7 +105,7 @@ describe('DayDetailModal', () => {
     // Day number appears in header
     expect(screen.getByText(/Dia 20 do ciclo/)).toBeDefined();
     // All 4 stamp labels should appear (each appears once as button label)
-    const stampsGrid = container.querySelector('[style*="grid-template-columns"]');
+    const stampsGrid = container.querySelector('[data-testid="stamps-grid"]');
     expect(stampsGrid).not.toBeNull();
     expect(within(stampsGrid).getByText('Sangramento')).toBeDefined();
     expect(within(stampsGrid).getByText('Seco')).toBeDefined();
@@ -143,7 +143,7 @@ describe('DayDetailModal', () => {
     const allText = container.textContent;
     expect(allText).toContain('ainda não chegou');
     // Stamp grid should NOT render
-    const stampsGrid = container.querySelector('[style*="grid-template-columns"]');
+    const stampsGrid = container.querySelector('[data-testid="stamps-grid"]');
     expect(stampsGrid).toBeNull();
   });
 
