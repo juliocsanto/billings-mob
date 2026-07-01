@@ -8,10 +8,11 @@
  * only neutral, recorded facts: cycle lengths and the days the aluna herself
  * stamped as ápice. No interpretation is derived or displayed.
  */
+import { BarChart2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Card } from '../components/ui';
+import { Card, EmptyState } from '../components/ui';
 
-export function AnalisePage({ stats }) {
+export function AnalisePage({ stats, onNavigate }) {
   const { t } = useTranslation();
 
   const sections = stats
@@ -48,7 +49,25 @@ export function AnalisePage({ stats }) {
       </header>
 
       {!stats ? (
-        <p className="px-5 py-10 text-center text-sm italic text-text-sec">{t('app.analysisMinCycles')}</p>
+        <div className="px-5 pt-6">
+          <EmptyState
+            data-testid="analise-empty-state"
+            icon={<BarChart2 />}
+            title={t('app.analysisMinCycles')}
+            description={t('app.analysisEmptyHint', { defaultValue: 'O gráfico mostrará a duração dos seus ciclos e os dias de ápice registrados.' })}
+            action={
+              onNavigate ? (
+                <button
+                  data-testid="analise-empty-goto-grafico"
+                  onClick={() => onNavigate('grafico')}
+                  className="rounded-btn bg-primary px-6 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:text-bg-app"
+                >
+                  {t('app.analysisEmptyAction', { defaultValue: 'Ver meu gráfico' })}
+                </button>
+              ) : null
+            }
+          />
+        </div>
       ) : (
         <div className="px-5 pt-5">
           {sections.map((section) => (
