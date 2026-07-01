@@ -261,7 +261,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[rgba(26,43,74,0.5)]"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[rgba(26,43,74,0.5)] animate-fade-in motion-reduce:animate-none"
     >
       <div
         ref={modalRef}
@@ -269,7 +269,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
         aria-modal="true"
         aria-labelledby="day-detail-modal-title"
         onKeyDown={handleKeyDown}
-        className="bg-surface rounded-t-2xl sm:rounded-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto pb-8 shadow-modal"
+        className="bg-surface rounded-t-2xl fixed bottom-0 left-0 right-0 sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:rounded-2xl w-full max-w-[430px] max-h-[90vh] overflow-y-auto pb-8 shadow-modal animate-slide-up motion-reduce:animate-none sm:animate-fade-in"
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-3">

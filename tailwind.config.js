@@ -43,9 +43,14 @@ export default {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'slide-up': {
+          from: { transform: 'translateY(100%)' },
+          to: { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.25s ease-out',
+        'slide-up': 'slide-up 0.3s ease-out',
       },
     },
   },
