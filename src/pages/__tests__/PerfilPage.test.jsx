@@ -92,8 +92,12 @@ function renderPage(overrides = {}) {
 
 describe('PerfilPage — disclaimer text size (LVL-34)', () => {
   it('renders without crashing', () => {
-    const { container } = renderPage();
-    expect(container.firstChild).toBeTruthy();
+    renderPage();
+    // Behavioral assertion: disclaimer text renders and its paragraph uses text-sm (LVL-34)
+    const disclaimerText = screen.getByText(/Este aplicativo é um apoio/);
+    expect(disclaimerText).toBeTruthy();
+    const disclaimerPara = disclaimerText.closest('p');
+    expect(disclaimerPara?.className).toContain('text-sm');
   });
 
   it('renders the disclaimer text', () => {

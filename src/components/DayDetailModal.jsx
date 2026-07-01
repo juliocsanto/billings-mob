@@ -265,6 +265,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
     >
       <div
         ref={modalRef}
+        data-testid="day-detail-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="day-detail-modal-title"
@@ -293,6 +294,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
             </div>
           </div>
           <button
+            data-testid="modal-close"
             onClick={onClose}
             aria-label={t('dayDetail.closeModal')}
             className="bg-transparent border-none text-[20px] text-text-sec cursor-pointer pl-3 leading-none"

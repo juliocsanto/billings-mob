@@ -161,6 +161,7 @@ export function GraficoPage({
                 return (
                   <div key={d.n} className="flex w-8 shrink-0 flex-col items-center">
                     <div
+                      data-testid={clickable ? 'day-chip' : undefined}
                       onClick={clickable ? () => onDayClick(d) : undefined}
                       aria-label={clickable ? t('dayDetail.cycleDayLabel', { n: d.n }) : undefined}
                       role={clickable ? 'button' : undefined}
