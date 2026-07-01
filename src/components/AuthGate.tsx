@@ -14,13 +14,16 @@
  *   (Sprint 6.10). Requires Google provider enabled in Supabase Dashboard:
  *   Authentication > Providers > Google, with Google Cloud Console credentials.
  * ADR-014: All user-visible strings sourced from i18n (useTranslation).
+ *
+ * LVL-06: All inline style props replaced with Tailwind utility classes.
+ *   Spinner uses Tailwind's built-in animate-spin (motion-reduce:animate-none).
+ *   Focus rings use focus-visible: classes — no JS onFocus/onBlur handlers.
  */
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabaseClient';
-import { DS } from '../constants.js';
 import { LanguageSelector } from './LanguageSelector.jsx';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -63,30 +66,13 @@ export function AuthGate({ children }: AuthGateProps) {
   // State 1: resolving initial session
   if (loading) {
     return (
-      <div style={{
-        background: DS.bg,
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'Lato, sans-serif',
-        flexDirection: 'column',
-        gap: 16,
-      }}>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg-app">
         <div
           role="status"
           aria-label={t('auth.loading')}
-          style={{
-            width: 40,
-            height: 40,
-            border: `3px solid ${DS.border}`,
-            borderTopColor: DS.primary,
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite',
-          }}
+          className="h-10 w-10 animate-spin motion-reduce:animate-none rounded-full border-[3px] border-border border-t-primary"
         />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (prefers-reduced-motion: reduce) { .spin { animation: none !important; } }`}</style>
-        <div style={{ fontSize: 13, color: DS.textSec }}>{t('auth.loading')}</div>
+        <div className="text-sm text-text-sec">{t('auth.loading')}</div>
       </div>
     );
   }
@@ -115,111 +101,54 @@ export function AuthGate({ children }: AuthGateProps) {
   };
 
   return (
-    <div style={{
-      background: DS.bg,
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'Lato, sans-serif',
-      padding: '24px 22px',
-    }}>
-      <div style={{ width: '100%', maxWidth: 360 }}>
+    <div className="flex min-h-screen items-center justify-center bg-bg-app px-[22px] py-6">
+      <div className="w-full max-w-[360px]">
         {/* Logo / heading */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{
-            fontFamily: 'Lato, sans-serif',
-            fontSize: 24,
-            fontWeight: 700,
-            color: DS.primary,
-            marginBottom: 6,
-          }}>
+        <div className="mb-9 text-center">
+          <div className="mb-1.5 text-2xl font-bold text-primary">
             {t('auth.appName')}
           </div>
-          <div style={{ fontSize: 12, color: DS.textSec, lineHeight: 1.6 }}>
+          <div className="text-xs leading-relaxed text-text-sec">
             {t('auth.appSubtitle')}
           </div>
           {/* Language selector on login screen */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+          <div className="mt-2.5 flex justify-center">
             <LanguageSelector />
           </div>
         </div>
 
         {sent ? (
           /* Success state */
-          <div style={{
-            background: DS.surface,
-            border: `1px solid ${DS.border}`,
-            borderRadius: 16,
-            padding: '28px 24px',
-            textAlign: 'center',
-            boxShadow: DS.shadowCard,
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 12, color: DS.success }}>✓</div>
-            <div style={{
-              fontFamily: 'Lato, sans-serif',
-              fontSize: 18,
-              fontWeight: 700,
-              color: DS.success,
-              marginBottom: 8,
-            }}>
+          <div className="rounded-2xl border border-border bg-surface px-6 py-7 text-center shadow-card">
+            <div className="mb-3 text-[28px] text-success" aria-hidden="true">✓</div>
+            <div className="mb-2 text-lg font-bold text-success">
               {t('auth.checkEmail')}
             </div>
-            <div style={{ fontSize: 13, color: DS.textSec, lineHeight: 1.7 }}>
+            <div className="text-sm leading-[1.7] text-text-sec">
               {t('auth.checkEmailBody', { email })}
             </div>
             <button
               onClick={() => { setSent(false); setEmail(''); }}
-              style={{
-                marginTop: 20,
-                background: 'transparent',
-                border: `1.5px solid ${DS.border}`,
-                borderRadius: DS.radiusBtn,
-                padding: '9px 20px',
-                fontSize: 12,
-                color: DS.textMain,
-                cursor: 'pointer',
-                fontFamily: 'Lato, sans-serif',
-              }}
+              className="mt-5 rounded-btn border border-border bg-transparent px-5 py-[9px] text-xs text-text-main transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               {t('auth.useOtherEmail')}
             </button>
           </div>
         ) : (
           /* Login form */
-          <div style={{
-            background: DS.surface,
-            border: `1px solid ${DS.border}`,
-            borderRadius: 16,
-            padding: '28px 24px',
-            boxShadow: DS.shadowCard,
-          }}>
-            <div style={{
-              fontFamily: 'Lato, sans-serif',
-              fontSize: 18,
-              fontWeight: 700,
-              color: DS.textMain,
-              marginBottom: 6,
-            }}>
+          <div className="rounded-2xl border border-border bg-surface px-6 py-7 shadow-card">
+            <div className="mb-1.5 text-lg font-bold text-text-main">
               {t('auth.loginTitle')}
             </div>
-            <div style={{ fontSize: 12, color: DS.textSec, marginBottom: 22, lineHeight: 1.6 }}>
+            <div className="mb-[22px] text-xs leading-relaxed text-text-sec">
               {t('auth.loginSubtitle')}
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: 14 }}>
+              <div className="mb-3.5">
                 <label
                   htmlFor="email-login"
-                  style={{
-                    display: 'block',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: DS.textSec,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    marginBottom: 8,
-                  }}
+                  className="mb-2 block text-[10px] font-bold uppercase tracking-[0.08em] text-text-sec"
                 >
                   {t('auth.emailLabel')}
                 </label>
@@ -231,34 +160,14 @@ export function AuthGate({ children }: AuthGateProps) {
                   placeholder={t('auth.emailPlaceholder')}
                   required
                   autoFocus
-                  onFocus={e => { (e.target as HTMLInputElement).style.outline = `2px solid ${DS.primary}`; (e.target as HTMLInputElement).style.outlineOffset = '2px'; }}
-                  onBlur={e => { (e.target as HTMLInputElement).style.outline = 'none'; }}
-                  style={{
-                    width: '100%',
-                    background: DS.surface,
-                    border: `1.5px solid ${DS.border}`,
-                    borderRadius: DS.radiusInput,
-                    padding: '12px 14px',
-                    fontSize: 14,
-                    color: DS.textMain,
-                    boxSizing: 'border-box',
-                    fontFamily: 'Lato, sans-serif',
-                  }}
+                  className="w-full rounded-card border border-border bg-surface px-[14px] py-3 text-sm text-text-main transition-colors placeholder:text-text-sec/60 focus:border-primary focus:ring-2 focus:ring-primary/25 focus-visible:outline-none"
                 />
               </div>
 
               {error && (
                 <div
                   role="alert"
-                  style={{
-                    background: '#FEE2E2',
-                    border: `1px solid ${DS.error}`,
-                    borderRadius: DS.radiusInput,
-                    padding: '9px 12px',
-                    fontSize: 12,
-                    color: DS.error,
-                    marginBottom: 14,
-                  }}
+                  className="mb-3.5 rounded-card border border-danger bg-danger-light px-3 py-[9px] text-xs text-danger"
                 >
                   {error}
                 </div>
@@ -266,49 +175,23 @@ export function AuthGate({ children }: AuthGateProps) {
 
               <button
                 type="submit"
+                data-testid="btn-send-magic-link"
                 disabled={!email.trim() || submitting}
-                style={{
-                  width: '100%',
-                  background: email.trim() && !submitting ? DS.primary : DS.border,
-                  color: email.trim() && !submitting ? DS.surface : DS.textSec,
-                  border: 'none',
-                  borderRadius: DS.radiusBtn,
-                  padding: '14px',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  letterSpacing: '0.05em',
-                  cursor: email.trim() && !submitting ? 'pointer' : 'default',
-                  fontFamily: 'Lato, sans-serif',
-                  transition: 'all 0.2s',
-                }}
+                className="w-full rounded-btn bg-primary px-4 py-[14px] text-sm font-bold tracking-[0.05em] text-surface transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-border disabled:text-text-sec"
               >
                 {submitting ? t('auth.sending') : t('auth.sendMagicLink')}
               </button>
             </form>
 
-            <div style={{
-              marginTop: 20,
-              fontSize: 11,
-              color: DS.textSec,
-              lineHeight: 1.6,
-              textAlign: 'center',
-              fontStyle: 'italic',
-            }}>
+            <div className="mt-5 text-center text-[11px] italic leading-relaxed text-text-sec">
               {t('auth.disclaimer')}
             </div>
 
             {/* ── Separator ─────────────────────────── */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              margin: '18px 0 14px',
-            }}>
-              <div style={{ flex: 1, height: 1, background: DS.border }} />
-              <span style={{ fontSize: 12, color: DS.textSec, whiteSpace: 'nowrap' }}>
-                ou
-              </span>
-              <div style={{ flex: 1, height: 1, background: DS.border }} />
+            <div className="my-[18px] flex items-center gap-2.5">
+              <div className="h-px flex-1 bg-border" />
+              <span className="whitespace-nowrap text-xs text-text-sec">ou</span>
+              <div className="h-px flex-1 bg-border" />
             </div>
 
             {/* ── Google OAuth button ────────────────── */}
@@ -316,30 +199,7 @@ export function AuthGate({ children }: AuthGateProps) {
               type="button"
               onClick={signInWithGoogle}
               aria-label={googleLabel}
-              onFocus={e => {
-                (e.target as HTMLButtonElement).style.outline = `2px solid ${DS.primary}`;
-                (e.target as HTMLButtonElement).style.outlineOffset = '2px';
-              }}
-              onBlur={e => {
-                (e.target as HTMLButtonElement).style.outline = 'none';
-              }}
-              style={{
-                width: '100%',
-                background: DS.surface,
-                border: `1.5px solid ${DS.border}`,
-                borderRadius: DS.radiusBtn,
-                padding: '12px 14px',
-                fontSize: 14,
-                fontWeight: 600,
-                color: DS.textMain,
-                cursor: 'pointer',
-                fontFamily: 'Lato, sans-serif',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                transition: 'border-color 0.2s',
-              }}
+              className="flex w-full items-center justify-center gap-2.5 rounded-btn border border-border bg-surface px-[14px] py-3 text-sm font-semibold text-text-main transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               {/* Google icon (SVG inline) */}
               <svg
@@ -372,16 +232,7 @@ export function AuthGate({ children }: AuthGateProps) {
             {/* ── Privacy Policy link ────────────────── */}
             <a
               href="/privacy"
-              style={{
-                fontSize: 12,
-                color: DS.textSec,
-                textDecoration: 'none',
-                marginTop: 16,
-                display: 'block',
-                textAlign: 'center',
-              }}
-              onMouseEnter={e => { (e.target as HTMLAnchorElement).style.textDecoration = 'underline'; }}
-              onMouseLeave={e => { (e.target as HTMLAnchorElement).style.textDecoration = 'none'; }}
+              className="mt-4 block text-center text-xs text-text-sec transition-colors hover:text-text-main hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:rounded-sm"
             >
               {privacyLabel}
             </a>
