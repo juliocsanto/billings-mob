@@ -159,6 +159,8 @@ describe('AuthGate — Google OAuth button', () => {
     // Button exists and is interactive
     expect(googleBtn.tagName).toBe('BUTTON');
     expect(googleBtn).not.toBeDisabled();
+    // Focus-visible ring classes must be present so a style regression is detectable
+    expect(googleBtn.className).toContain('focus-visible:ring-2');
   });
 
   it('AC5: the privacy policy link is visible below the form', () => {

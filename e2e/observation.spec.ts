@@ -103,24 +103,16 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
     // O ciclo atual é a view padrão (seletor "Atual" ativo).
-    // Cada círculo de dia na row Obs. tem cursor:pointer no ciclo atual.
-    // Procuramos por um círculo que contenha um símbolo (stamp não vazio).
+    // Cada círculo de dia na row Obs. tem data-testid="day-chip" quando clicável.
     // Os stamps do demo: sangramento (●), seco (—), muco (~), apice (✕)
-    // Usamos locator com style cursor:pointer dentro da viewport
-    const clickableCircle = page
-      .locator('div[style*="cursor: pointer"]')
-      .filter({ hasNot: page.locator('button') })
-      .first();
+    const dayChip = page.getByTestId('day-chip').first();
 
-    if (await clickableCircle.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await clickableCircle.click();
-      // DayDetailModal abre: exibe o dia do ciclo e o form de edição
-      // O único data-testid disponível é version-history (pode não aparecer
-      // se não houver observationId — o modal ainda renderiza sem ele)
-      // Verificamos o header do modal ("Dia X do ciclo")
-      await expect(page.getByText(/dia \d+ do ciclo/i)).toBeVisible({ timeout: 5_000 });
+    if (await dayChip.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await dayChip.click();
+      // DayDetailModal abre — verificamos pelo data-testid="day-detail-modal"
+      await expect(page.getByTestId('day-detail-modal')).toBeVisible({ timeout: 5_000 });
     } else {
-      // Fallback: o gráfico renderizou mas o círculo não foi encontrado via style
+      // Fallback: o gráfico renderizou mas o chip não foi encontrado
       // Verifica que a tab Gráfico está ativa e mostra dados (via stable testid)
       await expect(page.getByTestId('chart-legend-apice')).toBeVisible();
     }
@@ -136,20 +128,16 @@ test.describe('Observation — grid e DayDetailModal', () => {
     await page.getByTestId('nav-grafico').click();
     await expect(page.getByText('Histórico de Ciclos')).toBeVisible({ timeout: 5_000 });
 
-    const clickableCircle = page
-      .locator('div[style*="cursor: pointer"]')
-      .filter({ hasNot: page.locator('button') })
-      .first();
+    const dayChip = page.getByTestId('day-chip').first();
 
-    if (await clickableCircle.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      await clickableCircle.click();
+    if (await dayChip.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await dayChip.click();
 
-      // Modal aberto — localiza o botão de fechar (×/✕)
-      const modalHeader = page.getByText(/dia \d+ do ciclo/i);
-      if (await modalHeader.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        // O botão de fechar está no header do modal
-        // DayDetailModal renderiza um button com onClick={onClose} próximo ao header
-        const closeBtn = page.getByRole('button', { name: /fechar|×|✕|close/i }).first();
+      // Modal aberto — verifica pelo data-testid="day-detail-modal"
+      const modal = page.getByTestId('day-detail-modal');
+      if (await modal.isVisible({ timeout: 3_000 }).catch(() => false)) {
+        // Fecha via botão com data-testid="modal-close"
+        const closeBtn = page.getByTestId('modal-close');
         if (await closeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
           await closeBtn.click();
         } else {

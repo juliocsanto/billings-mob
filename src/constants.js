@@ -24,7 +24,7 @@ export const DS = {
   errorLight:     'rgb(var(--color-danger-light))',
   errorBorder:    'rgb(var(--color-danger) / 0.4)',
   warningText:    'rgb(var(--color-warning))',
-  bleedingColor:  '#A03030', // clinical notation color — theme-invariant
+  bleedingColor:  'var(--stamp-sangramento-ink)', // clinical notation color — theme-invariant
   // Shape & shadow tokens
   radiusCard:   8,
   radiusBtn:    24,
@@ -35,10 +35,10 @@ export const DS = {
 };
 
 export const STAMPS = [
-  { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',          c:'#A03030', bg:'#F5E8E8', border:'#D4A0A0' },
-  { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',      c:'#2E6040', bg:'#E4F0E8', border:'#7AB498' },
-  { id:'muco',        sym:'○', label:'Muco',         sub:'Fluxo presente',      c:'#806020', bg:'#F5ECD4', border:'#C4A860' },
-  { id:'apice',       sym:'✕', label:'Ápice',        sub:'Último dia lubrificante', c:'#8C3C28', bg:'#F0DCD4', border:'#C49080' },
+  { id:'sangramento', sym:'●', label:'Sangramento', sub:'Menstruação',          c:'var(--stamp-sangramento-ink)', bg:'var(--stamp-sangramento-bg)', border:'var(--stamp-sangramento-ring)' },
+  { id:'seco',        sym:'|', label:'Seco',         sub:'PBI — sem muco',      c:'var(--stamp-seco-ink)',        bg:'var(--stamp-seco-bg)',        border:'var(--stamp-seco-ring)'        },
+  { id:'muco',        sym:'○', label:'Muco',         sub:'Fluxo presente',      c:'var(--stamp-muco-ink)',        bg:'var(--stamp-muco-bg)',        border:'var(--stamp-muco-ring)'        },
+  { id:'apice',       sym:'✕', label:'Ápice',        sub:'Último dia lubrificante', c:'var(--stamp-apice-ink)',  bg:'var(--stamp-apice-bg)',        border:'var(--stamp-apice-ring)'       },
 ];
 
 export const MUCUS = [

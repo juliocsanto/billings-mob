@@ -6,6 +6,7 @@
  * no phase or fertility interpretation is derived (removed in the 2026-06
  * audit: auto-derived "Fase Lútea" banner/stat violated the constraint).
  */
+import { FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { STAMPS } from '../constants.js';
 import { today, fmtShort, getDay, genDays } from '../utils/dates.js';
@@ -158,8 +159,9 @@ export function GraficoPage({
                 const hasObs = !!s && !isFut;
                 const clickable = !selCycle;
                 return (
-                  <div key={d.n} className="flex w-8 shrink-0 justify-center">
+                  <div key={d.n} className="flex w-8 shrink-0 flex-col items-center">
                     <div
+                      data-testid={clickable ? 'day-chip' : undefined}
                       onClick={clickable ? () => onDayClick(d) : undefined}
                       aria-label={clickable ? t('dayDetail.cycleDayLabel', { n: d.n }) : undefined}
                       role={clickable ? 'button' : undefined}
@@ -180,11 +182,18 @@ export function GraficoPage({
                             : hasObs
                               ? 'border-primary bg-primary text-surface dark:text-bg-app'
                               : 'border-border bg-border text-text-sec',
-                        clickable ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary' : 'cursor-default',
+                        clickable
+                          ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary active:scale-90 active:opacity-75 transition-transform duration-100 motion-reduce:active:scale-100 motion-reduce:active:opacity-100'
+                          : 'cursor-default',
                       ].join(' ')}
                     >
                       {s ? s.sym : ''}
                     </div>
+                    {isToday && (
+                      <div className="text-center text-[8px] font-bold text-secondary mt-0.5">
+                        {t('app.today')}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -233,7 +242,7 @@ export function GraficoPage({
       <section className="px-5 pt-5">
         <h2 className="mb-3.5 font-display text-lg italic text-text-main">{t('app.recentRecords')}</h2>
         {!Object.keys(vObs).length ? (
-          <EmptyState title={t('app.noRecords')} description={t('app.noRecordsHint')} />
+          <EmptyState icon={<FileText />} title={t('app.noRecords')} description={t('app.noRecordsHint')} />
         ) : (
           Object.entries(vObs)
             .sort(([a], [b]) => b.localeCompare(a))

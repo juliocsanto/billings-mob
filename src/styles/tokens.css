@@ -45,6 +45,20 @@
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-modal: 0 4px 24px rgba(26, 43, 74, 0.18);
   --shadow-fab: 0 4px 12px rgba(26, 43, 74, 0.24);
+
+  /* Stamp notation colors — clinical, theme-invariant (never add dark overrides) */
+  --stamp-sangramento-ink:  #A03030;
+  --stamp-sangramento-bg:   #F5E8E8;
+  --stamp-sangramento-ring: #D4A0A0;
+  --stamp-seco-ink:         #2E6040;
+  --stamp-seco-bg:          #E4F0E8;
+  --stamp-seco-ring:        #7AB498;
+  --stamp-muco-ink:         #806020;
+  --stamp-muco-bg:          #F5ECD4;
+  --stamp-muco-ring:        #C4A860;
+  --stamp-apice-ink:        #8C3C28;
+  --stamp-apice-bg:         #F0DCD4;
+  --stamp-apice-ring:       #C49080;
 }
 
 .dark {

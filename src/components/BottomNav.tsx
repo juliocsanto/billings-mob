@@ -42,13 +42,20 @@ export function BottomNav({ tab, onNavigate }: Props) {
               data-testid={`nav-${id}`}
               onClick={() => onNavigate(id)}
               className={[
-                'flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 transition-colors',
+                'relative flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 pb-1 transition-colors',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary',
                 active ? 'text-primary' : 'text-text-sec',
               ].join(' ')}
             >
               <Icon size={20} strokeWidth={active ? 2.4 : 1.8} aria-hidden="true" />
               <span className={`text-xs ${active ? 'font-bold' : 'font-normal'}`}>{label}</span>
+              <span
+                aria-hidden="true"
+                className={[
+                  'absolute bottom-0 h-0.5 w-6 rounded-full transition-all duration-200 motion-reduce:transition-none',
+                  active ? 'bg-primary' : 'bg-transparent',
+                ].join(' ')}
+              />
             </button>
           );
         })}

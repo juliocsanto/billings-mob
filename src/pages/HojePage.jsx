@@ -6,7 +6,7 @@
  * synced through the API, which never logs them.
  */
 import { useTranslation } from 'react-i18next';
-import { STAMPS, MUCUS, BLEEDING, EMPTY_FORM } from '../constants.js';
+import { STAMPS, MUCUS, BLEEDING, SENSACAO, EMPTY_FORM } from '../constants.js';
 import { today } from '../utils/dates.js';
 import { Button } from '../components/ui';
 
@@ -22,7 +22,8 @@ export function HojePage({
   const { t } = useTranslation();
 
   return (
-    <div className="px-5 pt-6 pb-28">
+  <>
+    <div className="px-5 pt-6 pb-40">
       <h1 className="sr-only">{t('nav.hoje')}</h1>
 
       {saved && (
@@ -74,6 +75,35 @@ export function HojePage({
                 <div className={`mt-0.5 text-xs ${active ? 'text-surface/80 dark:text-bg-app/80' : 'text-text-sec'}`}>
                   {t('stampsub.' + s.id)}
                 </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Sensação — LVL-10 */}
+      <section className="mb-6" aria-label={t('dayDetail.sensation')}>
+        <h2 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-text-sec">
+          {t('dayDetail.sensation')}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {SENSACAO.map((s) => {
+            const active = form.sensacao === s.id;
+            return (
+              <button
+                key={s.id}
+                aria-pressed={active}
+                data-testid={`sensacao-${s.id}`}
+                onClick={() => setForm((p) => ({ ...p, sensacao: active ? null : s.id }))}
+                className={[
+                  'min-h-[40px] rounded-btn border px-4 py-1.5 text-sm font-semibold transition-colors',
+                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+                  active
+                    ? 'border-primary bg-primary text-surface dark:text-bg-app'
+                    : 'border-border bg-surface text-text-sec hover:border-primary/40',
+                ].join(' ')}
+              >
+                {t('sensacao.' + s.id)}
               </button>
             );
           })}
@@ -206,21 +236,6 @@ export function HojePage({
         />
       </section>
 
-      {/* Save */}
-      <Button
-        onClick={() => form.stamp && onSave(form)}
-        data-testid="save-observation"
-        disabled={!form.stamp}
-        fullWidth
-        size="lg"
-        className="mb-2.5 uppercase tracking-wider"
-      >
-        {t('app.saveObservation')}
-      </Button>
-      {!form.stamp && (
-        <p className="mb-2.5 text-center text-xs text-text-sec">{t('app.selectStampHint')}</p>
-      )}
-
       {!confirmNew ? (
         <Button
           variant="outline"
@@ -254,5 +269,23 @@ export function HojePage({
         </div>
       )}
     </div>
+
+    {/* Sticky save CTA — LVL-18 */}
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-surface border-t border-border px-5 pt-3 pb-[calc(env(safe-area-inset-bottom)+80px)]">
+      <Button
+        onClick={() => form.stamp && onSave(form)}
+        data-testid="save-observation"
+        disabled={!form.stamp}
+        fullWidth
+        size="lg"
+        className="uppercase tracking-wider"
+      >
+        {t('app.saveObservation')}
+      </Button>
+      {!form.stamp && (
+        <p className="mt-1.5 text-center text-xs text-text-sec">{t('app.selectStampHint')}</p>
+      )}
+    </div>
+  </>
   );
 }

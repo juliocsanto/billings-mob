@@ -1,6 +1,6 @@
 {
   "name": "billings-mob",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "description": "Gráfico do Método de Ovulação Billings",
   "type": "module",
   "homepage": "https://billings-mob.vercel.app",

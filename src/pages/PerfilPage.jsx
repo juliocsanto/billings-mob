@@ -155,7 +155,7 @@ export function PerfilPage({ user, activeLink, todayN, cycleStart, onNavigate })
 
         {/* Disclaimer */}
         <div className="rounded-card border border-warning/40 bg-warning-light px-3.5 py-3">
-          <p className="text-xs leading-relaxed text-text-sec">
+          <p className="text-sm leading-relaxed text-text-sec">
             <strong className="text-warning">{t('app.importantLabel')}</strong> — {t('app.profileDisclaimer')}
           </p>
         </div>
