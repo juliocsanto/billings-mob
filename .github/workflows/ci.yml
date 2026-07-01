@@ -126,9 +126,11 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Dependency vulnerability audit (OWASP A06)
-        # Fails CI on HIGH or CRITICAL vulnerabilities.
+        # Fails CI on HIGH or CRITICAL vulnerabilities in production dependencies.
         # MODERATE vulnerabilities generate a warning but do not block.
-        run: npm audit --audit-level=high
+        # --omit=dev: HIGH gate scoped to production deps (user-approved 2026-07-01);
+        # dev/build-only CVEs (elliptic via vite-plugin-node-polyfills) never ship to Vercel prod.
+        run: npm audit --audit-level=high --omit=dev
 
       - name: Dependency audit (MODERATE — warning only)
         run: npm audit --audit-level=moderate 2>&1 | tee audit-moderate.txt || true
