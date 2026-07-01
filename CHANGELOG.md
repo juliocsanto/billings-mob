@@ -6,6 +6,29 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.6.0] — 2026-07-01
+
+### Added
+- AppLogo component with SVG brand mark replacing the plain-text header across the PWA shell
+- Design-token stamp system: CSS custom properties (`--stamp-*-bg/ring/ink`) in `src/styles/tokens.css` for all stamp variants (`sangramento`, `seco`, `muco`, `apice`); consumed in `tailwind.config.js`
+- GraficoPage: empty-state illustration with "Sem observações ainda" copy; "Hoje" badge marker on the current-day chip; press-and-hold visual indicator on day chips
+- HojePage: vaginal sensation (sensação) question section; sticky "Registrar observação" CTA
+- AnalisePage: empty-state illustration with supportive copy when no cycles are present
+- DayDetailModal: slide-up sheet enter animation (`animate-slide-up`, `motion-reduce:animate-none`); `data-testid="stamps-grid"` on the stamp grid container
+- BottomNav: active-tab indicator pill underline
+- Font preload in `index.html` for improved LCP
+- Updated favicon (`public/favicon.svg`)
+- E2E test hardening: `data-testid` locators (`day-chip`, `day-detail-modal`, `modal-close`) added to `GraficoPage.jsx`, `DayDetailModal.jsx`, and `e2e/observation.spec.ts`
+
+### Changed
+- `AuthGate.tsx`: all `style={{}}` inline expressions replaced with Tailwind utilities; spinner migrated to `animate-spin motion-reduce:animate-none`; focus ring uses `focus-visible:` variant (removes `onFocus`/`onBlur` handlers); `DesignSystem` import removed
+- `GuiaPage.jsx`: inline styles replaced with Tailwind; layout converted to `flex/min-h-screen`
+- `DayDetailModal.jsx`: 62 `style={{}}` double-brace expressions removed and converted to Tailwind (`Lbl`, `Pill` active/inactive, `VersionHistorySection`, backdrop, header, stamp cards); single-brace `style={inactiveCircleStyle}` retained for CSS-var stamp theming (theme-invariant)
+- `App.jsx`: banner notification converted to toast (sonner); "Hoje" hero section added to shell; tab navigation uses fade transition
+- `src/constants.js` and `src/pdf/ChartPDF.jsx` aligned to the new stamp-token system
+
+---
+
 ## [1.5.0] - 2026-06-11
 
 ### Added
