@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { pdf } from '@react-pdf/renderer';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { STAMPS, EMPTY_FORM } from './constants.js';
 import { getLastOpenDate, setLastOpenDate } from './utils/storage.js';
@@ -63,7 +63,6 @@ export default function App({ user, session } = {}) {
   const [input, setInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [showBanner, setShowBanner] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null); // { date, n, obs } for DayDetailModal
   const chatEnd = useRef(null);
 
@@ -87,13 +86,14 @@ export default function App({ user, session } = {}) {
   }, [userId]);
   const activeLink = links.find((l) => l.status === 'active') ?? null;
 
-  // Daily reminder banner
+  // Daily reminder toast (LVL-17 — replaces sticky banner)
   useEffect(() => {
     const last = getLastOpenDate();
     if (last !== today()) {
-      setShowBanner(true);
+      toast.info(t('app.banner'), { duration: 6000 });
       setLastOpenDate(today());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Reflect today's observation in the form once data (and hydration) land.
@@ -248,37 +248,36 @@ export default function App({ user, session } = {}) {
       <Toaster position="top-center" richColors closeButton theme="system" />
       <OfflineIndicator />
 
-      {/* Daily reminder banner */}
-      {showBanner && (
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-primary px-4 py-2.5 animate-fade-in">
-          <span className="min-w-0 truncate text-sm text-surface dark:text-bg-app">{t('app.banner')}</span>
-          <button
-            onClick={() => setShowBanner(false)}
-            aria-label={t('common.close')}
-            className="shrink-0 p-1 text-surface dark:text-bg-app focus-visible:outline focus-visible:outline-2 focus-visible:outline-surface"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       {/* ── HEADER ─────────────────────────────── */}
-      <div
-        className="sticky z-20 border-b border-border bg-surface px-5 py-3.5 shadow-card"
-        style={{ top: showBanner ? 42 : 0 }}
-      >
+      {/* LVL-17: inline style removed — now uses sticky top-0 Tailwind class */}
+      {/* LVL-09: context-sensitive header — hero date on Hoje tab */}
+      <div className="sticky top-0 z-20 border-b border-border bg-surface px-5 py-3.5 shadow-card">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-display text-xl font-bold text-text-main">{t('auth.appName')}</p>
-            <p className="mt-0.5 text-xs text-text-sec">
-              {t('app.headerSubtitle', {
-                day: todayN,
-                date: new Date(today() + 'T12:00:00').toLocaleDateString('pt-BR', {
-                  day: '2-digit',
-                  month: 'short',
-                }),
-              })}
-            </p>
+            {tab === 'hoje' ? (
+              <>
+                <p className="text-[10px] uppercase tracking-wider text-text-sec">{t('auth.appName')}</p>
+                <p className="font-display italic text-2xl text-text-main leading-tight">
+                  {(() => {
+                    const wd = new Date(today() + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long' });
+                    return wd.charAt(0).toUpperCase() + wd.slice(1);
+                  })()}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-xl font-bold text-text-main">{t('auth.appName')}</p>
+                <p className="mt-0.5 text-xs text-text-sec">
+                  {t('app.headerSubtitle', {
+                    day: todayN,
+                    date: new Date(today() + 'T12:00:00').toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'short',
+                    }),
+                  })}
+                </p>
+              </>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {pendingCount > 0 && (
@@ -298,57 +297,59 @@ export default function App({ user, session } = {}) {
         </div>
       </div>
 
-      {/* ── PAGES ───────────────────────────────── */}
-      {tab === 'hoje' && (
-        <HojePage
-          form={form}
-          setForm={setForm}
-          saved={saved}
-          confirmNew={confirmNew}
-          setConfirmNew={setConfirmNew}
-          onSave={handleSave}
-          onStartNewCycle={handleStartNewCycle}
-        />
-      )}
+      {/* ── PAGES — LVL-13: key={tab} triggers fade-in on every tab switch ── */}
+      <div key={tab} className="animate-fade-in motion-reduce:animate-none">
+        {tab === 'hoje' && (
+          <HojePage
+            form={form}
+            setForm={setForm}
+            saved={saved}
+            confirmNew={confirmNew}
+            setConfirmNew={setConfirmNew}
+            onSave={handleSave}
+            onStartNewCycle={handleStartNewCycle}
+          />
+        )}
 
-      {tab === 'grafico' && (
-        <GraficoPage
-          obs={obs}
-          cycleStart={cycleStart}
-          history={history}
-          todayN={todayN}
-          selCycle={selCycle}
-          setSelCycle={setSelCycle}
-          onDayClick={setSelectedDay}
-          onExportPDF={handlePDFDownload}
-          pdfLoading={pdfLoading}
-        />
-      )}
+        {tab === 'grafico' && (
+          <GraficoPage
+            obs={obs}
+            cycleStart={cycleStart}
+            history={history}
+            todayN={todayN}
+            selCycle={selCycle}
+            setSelCycle={setSelCycle}
+            onDayClick={setSelectedDay}
+            onExportPDF={handlePDFDownload}
+            pdfLoading={pdfLoading}
+          />
+        )}
 
-      {tab === 'analise' && <AnalisePage stats={stats} />}
+        {tab === 'analise' && <AnalisePage stats={stats} />}
 
-      {tab === 'guia' && (
-        <GuiaPage msgs={msgs} input={input} setInput={setInput} aiLoading={aiLoading} sendAI={sendAI} chatEnd={chatEnd} />
-      )}
+        {tab === 'guia' && (
+          <GuiaPage msgs={msgs} input={input} setInput={setInput} aiLoading={aiLoading} sendAI={sendAI} chatEnd={chatEnd} />
+        )}
 
-      {tab === 'vinculo' && <LinkInstructorPage session={session} onBack={() => setTab('perfil')} />}
+        {tab === 'vinculo' && <LinkInstructorPage session={session} onBack={() => setTab('perfil')} />}
 
-      {tab === 'notificacoes' && user && <NotificationPreferencesPage />}
-      {tab === 'notificacoes' && !user && (
-        <p className="px-5 py-10 text-center text-sm italic text-text-sec">{t('app.loginRequired')}</p>
-      )}
+        {tab === 'notificacoes' && user && <NotificationPreferencesPage />}
+        {tab === 'notificacoes' && !user && (
+          <p className="px-5 py-10 text-center text-sm italic text-text-sec">{t('app.loginRequired')}</p>
+        )}
 
-      {tab === 'perfil' && (
-        <PerfilPage
-          user={user}
-          activeLink={activeLink}
-          todayN={todayN}
-          cycleStart={cycleStart}
-          onNavigate={setTab}
-        />
-      )}
+        {tab === 'perfil' && (
+          <PerfilPage
+            user={user}
+            activeLink={activeLink}
+            todayN={todayN}
+            cycleStart={cycleStart}
+            onNavigate={setTab}
+          />
+        )}
 
-      {tab === 'feedback' && <FeedbackPage session={session} />}
+        {tab === 'feedback' && <FeedbackPage session={session} />}
+      </div>
 
       {/* ── NAV ─────────────────────────────────── */}
       <BottomNav tab={tab} onNavigate={setTab} />
