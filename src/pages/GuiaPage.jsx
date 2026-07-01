@@ -13,7 +13,7 @@ export function GuiaPage({ msgs, input, setInput, aiLoading, sendAI, chatEnd }) 
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex flex-col">
       <header className="px-5 pt-5">
         <h1 className="mb-2 font-display text-xl text-text-main">{t('app.guideTitle')}</h1>
         <div className="mb-2.5 rounded-card border border-warning/40 bg-warning-light px-3.5 py-2.5">
@@ -58,11 +58,14 @@ export function GuiaPage({ msgs, input, setInput, aiLoading, sendAI, chatEnd }) 
         ))}
         {aiLoading && (
           <div role="status" aria-label={t('common.loading')} className="flex gap-1 px-1 pb-3 pt-1">
-            {[0, 1, 2].map((i) => (
+            {[
+              '[animation:dot_1s_0s_infinite]',
+              '[animation:dot_1s_0.2s_infinite]',
+              '[animation:dot_1s_0.4s_infinite]',
+            ].map((animCls, i) => (
               <span
                 key={i}
-                className="h-[7px] w-[7px] rounded-full bg-primary motion-reduce:animate-none"
-                style={{ animation: `dot 1s ${i * 0.2}s infinite` }}
+                className={`h-[7px] w-[7px] rounded-full bg-primary motion-reduce:animate-none ${animCls}`}
               />
             ))}
           </div>
