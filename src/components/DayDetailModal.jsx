@@ -492,7 +492,7 @@ export function DayDetailModal({ day, onClose, onSave, today: todayDate, observa
                   {form.relations ? '♥' : ''}
                 </div>
                 <span className={`text-[13px] ${form.relations ? 'text-danger' : 'text-text-main'}`}>
-                  {form.relations ? t('dayDetail.relationsYes') : t('dayDetail.relationsNo')}
+                  {t('dayDetail.relationsHad')}
                 </span>
               </button>
             </div>

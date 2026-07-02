@@ -6,6 +6,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.0] — 2026-07-02
+
+### Added
+- HojePage: "Tipo de muco" section (with "Sem muco" pill) now available for every stamp except
+  `sangramento` — including `apice` — matching the DayDetailModal behaviour, so mucus presence
+  and type can be recorded together with the peak day (user feedback)
+
+### Changed
+- Relations control (HojePage and DayDetailModal): single affirmative label
+  ("Houve relação íntima…") that the aluna checks when a relation occurred — the unchecked state
+  no longer displays "Não houve relações", which read as a clickable option and induced clicks
+  (user feedback); i18n keys `relationsYes/relationsNo(Today)` replaced by `relationsHad(Today)`
+- HojePage: mucus quality buttons now toggle off on second click (modal parity)
+
+---
+
 ## [1.6.0] — 2026-07-01
 
 ### Added
