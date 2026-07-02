@@ -140,12 +140,28 @@ export function HojePage({
         </section>
       )}
 
-      {/* Mucus detail */}
-      {form.stamp === 'muco' && (
+      {/* Mucus detail — all stamps except sangramento (parity with DayDetailModal) */}
+      {form.stamp && form.stamp !== 'sangramento' && (
         <section className="mb-6">
           <h2 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-text-sec">
             {t('dayDetail.mucusType')}
           </h2>
+          <div className="mb-2.5 flex flex-wrap gap-2">
+            <button
+              aria-pressed={form.mucus === null}
+              data-testid="mucus-none"
+              onClick={() => setForm((p) => ({ ...p, mucus: null }))}
+              className={[
+                'min-h-[40px] rounded-btn border px-4 py-1.5 text-sm font-semibold transition-colors',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
+                form.mucus === null
+                  ? 'border-primary bg-primary text-surface dark:text-bg-app'
+                  : 'border-border bg-surface text-text-sec hover:border-primary/40',
+              ].join(' ')}
+            >
+              {t('dayDetail.noMucus')}
+            </button>
+          </div>
           <div className="flex flex-col gap-2">
             {MUCUS.map((m) => {
               const active = form.mucus === m.id;
@@ -153,7 +169,8 @@ export function HojePage({
                 <button
                   key={m.id}
                   aria-pressed={active}
-                  onClick={() => setForm((p) => ({ ...p, mucus: m.id }))}
+                  data-testid={`mucus-${m.id}`}
+                  onClick={() => setForm((p) => ({ ...p, mucus: active ? null : m.id }))}
                   className={[
                     'w-full rounded-card border px-4 py-3 text-left transition-colors',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
@@ -214,7 +231,7 @@ export function HojePage({
           </span>
           <span>
             <span className={`block text-sm font-semibold ${form.relations ? 'text-danger' : 'text-text-main'}`}>
-              {form.relations ? t('app.relationsYesToday') : t('app.relationsNoToday')}
+              {t('app.relationsHadToday')}
             </span>
             <span className="mt-0.5 block text-xs text-text-sec">{t('app.relationsVisibility')}</span>
           </span>
