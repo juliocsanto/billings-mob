@@ -7,7 +7,7 @@
  *   "message": "Human-readable description"
  * }
  *
- * LGPD: Error messages must never reveal relations or notes field values.
+ * LGPD: Error messages must never reveal relations, notes, or sensacao field values.
  * The handler strips any error message that references sensitive fields.
  *
  * Observability (NC-02 ISO 27001): Unhandled 500 errors are captured in Sentry
@@ -28,6 +28,7 @@ export type ApiError = {
 const API_LGPD_SENSITIVE_FIELDS = new Set([
   'relations',
   'notes',
+  'sensacao',           // sensação corporal (seca/molhada/lubrificante) — LGPD Art. 11
   'observacao_descricao',
   'fcm_token',
   'password',
@@ -85,7 +86,7 @@ if (process.env.SENTRY_DSN) {
   });
 }
 
-const LGPD_SENSITIVE_PATTERN = /\b(relations|notes)\b/i;
+const LGPD_SENSITIVE_PATTERN = /\b(relations|notes|sensacao)\b/i;
 
 /**
  * Sanitizes an error message to ensure it does not leak LGPD-sensitive field names.

@@ -38,6 +38,42 @@ describe('sanitizeForAuditLog', () => {
     expect(result).not.toHaveProperty('notes');
   });
 
+  // ── LGPD regression: sensacao (LGPD Art. 11 health data) ─────────────────
+  it('removes sensacao field (health data — LGPD Art. 11)', () => {
+    const result = sanitizeForAuditLog({
+      id: 'abc',
+      stamp: 'muco',
+      sensacao: 'lubrificante',
+    });
+    expect(result).not.toHaveProperty('sensacao');
+  });
+
+  it('removes sensacao together with relations and notes', () => {
+    const result = sanitizeForAuditLog({
+      stamp: 'seco',
+      relations: false,
+      notes: 'nota',
+      sensacao: 'seca',
+      mucus: null,
+    });
+    expect(result).not.toHaveProperty('relations');
+    expect(result).not.toHaveProperty('notes');
+    expect(result).not.toHaveProperty('sensacao');
+  });
+
+  it('preserves non-sensitive fields when sensacao is stripped', () => {
+    const result = sanitizeForAuditLog({
+      id: 'uuid-2',
+      stamp: 'apice',
+      sensacao: 'molhada',
+      mucus: 'elastico',
+    });
+    expect(result).not.toHaveProperty('sensacao');
+    expect(result).toHaveProperty('id', 'uuid-2');
+    expect(result).toHaveProperty('stamp', 'apice');
+    expect(result).toHaveProperty('mucus', 'elastico');
+  });
+
   it('preserves all other fields', () => {
     const input = {
       id: 'uuid-1',
@@ -79,6 +115,13 @@ describe('assertNoSensitiveFields', () => {
   it('throws when "notes" field is present', () => {
     expect(() => {
       assertNoSensitiveFields({ stamp: 'seco', notes: 'texto sensível' });
+    }).toThrow(/LGPD violation/i);
+  });
+
+  // ── LGPD regression: sensacao (LGPD Art. 11 health data) ─────────────────
+  it('throws when "sensacao" field is present', () => {
+    expect(() => {
+      assertNoSensitiveFields({ stamp: 'muco', sensacao: 'lubrificante' });
     }).toThrow(/LGPD violation/i);
   });
 

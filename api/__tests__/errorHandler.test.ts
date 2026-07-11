@@ -193,6 +193,49 @@ describe('errorHandler — redactLgpdFieldsFromObject via apiLgpdBeforeSend', ()
     expect(result.request.data.token).toBe('[REDACTED]');
   });
 
+  // ── LGPD regression: sensacao (health data — LGPD Art. 11) ───────────────
+
+  it('redacts `sensacao` field to [REDACTED] in request.data', () => {
+    const event = {
+      request: { data: { sensacao: 'lubrificante', safeField: 'ok' } },
+      extra: {},
+      contexts: {},
+    };
+    const result = beforeSend(event as never) as {
+      request: { data: { sensacao: string; safeField: string } };
+    };
+    expect(result.request.data.sensacao).toBe('[REDACTED]');
+    expect(result.request.data.safeField).toBe('ok');
+  });
+
+  it('redacts nested `sensacao` field to [REDACTED]', () => {
+    const event = {
+      request: {
+        data: { observation: { sensacao: 'seca', stamp: 'seco' } },
+      },
+      extra: {},
+      contexts: {},
+    };
+    const result = beforeSend(event as never) as {
+      request: { data: { observation: { sensacao: string; stamp: string } } };
+    };
+    expect(result.request.data.observation.sensacao).toBe('[REDACTED]');
+    expect(result.request.data.observation.stamp).toBe('seco');
+  });
+
+  it('redacts `sensacao` in event.extra', () => {
+    const event = {
+      request: { data: {} },
+      extra: { sensacao: 'molhada', safe: 'ok' },
+      contexts: {},
+    };
+    const result = beforeSend(event as never) as {
+      extra: { sensacao: string; safe: string };
+    };
+    expect(result.extra.sensacao).toBe('[REDACTED]');
+    expect(result.extra.safe).toBe('ok');
+  });
+
   it('redacts any key containing "email" (case-insensitive) to [REDACTED]', () => {
     const event = {
       request: { data: { email: 'user@example.com', userEmail: 'user@example.com' } },
@@ -406,6 +449,16 @@ describe('errorHandler — badRequest', () => {
   it('sanitizes LGPD-sensitive message containing "notes"', () => {
     const ctx = makeContext();
     errorHandlerMod.badRequest(ctx, 'Invalid value in notes');
+    expect(ctx.json).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Internal processing error' }),
+      400,
+    );
+  });
+
+  // ── LGPD regression: sensacao in error messages ───────────────────────────
+  it('sanitizes LGPD-sensitive message containing "sensacao"', () => {
+    const ctx = makeContext();
+    errorHandlerMod.badRequest(ctx, 'Validation failed for sensacao field');
     expect(ctx.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'Internal processing error' }),
       400,
