@@ -8,6 +8,7 @@
 import { useTranslation } from 'react-i18next';
 import { STAMPS, MUCUS, BLEEDING, SENSACAO, EMPTY_FORM } from '../constants.js';
 import { today } from '../utils/dates.js';
+import { computeStreak } from '../utils/streak.js';
 import { Button } from '../components/ui';
 
 export function HojePage({
@@ -18,8 +19,10 @@ export function HojePage({
   setConfirmNew,
   onSave,
   onStartNewCycle,
+  obs = {},
 }) {
   const { t } = useTranslation();
+  const streak = computeStreak(obs, today());
 
   return (
   <>
@@ -35,6 +38,18 @@ export function HojePage({
           <span className="text-sm font-semibold text-success">{t('app.savedToday')}</span>
         </div>
       )}
+
+      {/* Streak indicator — neutral behavioral count, no clinical meaning */}
+      <div
+        data-testid="streak-indicator"
+        className="mb-5 flex items-center gap-2 rounded-card border border-border bg-surface px-4 py-2.5"
+        aria-label={streak > 0 ? t('streak.days', { count: streak }) : t('streak.zero')}
+      >
+        <span aria-hidden="true" className="text-base">🔥</span>
+        <span className="text-sm font-medium text-text-main">
+          {streak > 0 ? t('streak.days', { count: streak }) : t('streak.zero')}
+        </span>
+      </div>
 
       {/* Stamps */}
       <section className="mb-6">

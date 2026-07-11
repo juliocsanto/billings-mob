@@ -8,6 +8,7 @@ import { getLastOpenDate, setLastOpenDate } from './utils/storage.js';
 import { supabase } from './lib/supabaseClient';
 import { today, addDays, genDays } from './utils/dates.js';
 import { computeMultiCycleStats } from './utils/analysis.js';
+import { computeStreak, hasRecordedToday, missedYesterday } from './utils/streak.js';
 import { useObservationData } from './hooks/useObservationData';
 import { useInstructorLink } from './hooks/useInstructorLink';
 import { DayDetailModal } from './components/DayDetailModal.jsx';
@@ -86,11 +87,30 @@ export default function App({ user, session } = {}) {
   }, [userId]);
   const activeLink = links.find((l) => l.status === 'active') ?? null;
 
-  // Daily reminder toast (LVL-17 — replaces sticky banner)
+  // Daily reminder toast (LVL-17 — replaces sticky banner).
+  // Extended with missed-day nudge: if the aluna has a live streak but hasn't
+  // recorded today, encourage keeping it; if yesterday was also missed, softer
+  // "resume" message. One toast only — non-nagging, once per day.
   useEffect(() => {
     const last = getLastOpenDate();
     if (last !== today()) {
-      toast.info(t('app.banner'), { duration: 6000 });
+      const streak = computeStreak(obs, today());
+      const recordedToday = hasRecordedToday(obs, today());
+      const missed = missedYesterday(obs, today());
+
+      let message;
+      if (streak > 0 && !recordedToday) {
+        // Streak alive but today not yet recorded — encourage continuing.
+        message = t('streak.nudgeContinue', { count: streak });
+      } else if (missed && !recordedToday) {
+        // No active streak and yesterday was missed — gentle resume prompt.
+        message = t('streak.nudgeResume');
+      } else {
+        // Default daily reminder.
+        message = t('app.banner');
+      }
+
+      toast.info(message, { duration: 6000 });
       setLastOpenDate(today());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -308,6 +328,7 @@ export default function App({ user, session } = {}) {
             setConfirmNew={setConfirmNew}
             onSave={handleSave}
             onStartNewCycle={handleStartNewCycle}
+            obs={obs}
           />
         )}
 

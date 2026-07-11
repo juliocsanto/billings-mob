@@ -389,6 +389,14 @@
     "stampMuco": "Muco",
     "stampApice": "Ápice"
   },
+  "streak": {
+    "days": "{{count}} dia seguido de registro",
+    "days_plural": "{{count}} dias seguidos de registro",
+    "zero": "Comece sua sequência hoje",
+    "nudgeContinue": "Você tem {{count}} dias seguidos — registre hoje para não perder a sequência",
+    "nudgeContinue_plural": "Você tem {{count}} dias seguidos — registre hoje para não perder a sequência",
+    "nudgeResume": "Que tal retomar seus registros?"
+  },
   "ui": {
     "darkMode": "Tema escuro",
     "offline": "Você está offline — seus registros serão sincronizados quando a conexão voltar"

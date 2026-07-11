@@ -389,6 +389,14 @@
     "stampMuco": "Mucus",
     "stampApice": "Peak"
   },
+  "streak": {
+    "days": "{{count}}-day tracking streak",
+    "days_plural": "{{count}}-day tracking streak",
+    "zero": "Start your streak today",
+    "nudgeContinue": "You have a {{count}}-day streak — record today to keep it going",
+    "nudgeContinue_plural": "You have a {{count}}-day streak — record today to keep it going",
+    "nudgeResume": "How about resuming your records?"
+  },
   "ui": {
     "darkMode": "Dark theme",
     "offline": "You are offline — your entries will sync when the connection returns"
