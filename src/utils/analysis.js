@@ -51,6 +51,41 @@ export function getBIPDescriptor(cycle) {
   return bipDays[0].obs.mucus || 'seco';
 }
 
+// ── Neutral variability helpers ────────────────────────────
+
+/**
+ * Compute the population standard deviation of cycle lengths.
+ * Neutral arithmetic on recorded facts — no clinical interpretation.
+ *
+ * @param {Array} cycles - Array of cycle objects with {start, obs}
+ * @returns {number|null} Std dev rounded to 1 decimal, or null if < 2 valid lengths
+ */
+export function getCycleLengthStdDev(cycles) {
+  if (!cycles || cycles.length < 2) return null;
+  const lengths = cycles.map(getCycleLength).filter((l) => l !== null);
+  if (lengths.length < 2) return null;
+  const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+  const variance = lengths.reduce((acc, l) => acc + (l - mean) ** 2, 0) / lengths.length;
+  return Math.round(Math.sqrt(variance) * 10) / 10;
+}
+
+/**
+ * Extract per-cycle lengths for the historical trend chart.
+ * Returns only cycles with a computable length (skips empty obs).
+ *
+ * @param {Array} cycles - Array of cycle objects with {start, obs}
+ * @returns {Array<{index: number, length: number}>}
+ */
+export function getCycleLengthsForTrend(cycles) {
+  if (!cycles || !cycles.length) return [];
+  const result = [];
+  for (let i = 0; i < cycles.length; i++) {
+    const len = getCycleLength(cycles[i]);
+    if (len !== null) result.push({ index: i + 1, length: len });
+  }
+  return result;
+}
+
 // ── Multi-cycle stats ──────────────────────────────────────
 
 export function computeMultiCycleStats(currentCycle, history) {
@@ -94,6 +129,8 @@ export function computeMultiCycleStats(currentCycle, history) {
     avgLength:  mean(lengths),
     minLength:  lengths.length ? Math.min(...lengths) : null,
     maxLength:  lengths.length ? Math.max(...lengths) : null,
+    stdDevLength: getCycleLengthStdDev(recent),
+    cycleLengths: getCycleLengthsForTrend(recent),
     avgApice:   mean(apiceDays),
     minApice:   apiceDays.length ? Math.min(...apiceDays) : null,
     maxApice:   apiceDays.length ? Math.max(...apiceDays) : null,

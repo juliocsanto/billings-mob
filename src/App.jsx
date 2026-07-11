@@ -364,7 +364,7 @@ export default function App({ user, session } = {}) {
           />
         )}
 
-        {tab === 'analise' && <AnalisePage stats={stats} />}
+        {tab === 'analise' && <AnalisePage stats={stats} obs={obs} />}
 
         {tab === 'guia' && (
           <GuiaPage msgs={msgs} input={input} setInput={setInput} aiLoading={aiLoading} sendAI={sendAI} chatEnd={chatEnd} />
