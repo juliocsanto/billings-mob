@@ -4,7 +4,8 @@ import { pdf } from '@react-pdf/renderer';
 import { Toaster, toast } from 'sonner';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { STAMPS, EMPTY_FORM } from './constants.js';
-import { getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { getLastOpenDate, setLastOpenDate, getOnboardingSeen, setOnboardingSeen } from './utils/storage.js';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow.jsx';
 import { supabase } from './lib/supabaseClient';
 import { today, addDays, genDays } from './utils/dates.js';
 import { computeMultiCycleStats } from './utils/analysis.js';
@@ -67,6 +68,14 @@ export default function App({ user, session } = {}) {
   const [selectedDay, setSelectedDay] = useState(null); // { date, n, obs } for DayDetailModal
   const chatEnd = useRef(null);
 
+  // First-use onboarding gate — shown once, gated by localStorage.
+  // Initialized lazily so SSR-hostile localStorage is only read once on mount.
+  const [showOnboarding, setShowOnboarding] = useState(() => !getOnboardingSeen());
+  const handleOnboardingDone = () => {
+    setOnboardingSeen();
+    setShowOnboarding(false);
+  };
+
   // Local-first observation store with server sync (C-3 / ADR-004).
   const {
     loaded,
@@ -91,9 +100,15 @@ export default function App({ user, session } = {}) {
   // Extended with missed-day nudge: if the aluna has a live streak but hasn't
   // recorded today, encourage keeping it; if yesterday was also missed, softer
   // "resume" message. One toast only — non-nagging, once per day.
+  // Suppressed on first use: the onboarding overlay already welcomes the user;
+  // showing a toast simultaneously would be redundant and noisy.
   useEffect(() => {
     const last = getLastOpenDate();
     if (last !== today()) {
+      setLastOpenDate(today());
+      // Skip toast if the user is seeing the onboarding for the first time.
+      if (!getOnboardingSeen()) return;
+
       const streak = computeStreak(obs, today());
       const recordedToday = hasRecordedToday(obs, today());
       const missed = missedYesterday(obs, today());
@@ -111,7 +126,6 @@ export default function App({ user, session } = {}) {
       }
 
       toast.info(message, { duration: 6000 });
-      setLastOpenDate(today());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -267,6 +281,9 @@ export default function App({ user, session } = {}) {
     <div className="relative mx-auto min-h-screen max-w-[430px] bg-bg-app font-sans text-text-main">
       <Toaster position="top-center" richColors closeButton theme="system" />
       <OfflineIndicator />
+
+      {/* ── FIRST-USE ONBOARDING ─────────────────── */}
+      {showOnboarding && <OnboardingFlow onFinish={handleOnboardingDone} />}
 
       {/* ── HEADER ─────────────────────────────── */}
       {/* LVL-17: inline style removed — now uses sticky top-0 Tailwind class */}

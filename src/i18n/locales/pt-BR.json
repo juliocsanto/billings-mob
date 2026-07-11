@@ -400,5 +400,22 @@
   "ui": {
     "darkMode": "Tema escuro",
     "offline": "Você está offline — seus registros serão sincronizados quando a conexão voltar"
+  },
+  "onboarding": {
+    "dialogLabel": "Introdução ao Billings Gráfico",
+    "progressAria": "Passo {{current}} de {{total}}",
+    "skip": "Pular introdução",
+    "next": "Próximo",
+    "finish": "Começar",
+    "step1Title": "Bem-vinda ao Billings Gráfico",
+    "step1Body": "Este app ajuda você a registrar suas observações diárias do ciclo. Você anota o que observa — sua instrutora é quem interpreta.",
+    "step2Title": "O carimbo da observação",
+    "step2Body": "Cada dia tem um carimbo: Sangramento, Seco, Muco ou Ápice. O carimbo descreve o que você observou — não classifica nenhum dia.",
+    "step3Title": "Muco e sensação",
+    "step3Body": "Quando há muco, você registra o tipo (opaco, cremoso, transparente ou elástico) e a sensação (seca, molhada ou lubrificante). Quanto mais detalhado o registro, melhor o acompanhamento.",
+    "step4Title": "O papel da instrutora",
+    "step4Body": "O app não classifica dias — quem interpreta é sua instrutora. Ela é a única que pode orientar sobre o seu ciclo com base nos registros que você fizer.",
+    "step5Title": "Seus dados são seus",
+    "step5Body": "Seus registros ficam no seu dispositivo e são sincronizados de forma segura. Apenas você e sua instrutora têm acesso ao seu ciclo."
   }
 }

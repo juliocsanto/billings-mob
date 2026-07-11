@@ -65,3 +65,15 @@ export function getLastOpenDate() {
 export function setLastOpenDate(dateStr) {
   localStorage.setItem('billings-last-open', dateStr);
 }
+
+// ── First-use onboarding gate ─────────────────────────────────────────────────
+
+/** Returns true if the user has already seen (or skipped) the onboarding. */
+export function getOnboardingSeen() {
+  return localStorage.getItem('billings_onboarding_seen') === '1';
+}
+
+/** Marks the onboarding as seen so it is never shown again on this device. */
+export function setOnboardingSeen() {
+  localStorage.setItem('billings_onboarding_seen', '1');
+}

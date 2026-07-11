@@ -400,5 +400,22 @@
   "ui": {
     "darkMode": "Dark theme",
     "offline": "You are offline — your entries will sync when the connection returns"
+  },
+  "onboarding": {
+    "dialogLabel": "Introduction to Billings Chart",
+    "progressAria": "Step {{current}} of {{total}}",
+    "skip": "Skip introduction",
+    "next": "Next",
+    "finish": "Get started",
+    "step1Title": "Welcome to Billings Chart",
+    "step1Body": "This app helps you record your daily cycle observations. You note what you observe — your instructor is the one who interprets it.",
+    "step2Title": "The observation stamp",
+    "step2Body": "Each day has a stamp: Bleeding, Dry, Mucus, or Peak. The stamp describes what you observed — it does not classify any day.",
+    "step3Title": "Mucus and sensation",
+    "step3Body": "When there is mucus, you record the type (opaque, creamy, transparent, or elastic) and the sensation (dry, wet, or lubricative). The more detailed the record, the better the follow-up.",
+    "step4Title": "The instructor's role",
+    "step4Body": "The app does not classify days — your instructor is the one who interprets. She is the only one who can guide you about your cycle based on the records you make.",
+    "step5Title": "Your data is yours",
+    "step5Body": "Your records stay on your device and are synced securely. Only you and your instructor have access to your cycle."
   }
 }
