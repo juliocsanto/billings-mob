@@ -1,14 +1,14 @@
 /**
  * LGPD Art. 11 — Audit log sanitizer
  *
- * The fields 'relations' and 'notes' are sensitive personal data.
+ * The fields 'relations', 'notes', and 'sensacao' are sensitive personal/health data.
  * They must NEVER appear in any log entry, at any stage.
  *
  * This function removes those fields before any data is written to audit_log.
  * It is enforced at the application layer (not only at the database level).
  */
 
-const LGPD_SENSITIVE_FIELDS = ['relations', 'notes'] as const;
+const LGPD_SENSITIVE_FIELDS = ['relations', 'notes', 'sensacao'] as const;
 
 /**
  * Returns a shallow copy of the object with LGPD-sensitive fields removed.

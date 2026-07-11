@@ -13,39 +13,11 @@ import './index.css';
  * antes do envio à rede.
  *
  * NC-02 auditoria ISO 27001:2022 — critério de aceitação obrigatório.
+ *
+ * The scrubbing logic is extracted to src/utils/lgpdScrubber.ts so it can be
+ * regression-tested independently. See that module for the full sensitive field list.
  */
-const LGPD_SENSITIVE_FIELDS = [
-  'relations',          // orientação clínica da instrutora — LGPD Art. 11
-  'notes',              // notas livres da aluna — LGPD Art. 11
-  'observacao_descricao', // descrição do sangramento — LGPD Art. 11
-  'fcm_token',          // token pessoal de push
-  'password',
-  'token',
-];
-
-/**
- * Recursively redacts LGPD-sensitive fields from any plain object or array.
- * Returns a new object — never mutates the original.
- */
-function redactLgpdFields(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(redactLgpdFields);
-  }
-  if (obj !== null && typeof obj === 'object') {
-    const out = {};
-    for (const [key, val] of Object.entries(obj)) {
-      // Match full key or keys containing an email pattern
-      const isEmail = typeof key === 'string' && key.toLowerCase().includes('email') && key !== 'error';
-      if (LGPD_SENSITIVE_FIELDS.includes(key) || isEmail) {
-        out[key] = '[REDACTED]';
-      } else {
-        out[key] = redactLgpdFields(val);
-      }
-    }
-    return out;
-  }
-  return obj;
-}
+import { redactLgpdFields } from './utils/lgpdScrubber.ts';
 
 /**
  * Sentry beforeSend scrubber — runs on every error/transaction event
