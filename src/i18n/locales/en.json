@@ -25,7 +25,8 @@
     "analise": "Analysis",
     "guia": "Guide",
     "vinculo": "Connect",
-    "notificacoes": "Notifications"
+    "notificacoes": "Notifications",
+    "privacidade": "Privacy"
   },
   "stamps": {
     "sangramento": "Bleeding",
@@ -400,6 +401,26 @@
   "ui": {
     "darkMode": "Dark theme",
     "offline": "You are offline — your entries will sync when the connection returns"
+  },
+  "privacyTrust": {
+    "pageTitle": "Privacy & Your Data",
+    "sectionLabel": "Protections",
+    "back": "Back",
+    "heading": "Real protections we apply to keep your health data safe.",
+    "item1Title": "Your data stays in Brazil",
+    "item1Body": "Database in the sa-east-1 region (São Paulo). Health data never leaves Brazilian territory — fully LGPD compliant.",
+    "item2Title": "Only you and your instructor have access",
+    "item2Body": "Row Level Security (RLS) is active: no other user can read your records, even with direct database access.",
+    "item3Title": "Sensitive fields never appear in logs",
+    "item3Body": "The relations, notes, and sensation fields are automatically removed before any audit log or error tracking event.",
+    "item4Title": "Access is always authenticated",
+    "item4Body": "Every API call requires valid authentication. Sessions expire after inactivity (≈60 min) and use JWT — no stored passwords.",
+    "item5Title": "Zero data monetisation",
+    "item5Body": "Your data is never sold, shared with third parties, or used for advertising. Full stop.",
+    "item6Title": "The app does not interpret your cycle",
+    "item6Body": "The app records what you observe. Clinical interpretation of the cycle is the exclusive responsibility of your CENPLAFAM/WOOMB certified instructor.",
+    "instructorNote": "The app does NOT classify days. Your CENPLAFAM/WOOMB certified instructor — not an algorithm — interprets the cycle.",
+    "fullPolicyCta": "Read the full Privacy Policy"
   },
   "onboarding": {
     "dialogLabel": "Introduction to Billings Chart",

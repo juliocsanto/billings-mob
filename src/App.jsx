@@ -23,6 +23,7 @@ import { PerfilPage } from './pages/PerfilPage.jsx';
 import { LinkInstructorPage } from './pages/LinkInstructorPage.tsx';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage.tsx';
 import { FeedbackPage } from './components/feedback/FeedbackPage.tsx';
+import { PrivacyTrustPage } from './pages/PrivacyTrustPage.jsx';
 
 // ── Demo data (anonymous try-out mode only — never shown to logged-in users) ──
 function buildDemoData() {
@@ -385,6 +386,8 @@ export default function App({ user, session } = {}) {
             onNavigate={setTab}
           />
         )}
+
+        {tab === 'privacidade' && <PrivacyTrustPage onBack={() => setTab('perfil')} />}
 
         {tab === 'feedback' && <FeedbackPage session={session} />}
       </div>

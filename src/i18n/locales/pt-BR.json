@@ -25,7 +25,8 @@
     "analise": "Análise",
     "guia": "Guia",
     "vinculo": "Vínculo",
-    "notificacoes": "Notificações"
+    "notificacoes": "Notificações",
+    "privacidade": "Privacidade"
   },
   "stamps": {
     "sangramento": "Sangramento",
@@ -400,6 +401,26 @@
   "ui": {
     "darkMode": "Tema escuro",
     "offline": "Você está offline — seus registros serão sincronizados quando a conexão voltar"
+  },
+  "privacyTrust": {
+    "pageTitle": "Privacidade & Seus Dados",
+    "sectionLabel": "Proteções",
+    "back": "Voltar",
+    "heading": "Proteções reais que aplicamos para guardar seus dados de saúde com segurança.",
+    "item1Title": "Seus dados ficam no Brasil",
+    "item1Body": "Banco de dados na região sa-east-1 (São Paulo). Dados de saúde nunca saem do território nacional — em conformidade com a LGPD.",
+    "item2Title": "Só você e sua instrutora têm acesso",
+    "item2Body": "Row Level Security (RLS) ativo: nenhum outro usuário consegue ler seus registros, mesmo que tente acessar diretamente o banco.",
+    "item3Title": "Dados sensíveis nunca aparecem em logs",
+    "item3Body": "Os campos relações, notas e sensação são removidos automaticamente antes de qualquer log de auditoria ou rastreamento de erros.",
+    "item4Title": "Acesso sempre autenticado",
+    "item4Body": "Toda chamada à API exige autenticação válida. A sessão expira por inatividade (≈60 min) e usa JWT — sem senhas armazenadas.",
+    "item5Title": "Zero monetização dos seus dados",
+    "item5Body": "Seus dados jamais são vendidos, repassados a terceiros ou usados para fins publicitários. Ponto final.",
+    "item6Title": "O app não interpreta o seu ciclo",
+    "item6Body": "O app registra o que você observa. A interpretação clínica do ciclo é responsabilidade exclusiva da sua instrutora certificada CENPLAFAM/WOOMB.",
+    "instructorNote": "O app NÃO classifica dias. Quem interpreta o ciclo é sua instrutora certificada CENPLAFAM/WOOMB — não um algoritmo.",
+    "fullPolicyCta": "Ler a Política de Privacidade completa"
   },
   "onboarding": {
     "dialogLabel": "Introdução ao Billings Gráfico",
