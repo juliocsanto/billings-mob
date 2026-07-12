@@ -1,8 +1,8 @@
 # ARCHITECTURE.md — Billings Gráfico: Plataforma MOB
 
-> Documento de Arquitetura de Software — Versao 1.5  
+> Documento de Arquitetura de Software — Versao 1.6  
 > Projeto: **Billings Grafico** (billings-mob)  
-> Data: 2026-05-24 — atualizado em 2026-06-07  
+> Data: 2026-05-24 — atualizado em 2026-07-11  
 > Arquiteto Responsavel: Julio C. Santo  
 > Status: **APROVADO PARA IMPLEMENTACAO**
 
@@ -3684,5 +3684,216 @@ A camada Application (use cases do sistema de feedback) depende apenas de `Email
 | AWS SES | Requer conta AWS, IAM, verificacao de sandbox — complexidade desproporcional para o porte do MVP |
 | Nodemailer + SMTP proprio | Sem garantias de entrega, gestao de servidor SMTP propria, SPF/DKIM manuais — operacional inviavel para time de 2 pessoas |
 | React Email (templates) | Nova dependencia de build (React no servidor); overhead injustificado para 2 templates iniciais — revisitar se templates ultrapassarem 10 |
+
+---
+
+## ADR-020 — Convencao de Consolidacao de Rotas Serverless (Teto Vercel Hobby de 12 Funcoes)
+
+**Status:** ACEITO  
+**Data:** 2026-07-11  
+**Decisao:** Toda nova superficie de API entra como sub-rota dentro de um handler consolidado existente (Hono roteando por path + entrada de `rewrites` no `vercel.json`), nunca como novo arquivo `api/*/index.ts` de topo, enquanto o projeto permanecer no plano Hobby.
+
+### Contexto
+
+O plano Vercel Hobby limita o projeto a 12 Serverless Functions. O projeto atingiu o teto
+exato de **12/12** durante a Revisao Estrategica (2026-07). Os 12 handlers ativos sao:
+
+| Arquivo handler | Dominio |
+|---|---|
+| `api/billing/index.ts` | Asaas billing |
+| `api/cycles/index.ts` | Ciclos |
+| `api/feedback/index.ts` | Feedback (inclui /:id via Hono) |
+| `api/feedback/[id]/index.ts` | Feedback por ID |
+| `api/instructor-student-links/index.ts` | Vinculos aluna/instrutora |
+| `api/observations/index.ts` | Observacoes (lista + criacao) |
+| `api/observations/[id].ts` | Observacao por ID |
+| `api/observations/versions/index.ts` | Versoes pendentes |
+| `api/observations/[id]/versions/index.ts` | Versoes por observacao |
+| `api/users/index.ts` | Perfil do usuario |
+| `api/users/push-preferences/index.ts` | Preferencias de push |
+| `api/webhooks/whatsapp.ts` | Webhook WhatsApp |
+
+Ja existe uma convencao de fato: sub-paths sao roteados para handlers consolidados via
+`rewrites` no `vercel.json` (ex.: `/api/instructor-student-links/pending` e `/:id` →
+`instructor-student-links/index`; `/api/feedback/*` → `feedback/index`; `/api/users/(.*)`
+→ `users/index`). A revisao estrategica (2026-07) adicionou o endpoint `linkStatus`
+enriquecendo o handler `instructor-student-links/index` existente, sem criar nova funcao —
+validando o padrao.
+
+### Decisao
+
+**Convencao formalizada:** qualquer nova rota de API deve ser implementada como um novo
+path Hono dentro de um handler consolidado ja existente, acompanhada de uma nova entrada
+de `rewrites` no `vercel.json` — **nunca** como um novo arquivo `api/*/index.ts` de topo.
+
+Regras operacionais:
+
+1. Avaliar qual handler existente e o dono natural do novo dominio. Se nenhum for adequado,
+   consolidar dois handlers candidatos para liberar folga antes de criar um novo arquivo.
+2. A entrada de `rewrites` deve usar regex especifico o suficiente para nao capturar rotas
+   de outros handlers.
+3. Novos dominios so ganham funcao propria apos migracao para Vercel Pro (que remove o
+   teto de 12) ou apos consolidacao que libere pelo menos uma vaga.
+4. Pull Requests que adicionem um novo arquivo handler de topo sem migracao de plano
+   documentada sao bloqueados em code review.
+
+**Gatilho de reavaliacao:** migracao para Vercel Pro — o limite de 12 deixa de existir.
+
+### Consequencias positivas
+
+- Deploy nunca mais e bloqueado por estouro do limite de funcoes
+- Contrato explicito para PRs: revisores verificam a regra como gate de mergeabilidade
+- Consistente com a arquitetura Hono ja adotada (roteamento por path dentro do handler)
+- Zero custo adicional — usa infraestrutura ja existente (`vercel.json` rewrites)
+
+### Consequencias negativas
+
+- Handlers consolidados crescem em tamanho; importa manter separacao de concerns via
+  modulos internos em `api/_lib/`
+- Roteamento por sub-path exige disciplina de `rewrites`: erro de regex pode capturar
+  rotas erradas (risco mitigavel por testes de integracao)
+- Novos dominios sem handler natural adequado ficam artificialmente acoplados ao mais
+  proximo — debito arquitetural a resolver na migracao Pro
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Migrar para Vercel Pro agora | Custo desnecessario no estagio MVP; o limite de 12 e gerenciavel com a convencao |
+| Deletar handler existente para abrir vaga | Regressao funcional; nao e opcao viavel sem substituicao |
+| Ignorar o limite e deixar o deploy falhar | Bloqueia CI/CD sem aviso previo; inaceitavel para o time |
+
+---
+
+## ADR-021 — Adiamento de Expansao de i18n Alem de pt-BR/en
+
+**Status:** ACEITO  
+**Data:** 2026-07-11  
+**Decisao:** Adiar deliberadamente a adicao de novos locales (alem de `pt-BR` e `en`) ate que exista uma decisao validada de entrada em mercado internacional.
+
+### Contexto
+
+O suporte a i18n foi introduzido no ADR-014 com dois locales: `pt-BR` (primario) e `en`
+(secundario). Na Revisao Estrategica de 2026-07, a expansao de idiomas foi classificada
+como **P2 e CONDICIONAL** — so vale o investimento se houver uma aposta internacional
+concreta. O mercado-alvo atual e Brasil/CENPLAFAM.
+
+Adicionar um novo locale envolve:
+- Traducao completa de todas as chaves de UI (centenas de strings)
+- Traducao de terminologia clinica do MOB — que requer revisao por instrutora certificada
+  no idioma-alvo (risco clinico: traducao incorreta de termos como `apice`, `muco`,
+  `carimbo` pode induzir erro de interpretacao)
+- Manutencao continua: cada nova feature adiciona chaves que precisam ser traduzidas em
+  todos os locales ativos
+- Eventual necessidade de DPA com fornecedor de traducao profissional (LGPD Art. 7)
+
+### Decisao
+
+**Adiar** novos locales. O i18n raso (dois idiomas) e coerente com o estagio atual do
+produto. Adicionar idiomas sem uma aposta de mercado validada e custo sem retorno:
+traducao + revisao clinica bilingual + manutencao continua de strings sao overhead
+desproporcionais para o MVP.
+
+O framework `react-i18next` (ADR-014) ja e preparado para adicionar locales facilmente
+quando a decisao for tomada — o diferimento nao cria debito tecnico estrutural.
+
+**Gatilho de reavaliacao:** decisao concreta de go-to-market internacional (ex.: parceria
+com WOOMB fora do Brasil, piloto com comunidade de diaspora, acordo com organizacao
+certificadora estrangeira).
+
+### Consequencias positivas
+
+- Foco de recursos no loop de valor domestico (retencao de alunas, ferramenta da instrutora)
+- Eliminacao de manutencao de strings duplicadas em idiomas sem usuarios ativos
+- Terminologia clinica sem risco de traducao inadequada enquanto nao houver revisao especializada
+- Zero debito tecnico: a infraestrutura i18n (ADR-014) esta pronta para expansao
+
+### Consequencias negativas
+
+- Alunas/instrutoras fora do Brasil ou falantes de outros idiomas nao sao servidas alem do ingles
+- Se surgir oportunidade internacional rapida, a adicao de locale tera latencia de semanas
+  (traducao + revisao clinica nao e instantanea)
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Adicionar locale `es` (espanhol) preventivamente | Custo de manutencao sem demanda comprovada; terminologia clinica MOB em espanhol exige revisao por instrutora WOOMB certificada |
+| Traducao automatica (LLM ou Google Translate) | Inaceitavel para terminologia clinica de saude reprodutiva — erros podem induzir interpretacao errada do ciclo |
+| Manter apenas `pt-BR` (remover `en`) | Regressao: `en` ja esta implementado, testado e tem usuarios; remocao seria custo sem beneficio |
+
+---
+
+## ADR-022 — Avaliacao e Adiamento de Integracao com Wearables
+
+**Status:** ACEITO  
+**Data:** 2026-07-11  
+**Decisao:** Adiar integracao com wearables. O alto esforco, o risco clinico/regulatorio e a ausencia de demanda comprovada tornam a integracao prematura no estagio atual.
+
+### Contexto
+
+Concorrentes como Natural Cycles utilizam temperatura basal (via termometro certificado ou
+wearable) para oferecer status diario automatizado. A Revisao Estrategica de 2026-07
+incluiu "avaliar wearables" como item **P2 de alto esforco**.
+
+**Restricao clinica dura do produto:** o sistema NUNCA classifica fertilidade. Toda
+interpretacao clinica e competencia exclusiva da instrutora certificada CENPLAFAM/WOOMB.
+Esta restricao, formalizada desde o ADR-002 e ADR-003, e o ponto de tensao central com
+qualquer integracao de wearable: dados de temperatura basal tendem, por natureza, a
+sugerir padroes de janela fertil — o que colide frontalmente com a restricao clinica.
+
+Fatores avaliados:
+- **Esforco:** app companion Bluetooth ou Web Bluetooth API + novo modelo de dados para
+  leituras de temperatura + integracao de DPA com fabricante do dispositivo
+- **Lacuna primaria de retencao:** a revisao estrategica identificou que o problema de
+  retencao e habito diario de registro, nao precisao de sensor. Essa lacuna foi atacada
+  nesta revisao por streak + onboarding (Stage 4), que sao solucoes de menor esforco
+- **Vantagem competitiva:** o diferencial do produto e "instrutora no loop", nao rigor
+  de sensor — wearable nao enderca essa proposicao de valor
+- **Risco regulatorio:** dado de temperatura basal lido por sensor digital aproxima o
+  produto de um dispositivo medico (Medical Device Software — MDSW), o que pode exigir
+  enquadramento regulatorio no Brasil (ANVISA RDC 185/2006 e RDC 40/2015) e
+  internacionalmente (EU MDR / FDA SaMD)
+
+### Decisao
+
+**Adiar.** Se a integracao for adotada no futuro, os seguintes requisitos sao obrigatorios:
+
+1. **Modelo de dados neutro:** temperatura basal e registrada como OBSERVACAO (fato
+   medido), nunca como classificacao de fertilidade — o campo seria equivalente a `stamp`
+   em neutralidade clinica
+2. **Fronteira clinica explicita em UI:** a leitura e apresentada como dado bruto; nenhum
+   componente de frontend pode inferir ou exibir qualquer correlacao com fertilidade
+3. **Porta hexagonal dedicada:** seguir o padrao Port/Adapter/Factory (ADR-011, ADR-015)
+   — `WearablePort` + adapter especifico por fabricante + `MockWearableAdapter`
+4. **DPA do fabricante:** revisao LGPD (dados de saude) + Art. 11 antes de qualquer
+   integracao com SDK de terceiro
+5. **Revisao de enquadramento regulatorio (ANVISA/MDSW):** antes de qualquer release
+   publico com dado de sensor
+
+**Gatilho de reavaliacao:** metricas de retencao comprovarem que o loop de habito esta
+consolidado E houver demanda explicita e mensuravel de alunas/instrutoras por dados de
+temperatura, com plano de revisao regulatoria pre-aprovado.
+
+### Consequencias positivas
+
+- Escopo enxuto: nenhum esforco de integracao de hardware/Bluetooth no roadmap imediato
+- Restricao clinica intacta: sem risco de exibir inferencia de fertilidade via dado de sensor
+- Evita exposicao regulatoria prematura (ANVISA MDSW / EU MDR / FDA SaMD)
+- Recursos focados em retencao por habito — problema comprovado de maior impacto
+
+### Consequencias negativas
+
+- Produto nao compete em paridade de feature com Natural Cycles no curto prazo
+- Se demanda de wearable surgir rapido, a adicao tera latencia significativa (modelo de
+  dados + DPA + revisao regulatoria nao sao instantaneos)
+
+### Alternativas rejeitadas
+
+| Alternativa | Motivo da rejeicao |
+|---|---|
+| Integrar Web Bluetooth com termometro generico | Web Bluetooth tem suporte limitado (Chrome-only, sem iOS Safari); inconsistencia de experiencia inaceitavel para PWA cross-platform |
+| Importar dados de wearable como CSV/manual | Nao resolve a retencao (adiciona friccao); risco de dado de sensor sendo mal-interpretado como classificacao automatica |
+| Parceria com Natural Cycles ou Ava | Conflito de modelo de negocio; cede diferencial competitivo ("instrutora no loop") para concorrente direto |
 
 ---
