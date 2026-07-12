@@ -25,7 +25,8 @@
     "analise": "Análise",
     "guia": "Guia",
     "vinculo": "Vínculo",
-    "notificacoes": "Notificações"
+    "notificacoes": "Notificações",
+    "privacidade": "Privacidade"
   },
   "stamps": {
     "sangramento": "Sangramento",
@@ -234,6 +235,10 @@
     "pbiNotConfirmed": "PBI ainda em confirmação. São necessários 3 ciclos seguidos com padrão inalterado para confirmar.",
     "clinicalObservations": "Observações clínicas",
     "analysisDisclaimer": "Esta análise é uma ferramenta de apoio ao registro. A interpretação clínica do ciclo é responsabilidade exclusiva da instrutora credenciada CENPLAFAM/WOOMB.",
+    "labelVariability": "Variação",
+    "labelRegistrationStreak": "Sequência de registros",
+    "sectionCycleTrend": "Histórico de duração dos ciclos",
+    "cycleTrendAvgLabel": "Média",
     "guideTitle": "Guia de anotações",
     "guideWarning": "Ajuda com o uso do app.",
     "guideWarningCycleInterpretation": "Interpretação do ciclo",
@@ -285,7 +290,11 @@
     "manageLink": "Gerenciar vínculo",
     "noInstructorHint": "Associe-se à sua instrutora para compartilhar seus registros.",
     "appearanceSection": "Aparência",
-    "pendingSync": "{{count}} a sincronizar"
+    "pendingSync": "{{count}} a sincronizar",
+    "instructorNudgeTitle": "Receba a interpretação do seu ciclo",
+    "instructorNudgeBody": "Vincule-se a uma instrutora certificada CENPLAFAM/WOOMB — só ela interpreta seus registros. O app mostra apenas o que você observou.",
+    "instructorNudgeCta": "Vincular a uma instrutora",
+    "instructorNudgePending": "Convite enviado — aguardando sua instrutora aceitar."
   },
   "feedback": {
     "loginRequired": "Faça login para acessar as sugestões da comunidade.",
@@ -389,8 +398,53 @@
     "stampMuco": "Muco",
     "stampApice": "Ápice"
   },
+  "streak": {
+    "days": "{{count}} dia seguido de registro",
+    "days_plural": "{{count}} dias seguidos de registro",
+    "zero": "Comece sua sequência hoje",
+    "nudgeContinue": "Você tem {{count}} dias seguidos — registre hoje para não perder a sequência",
+    "nudgeContinue_plural": "Você tem {{count}} dias seguidos — registre hoje para não perder a sequência",
+    "nudgeResume": "Que tal retomar seus registros?"
+  },
   "ui": {
     "darkMode": "Tema escuro",
     "offline": "Você está offline — seus registros serão sincronizados quando a conexão voltar"
+  },
+  "privacyTrust": {
+    "pageTitle": "Privacidade & Seus Dados",
+    "sectionLabel": "Proteções",
+    "back": "Voltar",
+    "heading": "Proteções reais que aplicamos para guardar seus dados de saúde com segurança.",
+    "item1Title": "Seus dados ficam no Brasil",
+    "item1Body": "Banco de dados na região sa-east-1 (São Paulo). Dados de saúde nunca saem do território nacional — em conformidade com a LGPD.",
+    "item2Title": "Só você e sua instrutora têm acesso",
+    "item2Body": "Row Level Security (RLS) ativo: nenhum outro usuário consegue ler seus registros, mesmo que tente acessar diretamente o banco.",
+    "item3Title": "Dados sensíveis nunca aparecem em logs",
+    "item3Body": "Os campos relações, notas e sensação são removidos automaticamente antes de qualquer log de auditoria ou rastreamento de erros.",
+    "item4Title": "Acesso sempre autenticado",
+    "item4Body": "Toda chamada à API exige autenticação válida. A sessão expira por inatividade (≈60 min) e usa JWT — sem senhas armazenadas.",
+    "item5Title": "Zero monetização dos seus dados",
+    "item5Body": "Seus dados jamais são vendidos, repassados a terceiros ou usados para fins publicitários. Ponto final.",
+    "item6Title": "O app não interpreta o seu ciclo",
+    "item6Body": "O app registra o que você observa. A interpretação clínica do ciclo é responsabilidade exclusiva da sua instrutora certificada CENPLAFAM/WOOMB.",
+    "instructorNote": "O app NÃO classifica dias. Quem interpreta o ciclo é sua instrutora certificada CENPLAFAM/WOOMB — não um algoritmo.",
+    "fullPolicyCta": "Ler a Política de Privacidade completa"
+  },
+  "onboarding": {
+    "dialogLabel": "Introdução ao Billings Gráfico",
+    "progressAria": "Passo {{current}} de {{total}}",
+    "skip": "Pular introdução",
+    "next": "Próximo",
+    "finish": "Começar",
+    "step1Title": "Bem-vinda ao Billings Gráfico",
+    "step1Body": "Este app ajuda você a registrar suas observações diárias do ciclo. Você anota o que observa — sua instrutora é quem interpreta.",
+    "step2Title": "O carimbo da observação",
+    "step2Body": "Cada dia tem um carimbo: Sangramento, Seco, Muco ou Ápice. O carimbo descreve o que você observou — não classifica nenhum dia.",
+    "step3Title": "Muco e sensação",
+    "step3Body": "Quando há muco, você registra o tipo (opaco, cremoso, transparente ou elástico) e a sensação (seca, molhada ou lubrificante). Quanto mais detalhado o registro, melhor o acompanhamento.",
+    "step4Title": "O papel da instrutora",
+    "step4Body": "O app não classifica dias — quem interpreta é sua instrutora. Ela é a única que pode orientar sobre o seu ciclo com base nos registros que você fizer.",
+    "step5Title": "Seus dados são seus",
+    "step5Body": "Seus registros ficam no seu dispositivo e são sincronizados de forma segura. Apenas você e sua instrutora têm acesso ao seu ciclo."
   }
 }

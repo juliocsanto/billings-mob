@@ -25,7 +25,8 @@
     "analise": "Analysis",
     "guia": "Guide",
     "vinculo": "Connect",
-    "notificacoes": "Notifications"
+    "notificacoes": "Notifications",
+    "privacidade": "Privacy"
   },
   "stamps": {
     "sangramento": "Bleeding",
@@ -234,6 +235,10 @@
     "pbiNotConfirmed": "BIP still being confirmed. 3 consecutive cycles with unchanged pattern are required.",
     "clinicalObservations": "Clinical observations",
     "analysisDisclaimer": "This analysis is a support tool for recording. Clinical interpretation of the cycle is the exclusive responsibility of the CENPLAFAM/WOOMB certified instructor.",
+    "labelVariability": "Variability",
+    "labelRegistrationStreak": "Recording streak",
+    "sectionCycleTrend": "Cycle duration history",
+    "cycleTrendAvgLabel": "Average",
     "guideTitle": "Annotation guide",
     "guideWarning": "Help with using the app.",
     "guideWarningCycleInterpretation": "Cycle interpretation",
@@ -285,7 +290,11 @@
     "manageLink": "Manage link",
     "noInstructorHint": "Link with your instructor to share your records.",
     "appearanceSection": "Appearance",
-    "pendingSync": "{{count}} to sync"
+    "pendingSync": "{{count}} to sync",
+    "instructorNudgeTitle": "Get your cycle interpreted",
+    "instructorNudgeBody": "Link with a certified CENPLAFAM/WOOMB instructor — only she interprets your records. The app shows only what you observed.",
+    "instructorNudgeCta": "Link with an instructor",
+    "instructorNudgePending": "Invitation sent — waiting for your instructor to accept."
   },
   "feedback": {
     "loginRequired": "Log in to access community suggestions.",
@@ -389,8 +398,53 @@
     "stampMuco": "Mucus",
     "stampApice": "Peak"
   },
+  "streak": {
+    "days": "{{count}}-day tracking streak",
+    "days_plural": "{{count}}-day tracking streak",
+    "zero": "Start your streak today",
+    "nudgeContinue": "You have a {{count}}-day streak — record today to keep it going",
+    "nudgeContinue_plural": "You have a {{count}}-day streak — record today to keep it going",
+    "nudgeResume": "How about resuming your records?"
+  },
   "ui": {
     "darkMode": "Dark theme",
     "offline": "You are offline — your entries will sync when the connection returns"
+  },
+  "privacyTrust": {
+    "pageTitle": "Privacy & Your Data",
+    "sectionLabel": "Protections",
+    "back": "Back",
+    "heading": "Real protections we apply to keep your health data safe.",
+    "item1Title": "Your data stays in Brazil",
+    "item1Body": "Database in the sa-east-1 region (São Paulo). Health data never leaves Brazilian territory — fully LGPD compliant.",
+    "item2Title": "Only you and your instructor have access",
+    "item2Body": "Row Level Security (RLS) is active: no other user can read your records, even with direct database access.",
+    "item3Title": "Sensitive fields never appear in logs",
+    "item3Body": "The relations, notes, and sensation fields are automatically removed before any audit log or error tracking event.",
+    "item4Title": "Access is always authenticated",
+    "item4Body": "Every API call requires valid authentication. Sessions expire after inactivity (≈60 min) and use JWT — no stored passwords.",
+    "item5Title": "Zero data monetisation",
+    "item5Body": "Your data is never sold, shared with third parties, or used for advertising. Full stop.",
+    "item6Title": "The app does not interpret your cycle",
+    "item6Body": "The app records what you observe. Clinical interpretation of the cycle is the exclusive responsibility of your CENPLAFAM/WOOMB certified instructor.",
+    "instructorNote": "The app does NOT classify days. Your CENPLAFAM/WOOMB certified instructor — not an algorithm — interprets the cycle.",
+    "fullPolicyCta": "Read the full Privacy Policy"
+  },
+  "onboarding": {
+    "dialogLabel": "Introduction to Billings Chart",
+    "progressAria": "Step {{current}} of {{total}}",
+    "skip": "Skip introduction",
+    "next": "Next",
+    "finish": "Get started",
+    "step1Title": "Welcome to Billings Chart",
+    "step1Body": "This app helps you record your daily cycle observations. You note what you observe — your instructor is the one who interprets it.",
+    "step2Title": "The observation stamp",
+    "step2Body": "Each day has a stamp: Bleeding, Dry, Mucus, or Peak. The stamp describes what you observed — it does not classify any day.",
+    "step3Title": "Mucus and sensation",
+    "step3Body": "When there is mucus, you record the type (opaque, creamy, transparent, or elastic) and the sensation (dry, wet, or lubricative). The more detailed the record, the better the follow-up.",
+    "step4Title": "The instructor's role",
+    "step4Body": "The app does not classify days — your instructor is the one who interprets. She is the only one who can guide you about your cycle based on the records you make.",
+    "step5Title": "Your data is yours",
+    "step5Body": "Your records stay on your device and are synced securely. Only you and your instructor have access to your cycle."
   }
 }

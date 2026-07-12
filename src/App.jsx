@@ -4,10 +4,13 @@ import { pdf } from '@react-pdf/renderer';
 import { Toaster, toast } from 'sonner';
 import { ChartDocument } from './pdf/ChartPDF.jsx';
 import { STAMPS, EMPTY_FORM } from './constants.js';
-import { getLastOpenDate, setLastOpenDate } from './utils/storage.js';
+import { getLastOpenDate, setLastOpenDate, getOnboardingSeen, setOnboardingSeen } from './utils/storage.js';
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow.jsx';
 import { supabase } from './lib/supabaseClient';
 import { today, addDays, genDays } from './utils/dates.js';
 import { computeMultiCycleStats } from './utils/analysis.js';
+import { deriveInstructorLinkStatus } from './utils/instructorLinkStatus.js';
+import { computeStreak, hasRecordedToday, missedYesterday } from './utils/streak.js';
 import { useObservationData } from './hooks/useObservationData';
 import { useInstructorLink } from './hooks/useInstructorLink';
 import { DayDetailModal } from './components/DayDetailModal.jsx';
@@ -21,6 +24,7 @@ import { PerfilPage } from './pages/PerfilPage.jsx';
 import { LinkInstructorPage } from './pages/LinkInstructorPage.tsx';
 import { NotificationPreferencesPage } from './pages/NotificationPreferencesPage.tsx';
 import { FeedbackPage } from './components/feedback/FeedbackPage.tsx';
+import { PrivacyTrustPage } from './pages/PrivacyTrustPage.jsx';
 
 // ── Demo data (anonymous try-out mode only — never shown to logged-in users) ──
 function buildDemoData() {
@@ -66,6 +70,14 @@ export default function App({ user, session } = {}) {
   const [selectedDay, setSelectedDay] = useState(null); // { date, n, obs } for DayDetailModal
   const chatEnd = useRef(null);
 
+  // First-use onboarding gate — shown once, gated by localStorage.
+  // Initialized lazily so SSR-hostile localStorage is only read once on mount.
+  const [showOnboarding, setShowOnboarding] = useState(() => !getOnboardingSeen());
+  const handleOnboardingDone = () => {
+    setOnboardingSeen();
+    setShowOnboarding(false);
+  };
+
   // Local-first observation store with server sync (C-3 / ADR-004).
   const {
     loaded,
@@ -85,13 +97,38 @@ export default function App({ user, session } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
   const activeLink = links.find((l) => l.status === 'active') ?? null;
+  const instructorLinkStatus = deriveInstructorLinkStatus(links);
 
-  // Daily reminder toast (LVL-17 — replaces sticky banner)
+  // Daily reminder toast (LVL-17 — replaces sticky banner).
+  // Extended with missed-day nudge: if the aluna has a live streak but hasn't
+  // recorded today, encourage keeping it; if yesterday was also missed, softer
+  // "resume" message. One toast only — non-nagging, once per day.
+  // Suppressed on first use: the onboarding overlay already welcomes the user;
+  // showing a toast simultaneously would be redundant and noisy.
   useEffect(() => {
     const last = getLastOpenDate();
     if (last !== today()) {
-      toast.info(t('app.banner'), { duration: 6000 });
       setLastOpenDate(today());
+      // Skip toast if the user is seeing the onboarding for the first time.
+      if (!getOnboardingSeen()) return;
+
+      const streak = computeStreak(obs, today());
+      const recordedToday = hasRecordedToday(obs, today());
+      const missed = missedYesterday(obs, today());
+
+      let message;
+      if (streak > 0 && !recordedToday) {
+        // Streak alive but today not yet recorded — encourage continuing.
+        message = t('streak.nudgeContinue', { count: streak });
+      } else if (missed && !recordedToday) {
+        // No active streak and yesterday was missed — gentle resume prompt.
+        message = t('streak.nudgeResume');
+      } else {
+        // Default daily reminder.
+        message = t('app.banner');
+      }
+
+      toast.info(message, { duration: 6000 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -248,6 +285,9 @@ export default function App({ user, session } = {}) {
       <Toaster position="top-center" richColors closeButton theme="system" />
       <OfflineIndicator />
 
+      {/* ── FIRST-USE ONBOARDING ─────────────────── */}
+      {showOnboarding && <OnboardingFlow onFinish={handleOnboardingDone} />}
+
       {/* ── HEADER ─────────────────────────────── */}
       {/* LVL-17: inline style removed — now uses sticky top-0 Tailwind class */}
       {/* LVL-09: context-sensitive header — hero date on Hoje tab */}
@@ -308,6 +348,7 @@ export default function App({ user, session } = {}) {
             setConfirmNew={setConfirmNew}
             onSave={handleSave}
             onStartNewCycle={handleStartNewCycle}
+            obs={obs}
           />
         )}
 
@@ -325,7 +366,14 @@ export default function App({ user, session } = {}) {
           />
         )}
 
-        {tab === 'analise' && <AnalisePage stats={stats} />}
+        {tab === 'analise' && (
+          <AnalisePage
+            stats={stats}
+            obs={obs}
+            instructorLinkStatus={instructorLinkStatus}
+            onNavigate={setTab}
+          />
+        )}
 
         {tab === 'guia' && (
           <GuiaPage msgs={msgs} input={input} setInput={setInput} aiLoading={aiLoading} sendAI={sendAI} chatEnd={chatEnd} />
@@ -347,6 +395,8 @@ export default function App({ user, session } = {}) {
             onNavigate={setTab}
           />
         )}
+
+        {tab === 'privacidade' && <PrivacyTrustPage onBack={() => setTab('perfil')} />}
 
         {tab === 'feedback' && <FeedbackPage session={session} />}
       </div>

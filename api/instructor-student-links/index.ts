@@ -61,6 +61,25 @@ function canRevoke(link: { status: string }): boolean {
   return link.status !== 'revoked';
 }
 
+/**
+ * deriveLinkStatus — pure helper (unit-testable, no side-effects).
+ *
+ * For a student caller: returns the highest-priority link status across all
+ * their rows: 'active' > 'pending' > 'none'.
+ * For any other role (instructor, admin): returns null (field not applicable).
+ *
+ * LGPD/clinical: receives only the status field — no personal or clinical data.
+ */
+export function deriveLinkStatus(
+  rows: Array<{ status: string }>,
+  role: string,
+): 'active' | 'pending' | 'none' | null {
+  if (role !== 'student') return null;
+  if (rows.some((r) => r.status === 'active')) return 'active';
+  if (rows.some((r) => r.status === 'pending')) return 'pending';
+  return 'none';
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const app = new Hono();
@@ -81,7 +100,7 @@ app.get('/', async (c) => {
 
   if (error) return internalError(c, error);
 
-  return c.json({ data: data ?? [] });
+  return c.json({ data: data ?? [], linkStatus: deriveLinkStatus(data ?? [], auth.role) });
 });
 
 // ─── POST /api/instructor-student-links ───────────────────────────────────────

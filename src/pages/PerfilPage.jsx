@@ -7,7 +7,7 @@
  * contradicted the Vínculo flow), entry points to Vínculo / Notificações /
  * Feedback, calendar reminders and the usage disclaimer.
  */
-import { Bell, MessageSquareText, Link2, ChevronRight, LogOut } from 'lucide-react';
+import { Bell, MessageSquareText, Link2, ShieldCheck, ChevronRight, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabaseClient';
 import { generateDailyReminder, downloadICS } from '../utils/ics.js';
@@ -21,6 +21,7 @@ export function PerfilPage({ user, activeLink, todayN, cycleStart, onNavigate })
   const menuItems = [
     { id: 'vinculo', label: t('nav.vinculo'), Icon: Link2, testId: 'menu-vinculo' },
     { id: 'notificacoes', label: t('nav.notificacoes'), Icon: Bell, testId: 'menu-notificacoes' },
+    { id: 'privacidade', label: t('nav.privacidade'), Icon: ShieldCheck, testId: 'menu-privacidade' },
     { id: 'feedback', label: 'Feedback', Icon: MessageSquareText, testId: 'menu-feedback' },
   ];
 

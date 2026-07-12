@@ -92,6 +92,8 @@ vi.mock('../utils/storage', () => ({
   saveApiKey: vi.fn(),
   getLastOpenDate: vi.fn(() => null),
   setLastOpenDate: vi.fn(),
+  getOnboardingSeen: vi.fn(() => true),
+  setOnboardingSeen: vi.fn(),
 }));
 
 // ── Mock other imports ────────────────────────────────────────────────────────
