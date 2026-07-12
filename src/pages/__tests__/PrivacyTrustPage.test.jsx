@@ -102,13 +102,13 @@ vi.mock('../../components/LanguageSelector.jsx', () => ({
 
 describe('PrivacyTrustPage', () => {
   it('AC1: renders with data-testid="privacy-trust-page"', () => {
-    const { getByTestId } = render(<PrivacyTrustPage onBack={vi.fn()} />);
-    expect(getByTestId('privacy-trust-page')).toBeTruthy();
+    render(<PrivacyTrustPage onBack={vi.fn()} />);
+    expect(screen.queryByTestId('privacy-trust-page')).toBeInTheDocument();
   });
 
   it('AC2a: residency row is present (testid privacy-residency)', () => {
-    const { getByTestId } = render(<PrivacyTrustPage onBack={vi.fn()} />);
-    expect(getByTestId('privacy-residency')).toBeTruthy();
+    render(<PrivacyTrustPage onBack={vi.fn()} />);
+    expect(screen.queryByTestId('privacy-residency')).toBeInTheDocument();
   });
 
   it('AC2b: residency row body mentions Brasil', () => {
@@ -162,7 +162,6 @@ describe('PrivacyTrustPage', () => {
   it('heading (h1) is present', () => {
     render(<PrivacyTrustPage onBack={vi.fn()} />);
     const h1 = screen.getByRole('heading', { level: 1 });
-    expect(h1).toBeTruthy();
     expect(h1.textContent).toContain('Privacidade');
   });
 });
@@ -187,7 +186,7 @@ describe('PerfilPage — menu-privacidade item', () => {
 
   it('AC6a: menu-privacidade button is present', () => {
     renderPerfil();
-    expect(screen.getByTestId('menu-privacidade')).toBeTruthy();
+    expect(screen.queryByTestId('menu-privacidade')).toBeInTheDocument();
   });
 
   it('AC6b: clicking menu-privacidade calls onNavigate with "privacidade"', () => {

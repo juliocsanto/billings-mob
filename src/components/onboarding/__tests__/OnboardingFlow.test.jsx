@@ -55,7 +55,7 @@ function renderFlow(onFinish = vi.fn()) {
 describe('OnboardingFlow — rendering', () => {
   it('renders the onboarding overlay with correct testid', () => {
     renderFlow();
-    expect(screen.getByTestId('onboarding-overlay')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-overlay')).toBeInTheDocument();
   });
 
   it('renders with role=dialog and aria-modal=true', () => {
@@ -76,20 +76,19 @@ describe('OnboardingFlow — rendering', () => {
 
   it('renders step 1 content on mount (data-testid onboarding-step-1)', () => {
     renderFlow();
-    expect(screen.getByTestId('onboarding-step-1')).toBeTruthy();
-    expect(screen.getByText('Bem-vinda ao Billings Gráfico')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-step-1')).toBeInTheDocument();
+    expect(screen.queryByText('Bem-vinda ao Billings Gráfico')).toBeInTheDocument();
   });
 
   it('renders skip button with correct testid and accessible label', () => {
     renderFlow();
     const skip = screen.getByTestId('onboarding-skip');
-    expect(skip).toBeTruthy();
     expect(skip.getAttribute('aria-label')).toBe('Pular introdução');
   });
 
   it('renders next button (not finish) on first step', () => {
     renderFlow();
-    expect(screen.getByTestId('onboarding-next')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-next')).toBeInTheDocument();
     expect(screen.queryByTestId('onboarding-finish')).toBeNull();
   });
 });
@@ -98,8 +97,8 @@ describe('OnboardingFlow — navigation', () => {
   it('advances to step 2 when Next is clicked', () => {
     renderFlow();
     fireEvent.click(screen.getByTestId('onboarding-next'));
-    expect(screen.getByTestId('onboarding-step-2')).toBeTruthy();
-    expect(screen.getByText('O carimbo da observação')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-step-2')).toBeInTheDocument();
+    expect(screen.queryByText('O carimbo da observação')).toBeInTheDocument();
   });
 
   it('advances through all 5 steps via Next clicks', () => {
@@ -108,8 +107,8 @@ describe('OnboardingFlow — navigation', () => {
       fireEvent.click(screen.getByTestId('onboarding-next'));
     }
     // Should now be on step 5
-    expect(screen.getByTestId('onboarding-step-5')).toBeTruthy();
-    expect(screen.getByText('Seus dados são seus')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-step-5')).toBeInTheDocument();
+    expect(screen.queryByText('Seus dados são seus')).toBeInTheDocument();
   });
 
   it('shows finish button (not next) on the last step', () => {
@@ -117,7 +116,7 @@ describe('OnboardingFlow — navigation', () => {
     for (let i = 0; i < 4; i++) {
       fireEvent.click(screen.getByTestId('onboarding-next'));
     }
-    expect(screen.getByTestId('onboarding-finish')).toBeTruthy();
+    expect(screen.queryByTestId('onboarding-finish')).toBeInTheDocument();
     expect(screen.queryByTestId('onboarding-next')).toBeNull();
   });
 });

@@ -34,8 +34,8 @@ const FORBIDDEN = /f[eé]rtil|inf[eé]rtil|inseguro|janela f[eé]rtil|per[ií]od
 describe('InstructorLinkNudge', () => {
   it('renders the CTA card when status is "none"', () => {
     render(<InstructorLinkNudge status="none" onNavigate={() => {}} />);
-    expect(screen.getByTestId('instructor-link-nudge')).toBeTruthy();
-    expect(screen.getByTestId('instructor-link-nudge-cta')).toBeTruthy();
+    expect(screen.getByTestId('instructor-link-nudge')).toHaveTextContent('Receba a interpretação do seu ciclo');
+    expect(screen.getByTestId('instructor-link-nudge-cta')).toHaveTextContent('Vincular a uma instrutora');
   });
 
   it('CTA button navigates to the vinculo tab', () => {
@@ -47,7 +47,7 @@ describe('InstructorLinkNudge', () => {
 
   it('renders the awaiting note (no CTA) when status is "pending"', () => {
     render(<InstructorLinkNudge status="pending" onNavigate={() => {}} />);
-    expect(screen.getByTestId('instructor-link-nudge-pending')).toBeTruthy();
+    expect(screen.getByTestId('instructor-link-nudge-pending')).toHaveTextContent('aguardando');
     expect(screen.queryByTestId('instructor-link-nudge-cta')).toBeNull();
   });
 

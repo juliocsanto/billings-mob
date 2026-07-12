@@ -105,7 +105,7 @@ describe('HojePage — streak indicator', () => {
   it('renders the streak indicator element', () => {
     const obs = { '2026-07-10': { stamp: 'seco' }, '2026-07-11': { stamp: 'seco' } };
     renderPage(obs);
-    expect(screen.getByTestId('streak-indicator')).toBeTruthy();
+    expect(screen.queryByTestId('streak-indicator')).toBeInTheDocument();
   });
 
   it('displays the streak count with human-readable text when streak > 0', () => {
@@ -138,7 +138,7 @@ describe('HojePage — streak indicator', () => {
         onStartNewCycle={vi.fn()}
       />,
     );
-    expect(screen.getByTestId('streak-indicator')).toBeTruthy();
+    expect(screen.queryByTestId('streak-indicator')).toBeInTheDocument();
   });
 
   it('does not render clinical classification labels (clinical constraint)', () => {
