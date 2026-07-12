@@ -94,7 +94,7 @@ describe('GET /api/instructor-student-links', () => {
     mockServiceFrom.mockReturnValue({ insert: mockAuditInsert });
   });
 
-  it('returns 200 with empty array when no links exist', async () => {
+  it('returns 200 with empty array and linkStatus none when no links exist (student)', async () => {
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnThis(),
       order: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -103,11 +103,54 @@ describe('GET /api/instructor-student-links', () => {
     const res = await app.request('/', { headers: studentHeaders });
 
     expect(res.status).toBe(200);
-    const json = await res.json() as { data: unknown[] };
+    const json = await res.json() as { data: unknown[]; linkStatus: string };
     expect(json.data).toEqual([]);
+    expect(json.linkStatus).toBe('none');
   });
 
-  it('returns 200 with list of links', async () => {
+  it('returns linkStatus pending when student has only pending links', async () => {
+    const link = makeLink({ status: 'pending' });
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [link], error: null }),
+    });
+
+    const res = await app.request('/', { headers: studentHeaders });
+
+    expect(res.status).toBe(200);
+    const json = await res.json() as { data: typeof link[]; linkStatus: string };
+    expect(json.linkStatus).toBe('pending');
+  });
+
+  it('returns linkStatus active when student has at least one active link', async () => {
+    const activeLink = makeLink({ status: 'active' });
+    const pendingLink = makeLink({ id: 'other-id', status: 'pending' });
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [activeLink, pendingLink], error: null }),
+    });
+
+    const res = await app.request('/', { headers: studentHeaders });
+
+    expect(res.status).toBe(200);
+    const json = await res.json() as { data: unknown[]; linkStatus: string };
+    expect(json.linkStatus).toBe('active');
+  });
+
+  it('returns linkStatus null for instructor caller (not applicable)', async () => {
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    });
+
+    const res = await app.request('/', { headers: instructorHeaders });
+
+    expect(res.status).toBe(200);
+    const json = await res.json() as { data: unknown[]; linkStatus: null };
+    expect(json.linkStatus).toBeNull();
+  });
+
+  it('returns 200 with list of links (data array unchanged)', async () => {
     const link = makeLink();
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnThis(),
@@ -117,10 +160,12 @@ describe('GET /api/instructor-student-links', () => {
     const res = await app.request('/', { headers: studentHeaders });
 
     expect(res.status).toBe(200);
-    const json = await res.json() as { data: typeof link[] };
+    const json = await res.json() as { data: typeof link[]; linkStatus: string };
     expect(json.data).toHaveLength(1);
     expect(json.data[0].id).toBe(MOCK_LINK_ID);
     expect(json.data[0].status).toBe('pending');
+    // linkStatus derived from the pending row
+    expect(json.linkStatus).toBe('pending');
   });
 
   it('returns 500 when DB query fails', async () => {

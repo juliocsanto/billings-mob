@@ -16,6 +16,7 @@
 import { BarChart2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card, EmptyState } from '../components/ui';
+import { InstructorLinkNudge } from '../components/InstructorLinkNudge.jsx';
 import { computeStreak } from '../utils/streak.js';
 import { today } from '../utils/dates.js';
 
@@ -103,7 +104,7 @@ function CycleLengthTrendChart({ cycleLengths, avgLength, t }) {
 
 // ── Page component ─────────────────────────────────────────────────────────────
 
-export function AnalisePage({ stats, obs, onNavigate }) {
+export function AnalisePage({ stats, obs, instructorLinkStatus, onNavigate }) {
   const { t } = useTranslation();
 
   // Registration streak — neutral behavioral count, no fertility inference.
@@ -223,6 +224,9 @@ export function AnalisePage({ stats, obs, onNavigate }) {
               </p>
             </Card>
           )}
+
+          {/* Nudge: unlinked aluna → invite to link with an instrutora for interpretation */}
+          <InstructorLinkNudge status={instructorLinkStatus} onNavigate={onNavigate} />
 
           {/* Interpretation belongs to the instrutora — permanent, not dismissible */}
           <Card className="mt-1">

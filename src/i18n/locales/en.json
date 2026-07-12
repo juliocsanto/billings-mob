@@ -290,7 +290,11 @@
     "manageLink": "Manage link",
     "noInstructorHint": "Link with your instructor to share your records.",
     "appearanceSection": "Appearance",
-    "pendingSync": "{{count}} to sync"
+    "pendingSync": "{{count}} to sync",
+    "instructorNudgeTitle": "Get your cycle interpreted",
+    "instructorNudgeBody": "Link with a certified CENPLAFAM/WOOMB instructor — only she interprets your records. The app shows only what you observed.",
+    "instructorNudgeCta": "Link with an instructor",
+    "instructorNudgePending": "Invitation sent — waiting for your instructor to accept."
   },
   "feedback": {
     "loginRequired": "Log in to access community suggestions.",

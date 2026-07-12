@@ -290,7 +290,11 @@
     "manageLink": "Gerenciar vínculo",
     "noInstructorHint": "Associe-se à sua instrutora para compartilhar seus registros.",
     "appearanceSection": "Aparência",
-    "pendingSync": "{{count}} a sincronizar"
+    "pendingSync": "{{count}} a sincronizar",
+    "instructorNudgeTitle": "Receba a interpretação do seu ciclo",
+    "instructorNudgeBody": "Vincule-se a uma instrutora certificada CENPLAFAM/WOOMB — só ela interpreta seus registros. O app mostra apenas o que você observou.",
+    "instructorNudgeCta": "Vincular a uma instrutora",
+    "instructorNudgePending": "Convite enviado — aguardando sua instrutora aceitar."
   },
   "feedback": {
     "loginRequired": "Faça login para acessar as sugestões da comunidade.",

@@ -9,6 +9,7 @@ import { OnboardingFlow } from './components/onboarding/OnboardingFlow.jsx';
 import { supabase } from './lib/supabaseClient';
 import { today, addDays, genDays } from './utils/dates.js';
 import { computeMultiCycleStats } from './utils/analysis.js';
+import { deriveInstructorLinkStatus } from './utils/instructorLinkStatus.js';
 import { computeStreak, hasRecordedToday, missedYesterday } from './utils/streak.js';
 import { useObservationData } from './hooks/useObservationData';
 import { useInstructorLink } from './hooks/useInstructorLink';
@@ -96,6 +97,7 @@ export default function App({ user, session } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
   const activeLink = links.find((l) => l.status === 'active') ?? null;
+  const instructorLinkStatus = deriveInstructorLinkStatus(links);
 
   // Daily reminder toast (LVL-17 — replaces sticky banner).
   // Extended with missed-day nudge: if the aluna has a live streak but hasn't
@@ -364,7 +366,14 @@ export default function App({ user, session } = {}) {
           />
         )}
 
-        {tab === 'analise' && <AnalisePage stats={stats} obs={obs} />}
+        {tab === 'analise' && (
+          <AnalisePage
+            stats={stats}
+            obs={obs}
+            instructorLinkStatus={instructorLinkStatus}
+            onNavigate={setTab}
+          />
+        )}
 
         {tab === 'guia' && (
           <GuiaPage msgs={msgs} input={input} setInput={setInput} aiLoading={aiLoading} sendAI={sendAI} chatEnd={chatEnd} />
